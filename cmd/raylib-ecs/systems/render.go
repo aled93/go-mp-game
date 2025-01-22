@@ -19,6 +19,8 @@ import (
 type renderController struct {
 	width, height int32
 	texture       rl.Texture2D
+	showDebugInfo bool
+	showQtreeVis  bool
 }
 
 func (s *renderController) Init(world *ecs.World) {
@@ -67,13 +69,22 @@ func (s *renderController) Update(world *ecs.World) {
 		return true
 	})
 
-	drawUserDataDebug(gravity.QTree.Root())
+	if s.showQtreeVis {
+		drawUserDataDebug(gravity.QTree.Root())
+	}
 
-	// rl.DrawRectangle(0, 0, 120, 120, rl.DarkGray)
-	rl.DrawFPS(10, 10)
-	rl.DrawText(fmt.Sprintf("%d", world.Size()), 10, 30, 20, rl.Red)
-	rl.DrawText(fmt.Sprintf("%s", world.DtUpdate()), 10, 50, 20, rl.Red)
-	rl.DrawText(fmt.Sprintf("%s", world.DtFixedUpdate()), 10, 70, 20, rl.Red)
+	if s.showDebugInfo {
+		rl.DrawRectangle(0, 0, 120, 100, rl.DarkGray)
+		rl.DrawFPS(10, 10)
+		rl.DrawText(fmt.Sprintf("%d", world.Size()), 10, 30, 20, rl.Red)
+	}
+
+	if rl.IsKeyPressed(rl.KeyF1) {
+		s.showDebugInfo = !s.showDebugInfo
+	}
+	if rl.IsKeyPressed(rl.KeyF2) {
+		s.showQtreeVis = !s.showQtreeVis
+	}
 }
 
 func (s *renderController) FixedUpdate(world *ecs.World) {}

@@ -14,7 +14,7 @@ import (
 	"math"
 )
 
-const G = 6.67430e-11
+const G = 6.67430e-1
 
 type gravityReceiveController struct {
 	spatials   *ecs.ComponentManager[components.SpatialEnt]
@@ -41,21 +41,10 @@ func (s *gravityReceiveController) FixedUpdate(world *ecs.World) {
 			return true
 		}
 
-		cx, cy, mass := calcGravityEffect(spat.Ent.ContainingNode(), spat.Ent)
-		x, y := spat.Ent.Position()
-		dx := cx - x
-		dy := cy - y
-		distSq := dx*dx + dy*dy
+		cx, cy := calcGravityEffect(spat.Ent.ContainingNode(), spat.Ent)
 
-		if distSq == 0.0 {
-			return true
-		}
-
-		frc := mass / distSq
-		dist := math.Sqrt(distSq)
-
-		vel.X += float32(frc * (dx / dist))
-		vel.Y += float32(frc * (dy / dist))
+		vel.X += float32(cx)
+		vel.Y += float32(cy)
 
 		return true
 	})
@@ -63,27 +52,23 @@ func (s *gravityReceiveController) FixedUpdate(world *ecs.World) {
 
 func (s *gravityReceiveController) Destroy(world *ecs.World) {}
 
-func calcGravityEffect(n *spatial.QuadNode[gravity.QuadNodeUserData, any], target *spatial.Entity[gravity.QuadNodeUserData, any]) (cx, cy, mass float64) {
+func calcGravityEffect(n *spatial.QuadNode[gravity.QuadNodeUserData, any], target *spatial.Entity[gravity.QuadNodeUserData, any]) (cx, cy float64) {
 	ents := n.Entities()
 	if ents == nil {
-		return cx, cy, mass
+		return cx, cy
 	}
 
-	ei := 0
+	tx, ty := target.Position()
+
 	for _, ent := range ents {
 		if ent == nil || ent == target {
 			continue
 		}
 
-		if ei == 0 {
-			cx, cy = ent.Position()
-		} else {
-			x, y := ent.Position()
-			cx += x
-			cy += y
-			mass += 1.0
-		}
-		ei++
+		x, y := ent.Position()
+		fx, fy := calc2BodyGravity(tx, ty, 1.0, x, y, 1.0)
+		cx += fx
+		cy += fy
 	}
 
 	cur := n.Parent()
@@ -94,14 +79,31 @@ func calcGravityEffect(n *spatial.QuadNode[gravity.QuadNodeUserData, any], targe
 					continue
 				}
 
-				mass += sibling.UserData().Mass
-				cx += sibling.UserData().GX * sibling.UserData().Mass
-				cy += sibling.UserData().GY * sibling.UserData().Mass
+				mass := sibling.UserData().Mass
+				x := sibling.UserData().GX
+				y := sibling.UserData().GY
+				fx, fy := calc2BodyGravity(tx, ty, 1.0, x, y, mass)
+				cx += fx
+				cy += fy
 			}
 		}
 
 		cur = cur.Parent()
 	}
 
-	return cx / mass, cy / mass, mass
+	return cx, cy
+}
+
+func calc2BodyGravity(ax, ay, am, bx, by, bm float64) (fx, fy float64) {
+	dx, dy := bx-ax, by-ay
+	distSq := dx*dx + dy*dy + 2.0
+	if distSq != 0.0 {
+		frc := G * (am * bm / distSq)
+		dist := math.Sqrt(distSq)
+
+		fx = frc * (dx / dist)
+		fy = frc * (dy / dist)
+	}
+
+	return fx, fy
 }

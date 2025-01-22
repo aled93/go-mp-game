@@ -7,19 +7,17 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package systems
 
 import (
-	"fmt"
 	"gomp_game/cmd/raylib-ecs/components"
 	"gomp_game/pkgs/gomp/ecs"
-	"log"
 	"math/rand"
-	"os"
-	"runtime/pprof"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type spawnController struct {
-	pprofEnabled bool
+	pprofEnabled      bool
+	slingshotCharging bool
+	slingshotStart    rl.Vector2
 }
 
 const (
@@ -68,8 +66,8 @@ func (s *spawnController) Update(world *ecs.World) {
 			scales.Create(newCreature, scale)
 
 			velocities.Create(newCreature, components.Velocity{
-				X: (rand.Float32()*2.0 - 1.0) * 3.0,
-				Y: (rand.Float32()*2.0 - 1.0) * 3.0,
+				X: (rand.Float32()*2.0 - 1.0) * 0.0001,
+				Y: (rand.Float32()*2.0 - 1.0) * 0.0001,
 			})
 
 			gravemits.Create(newCreature, components.GravitationEmitter{})
@@ -92,20 +90,78 @@ func (s *spawnController) Update(world *ecs.World) {
 		}
 	}
 
-	if rl.IsKeyPressed(rl.KeyF9) {
-		if s.pprofEnabled {
-			pprof.StopCPUProfile()
-			fmt.Println("CPU Profile Stopped")
-		} else {
-			f, err := os.Create("cpu.out")
-			if err != nil {
-				log.Fatal(err)
-			}
-			pprof.StartCPUProfile(f)
-			fmt.Println("CPU Profile Started")
-		}
+	mpos := rl.GetMousePosition()
 
-		s.pprofEnabled = !s.pprofEnabled
+	if rl.IsMouseButtonDown(rl.MouseButtonLeft) {
+		star := world.CreateEntity("Star")
+
+		positions.Create(star, components.Position{
+			X: mpos.X,
+			Y: mpos.Y,
+		})
+
+		rotations.Create(star, components.Rotation{})
+		scales.Create(star, components.Scale{
+			X: 2.0,
+			Y: 2.0,
+		})
+
+		velocities.Create(star, components.Velocity{
+			X: 0.0,
+			Y: 0.0,
+		})
+
+		gravemits.Create(star, components.GravitationEmitter{})
+		gravrecvs.Create(star, components.GravitationReceiver{})
+
+		healths.Create(star, components.Health{
+			Hp:    10000,
+			MaxHp: 10000,
+		})
+
+		sprites.Create(star, components.Sprite{
+			Origin: rl.NewVector2(0.5, 0.5),
+		})
+	}
+
+	if rl.IsMouseButtonPressed(rl.MouseButtonRight) {
+		s.slingshotCharging = true
+		s.slingshotStart = mpos
+	}
+	if rl.IsMouseButtonReleased(rl.MouseButtonRight) && s.slingshotCharging {
+		s.slingshotCharging = false
+		vel := rl.Vector2Scale(rl.Vector2Subtract(mpos, s.slingshotStart), 0.01)
+		// frc := rl.Vector2Distance(mpos, s.slingshotStart)
+
+		star := world.CreateEntity("Star")
+
+		positions.Create(star, components.Position{
+			X: mpos.X,
+			Y: mpos.Y,
+		})
+
+		rotations.Create(star, components.Rotation{})
+		scales.Create(star, components.Scale{
+			X: 2.0,
+			Y: 2.0,
+		})
+
+		velocities.Create(star, components.Velocity{
+			X: vel.X,
+			Y: vel.Y,
+		})
+
+		gravemits.Create(star, components.GravitationEmitter{})
+		gravrecvs.Create(star, components.GravitationReceiver{})
+
+		healths.Create(star, components.Health{
+			Hp:    10000,
+			MaxHp: 10000,
+		})
+
+		sprites.Create(star, components.Sprite{
+			Origin: rl.NewVector2(0.5, 0.5),
+		})
 	}
 }
 func (s *spawnController) FixedUpdate(world *ecs.World) {
