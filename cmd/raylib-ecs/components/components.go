@@ -33,6 +33,10 @@ type Sprite struct {
 	Tint          color.RGBA
 }
 
+type Velocity struct {
+	X, Y float32
+}
+
 type SpriteRender struct {
 	Sprite   Sprite
 	Dest     rl.Rectangle
@@ -42,10 +46,9 @@ type SpriteRender struct {
 var PositionService = ecs.CreateComponentService[Position](TRANSFORM_ID)
 var RotationService = ecs.CreateComponentService[Rotation](ROTATION_ID)
 var ScaleService = ecs.CreateComponentService[Scale](SCALE_ID)
-
 var HealthService = ecs.CreateComponentService[Health](HEALTH_ID)
-
 var SpriteService = ecs.CreateComponentService[Sprite](SPRITE_ID)
+var VelocityService = ecs.CreateComponentService[Velocity](VELOCITY_ID)
 var SpriteRenderService = ecs.CreateComponentService[SpriteRender](SPRITE_RENDER_ID)
 
 // spawn creature every tick with random hp and position

@@ -38,6 +38,7 @@ func main() {
 		&components.HealthService,
 		&components.SpriteRenderService,
 		&components.SpriteService,
+		&components.VelocityService,
 	)
 
 	world.RegisterSystems().
@@ -46,6 +47,7 @@ func main() {
 			&systems.HpService,
 			&systems.ColorService,
 			&systems.SpriteService,
+			&systems.InertiaService,
 		).
 		Sequential(
 			&systems.RenderService,

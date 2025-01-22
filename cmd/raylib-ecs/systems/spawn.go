@@ -35,6 +35,7 @@ func (s *spawnController) Update(world *ecs.World) {
 	positions := components.PositionService.GetManager(world)
 	rotations := components.RotationService.GetManager(world)
 	scales := components.ScaleService.GetManager(world)
+	velocities := components.VelocityService.GetManager(world)
 
 	if rl.IsKeyDown(rl.KeySpace) {
 		for range rand.Intn(10000) {
@@ -63,6 +64,11 @@ func (s *spawnController) Update(world *ecs.World) {
 				Y: 2,
 			}
 			scales.Create(newCreature, scale)
+
+			velocities.Create(newCreature, components.Velocity{
+				X: (rand.Float32()*2.0 - 1.0) * 3.0,
+				Y: (rand.Float32()*2.0 - 1.0) * 3.0,
+			})
 
 			// Adding HP component
 			maxHp := minMaxHp + rand.Int31n(maxMaxHp-minMaxHp)
