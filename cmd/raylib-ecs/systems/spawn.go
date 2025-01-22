@@ -24,8 +24,8 @@ type spawnController struct {
 
 const (
 	minHpPercentage = 20
-	minMaxHp        = 500
-	maxMaxHp        = 2000
+	minMaxHp        = 50000
+	maxMaxHp        = 200000
 )
 
 func (s *spawnController) Init(world *ecs.World) {}
@@ -36,9 +36,11 @@ func (s *spawnController) Update(world *ecs.World) {
 	rotations := components.RotationService.GetManager(world)
 	scales := components.ScaleService.GetManager(world)
 	velocities := components.VelocityService.GetManager(world)
+	gravemits := components.GravitationEmitterService.GetManager(world)
+	gravrecvs := components.GravitationReceiveService.GetManager(world)
 
 	if rl.IsKeyDown(rl.KeySpace) {
-		for range rand.Intn(10000) {
+		for range rand.Intn(100) {
 			if world.Size() > 100_000_000 {
 				break
 			}
@@ -69,6 +71,9 @@ func (s *spawnController) Update(world *ecs.World) {
 				X: (rand.Float32()*2.0 - 1.0) * 3.0,
 				Y: (rand.Float32()*2.0 - 1.0) * 3.0,
 			})
+
+			gravemits.Create(newCreature, components.GravitationEmitter{})
+			gravrecvs.Create(newCreature, components.GravitationReceiver{})
 
 			// Adding HP component
 			maxHp := minMaxHp + rand.Int31n(maxMaxHp-minMaxHp)

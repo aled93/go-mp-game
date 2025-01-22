@@ -9,7 +9,9 @@ package systems
 import (
 	"fmt"
 	"gomp_game/cmd/raylib-ecs/components"
+	"gomp_game/cmd/raylib-ecs/gravity"
 	"gomp_game/pkgs/gomp/ecs"
+	"gomp_game/pkgs/spatial"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -65,6 +67,8 @@ func (s *renderController) Update(world *ecs.World) {
 		return true
 	})
 
+	drawUserDataDebug(gravity.QTree.Root())
+
 	// rl.DrawRectangle(0, 0, 120, 120, rl.DarkGray)
 	rl.DrawFPS(10, 10)
 	rl.DrawText(fmt.Sprintf("%d", world.Size()), 10, 30, 20, rl.Red)
@@ -76,4 +80,29 @@ func (s *renderController) FixedUpdate(world *ecs.World) {}
 
 func (s *renderController) Destroy(world *ecs.World) {
 	rl.CloseWindow()
+}
+
+func drawUserDataDebug(n *spatial.QuadNode[gravity.QuadNodeUserData, any]) {
+	clr := rl.Lime
+	minx, miny, maxx, maxy := n.Bounds()
+
+	// if ents := n.Entities(); ents != nil {
+	// 	rl.DrawText(strconv.Itoa(len(ents)), int32(minx), int32(maxy)-10, 10, clr)
+	// }
+
+	if n.Childs()[0] != nil {
+		midx := minx + (maxx-minx)*0.5
+		midy := miny + (maxy-miny)*0.5
+
+		rl.DrawLine(int32(minx), int32(midy), int32(maxx), int32(midy), clr)
+		rl.DrawLine(int32(midx), int32(miny), int32(midx), int32(maxy), clr)
+
+		rl.DrawLine(int32(midx), int32(midy), int32(n.UserData().GX), int32(n.UserData().GY), rl.Red)
+		rl.DrawCircle(int32(n.UserData().GX), int32(n.UserData().GY), float32(n.UserData().Mass)*0.001, rl.Red)
+		rl.DrawText(fmt.Sprintf("%.1fx%.1f", n.UserData().GX, n.UserData().GY), int32(minx), int32(miny), 10, rl.Lime)
+
+		for _, child := range n.Childs() {
+			drawUserDataDebug(child)
+		}
+	}
 }

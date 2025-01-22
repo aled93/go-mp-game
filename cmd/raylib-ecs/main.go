@@ -39,6 +39,9 @@ func main() {
 		&components.SpriteRenderService,
 		&components.SpriteService,
 		&components.VelocityService,
+		&components.SpatialEntService,
+		&components.GravitationEmitterService,
+		&components.GravitationReceiveService,
 	)
 
 	world.RegisterSystems().
@@ -48,9 +51,14 @@ func main() {
 			&systems.ColorService,
 			&systems.SpriteService,
 			&systems.InertiaService,
+			&systems.ScreenWrapService,
 		).
 		Sequential(
+			&systems.SpatialUpdateService,
+			&systems.GravityEmitterService,
+			&systems.GravityReceiverService,
 			&systems.RenderService,
+			&systems.DebugService,
 		)
 
 	world.Run(60)

@@ -6,7 +6,9 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package components
 
 import (
+	"gomp_game/cmd/raylib-ecs/gravity"
 	"gomp_game/pkgs/gomp/ecs"
+	"gomp_game/pkgs/spatial"
 	"image/color"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -37,6 +39,14 @@ type Velocity struct {
 	X, Y float32
 }
 
+type SpatialEnt struct {
+	Ent *spatial.Entity[gravity.QuadNodeUserData, any]
+}
+
+type GravitationEmitter struct{}
+
+type GravitationReceiver struct{}
+
 type SpriteRender struct {
 	Sprite   Sprite
 	Dest     rl.Rectangle
@@ -49,6 +59,9 @@ var ScaleService = ecs.CreateComponentService[Scale](SCALE_ID)
 var HealthService = ecs.CreateComponentService[Health](HEALTH_ID)
 var SpriteService = ecs.CreateComponentService[Sprite](SPRITE_ID)
 var VelocityService = ecs.CreateComponentService[Velocity](VELOCITY_ID)
+var SpatialEntService = ecs.CreateComponentService[SpatialEnt](SPATIALENT_ID)
+var GravitationEmitterService = ecs.CreateComponentService[GravitationEmitter](GRAVEMITTER_ID)
+var GravitationReceiveService = ecs.CreateComponentService[GravitationReceiver](GRAVRECEIVER_ID)
 var SpriteRenderService = ecs.CreateComponentService[SpriteRender](SPRITE_RENDER_ID)
 
 // spawn creature every tick with random hp and position
