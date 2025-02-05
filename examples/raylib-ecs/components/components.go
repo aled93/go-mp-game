@@ -24,6 +24,9 @@ var PositionService = ecs.CreateComponentService[Position](POSITION_ID)
 var RotationService = ecs.CreateComponentService[Rotation](ROTATION_ID)
 var ScaleService = ecs.CreateComponentService[Scale](SCALE_ID)
 var MirroredService = ecs.CreateComponentService[Mirrored](MIRRORED_ID)
+var InputIntentService = ecs.CreateComponentService[InputIntent](INPUT_INTENT_ID)
+var LocalInputService = ecs.CreateComponentService[LocalInput](LOCAL_INPUT_ID)
+var BotRoamerService = ecs.CreateComponentService[BotRoamer](BOT_ROAMER_ID)
 
 // Rendering
 

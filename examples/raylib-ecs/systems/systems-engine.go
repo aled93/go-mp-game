@@ -30,6 +30,11 @@ var NetworkService = ecs.CreateSystemService(&networkController{})
 var NetworkSendService = ecs.CreateSystemService(&networkSendController{})
 var NetworkReceiveService = ecs.CreateSystemService(&networkReceiveController{})
 
+// Input
+
+var LocalInputService = ecs.CreateSystemService(&localInputController{})
+var BotRoamingService = ecs.CreateSystemService(&botRoamingController{})
+
 // Engine Texture PreRender systems
 
 var AnimationSpriteMatrixService = ecs.CreateSystemService(&animationSpriteMatrixController{})

@@ -99,6 +99,10 @@ func (m *PagedMap[K, V]) Len() int32 {
 
 func (m *PagedMap[K, V]) All() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
+		if m == nil || m.book == nil {
+			return
+		}
+
 		for pageId, page := range m.book {
 			for idx, e := range page.data {
 				if !e.ok {
@@ -115,6 +119,10 @@ func (m *PagedMap[K, V]) All() iter.Seq2[K, V] {
 
 func (m *PagedMap[K, V]) Keys() iter.Seq[K] {
 	return func(yield func(K) bool) {
+		if m == nil || m.book == nil {
+			return
+		}
+
 		for pageId, page := range m.book {
 			for idx, e := range page.data {
 				if !e.ok {
@@ -131,6 +139,10 @@ func (m *PagedMap[K, V]) Keys() iter.Seq[K] {
 
 func (m *PagedMap[K, V]) Values() iter.Seq[V] {
 	return func(yield func(V) bool) {
+		if m == nil || m.book == nil {
+			return
+		}
+
 		for _, page := range m.book {
 			for _, e := range page.data {
 				if !e.ok {

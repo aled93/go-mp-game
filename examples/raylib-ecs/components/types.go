@@ -15,9 +15,10 @@ Thank you for your support!
 package components
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"image/color"
 	"time"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 // Business
@@ -39,6 +40,15 @@ type Scale struct {
 }
 type Mirrored struct {
 	X, Y bool
+}
+type InputIntent struct {
+	Move rl.Vector2
+}
+type LocalInput struct{}
+type BotRoamer struct {
+	RoamTarget    rl.Vector2
+	Chilling      bool
+	ChillDuration int
 }
 
 // Render

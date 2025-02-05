@@ -7,10 +7,11 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package entities
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/examples/raylib-ecs/assets"
 	"gomp/examples/raylib-ecs/components"
 	ecs2 "gomp/pkg/ecs"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 const (
@@ -33,6 +34,7 @@ type Player struct {
 	AnimationPlayer *components.AnimationPlayer
 	AnimationState  *components.AnimationState
 	Mirrored        *components.Mirrored
+	InputIntent     *components.InputIntent
 }
 
 var playerSpriteMatrix = components.SpriteMatrix{
@@ -74,6 +76,7 @@ func CreatePlayer(world *ecs2.World) (player Player) {
 	animationStates := components.AnimationStateService.GetManager(world)
 	tints := components.TintService.GetManager(world)
 	mirrored := components.MirroredService.GetManager(world)
+	inputIntents := components.InputIntentService.GetManager(world)
 
 	// Creating new player
 
@@ -111,6 +114,9 @@ func CreatePlayer(world *ecs2.World) (player Player) {
 
 	// Adding Mirrored component
 	player.Mirrored = mirrored.Create(entity, components.Mirrored{})
+
+	// Adding Input intent component
+	player.InputIntent = inputIntents.Create(entity, components.InputIntent{})
 
 	return player
 }

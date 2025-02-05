@@ -43,6 +43,9 @@ func main() {
 		&components.AnimationPlayerService,
 		&components.AnimationStateService,
 		&components.TextureRenderService,
+		&components.InputIntentService,
+		&components.LocalInputService,
+		&components.BotRoamerService,
 	)
 
 	world.RegisterSystems().
@@ -52,6 +55,10 @@ func main() {
 		Parallel( // Network receive systems
 			&systems.NetworkService,
 			&systems.NetworkReceiveService,
+		).
+		Parallel( // Input
+			&systems.LocalInputService,
+			&systems.BotRoamingService,
 		).
 		Parallel( // Business logic systems
 			&systems.PlayerService,
