@@ -42,6 +42,11 @@ func (s *RenderSystem) Run() bool {
 		return true
 	})
 
+	s.Positions.AllData(func(position *stdcomponents.Position) bool {
+		rl.DrawRectangle(int32(position.X), int32(position.Y), 10, 10, rl.Red)
+		return true
+	})
+
 	// rl.DrawRectangle(0, 0, 120, 120, rl.DarkGray)
 	rl.DrawFPS(10, 10)
 	rl.DrawText(fmt.Sprintf("%d", s.EntityManager.Size()), 10, 30, 20, rl.Red)

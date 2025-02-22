@@ -22,7 +22,7 @@ type TextureRenderScaleSystem struct {
 }
 
 func (s *TextureRenderScaleSystem) Init() {}
-func (s *TextureRenderScaleSystem) Run(interpolation float32) {
+func (s *TextureRenderScaleSystem) Run() {
 	s.TextureRenders.AllParallel(func(entity ecs.Entity, tr *stdcomponents.TextureRender) bool {
 		if tr == nil {
 			return true

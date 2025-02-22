@@ -24,7 +24,7 @@ type AnyScene interface {
 	Init()
 	Update(dt time.Duration) SceneId
 	FixedUpdate(dt time.Duration)
-	Render(interpolation float32)
+	Render(dt time.Duration)
 	Destroy()
 	OnEnter()
 	OnExit()

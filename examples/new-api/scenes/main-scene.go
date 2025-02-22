@@ -87,11 +87,10 @@ func (s *MainScene) FixedUpdate(dt time.Duration) {
 	s.World.Systems.Network.Run(dt)
 
 	s.World.Systems.Velocity.Run(dt)
-	s.World.Systems.ViewPosition.Run()
 	s.World.Systems.NetworkSend.Run(dt)
 }
 
-func (s *MainScene) Render(interpolation float32) {
+func (s *MainScene) Render(dt time.Duration) {
 	// Animation
 	s.World.Systems.AnimationSpriteMatrix.Run()
 	s.World.Systems.AnimationPlayer.Run()
@@ -104,10 +103,10 @@ func (s *MainScene) Render(interpolation float32) {
 	// Prerender fill
 	s.World.Systems.TextureRenderAnimation.Run()
 	s.World.Systems.TextureRenderFlip.Run()
-	s.World.Systems.TextureRenderPosition.Run(interpolation)
-	s.World.Systems.TextureRenderRotation.Run(interpolation)
-	s.World.Systems.TextureRenderScale.Run(interpolation)
-	s.World.Systems.TextureRenderTint.Run(interpolation)
+	s.World.Systems.TextureRenderPosition.Run(dt)
+	s.World.Systems.TextureRenderRotation.Run()
+	s.World.Systems.TextureRenderScale.Run()
+	s.World.Systems.TextureRenderTint.Run()
 
 	// Render
 	s.World.Systems.Debug.Run()

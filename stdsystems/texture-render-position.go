@@ -9,6 +9,8 @@ package stdsystems
 import (
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
+	"math"
+	"time"
 )
 
 func NewTextureRenderPositionSystem() TextureRenderPositionSystem {
@@ -17,29 +19,31 @@ func NewTextureRenderPositionSystem() TextureRenderPositionSystem {
 
 // TextureRenderPositionSystem is a system that sets Position of textureRender
 type TextureRenderPositionSystem struct {
-	ViewPositions  *stdcomponents.ViewPositionComponentManager
+	Positions      *stdcomponents.PositionComponentManager
 	TextureRenders *stdcomponents.TextureRenderComponentManager
 }
 
 func (s *TextureRenderPositionSystem) Init() {}
-func (s *TextureRenderPositionSystem) Run(interpolation float32) {
+func (s *TextureRenderPositionSystem) Run(dt time.Duration) {
 	s.TextureRenders.AllParallel(func(entity ecs.Entity, tr *stdcomponents.TextureRender) bool {
 		if tr == nil {
 			return true
 		}
 
-		viewPosition := s.ViewPositions.Get(entity)
-		if viewPosition == nil {
+		position := s.Positions.Get(entity)
+		if position == nil {
 			return true
 		}
 
-		// Lerp(start, end, amount float32) start + amount*(end-start)
-		interpolationX := interpolation * (viewPosition.CurrentPositionX - viewPosition.LastPositionX)
-		interpolationY := interpolation * (viewPosition.CurrentPositionY - viewPosition.LastPositionY)
-		tr.Dest.X = viewPosition.LastPositionX + interpolationX
-		tr.Dest.Y = viewPosition.LastPositionY + interpolationY
+		decay := 100.0
+		tr.Dest.X = float32(expDecay(float64(tr.Dest.X), float64(position.X), decay, dt))
+		tr.Dest.Y = float32(expDecay(float64(tr.Dest.Y), float64(position.Y), decay, dt))
 
 		return true
 	})
 }
 func (s *TextureRenderPositionSystem) Destroy() {}
+
+func expDecay(a, b, decay float64, dt time.Duration) float64 {
+	return b + (a-b)*(math.Exp(-decay*dt.Seconds()))
+}

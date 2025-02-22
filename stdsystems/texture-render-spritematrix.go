@@ -21,6 +21,7 @@ type TextureRenderMatrixSystem struct {
 	SpriteMatrixes  *stdcomponents.SpriteMatrixComponentManager
 	TextureRenders  *stdcomponents.TextureRenderComponentManager
 	AnimationStates *stdcomponents.AnimationStateComponentManager
+	Positions       *stdcomponents.PositionComponentManager
 }
 
 func (s *TextureRenderMatrixSystem) Init() {}
@@ -36,6 +37,11 @@ func (s *TextureRenderMatrixSystem) Run() {
 			return true
 		}
 
+		position := s.Positions.Get(entity)
+		if position == nil {
+			return true
+		}
+
 		currentAnimationFrame := spriteMatrix.Animations[*animationState].Frame
 
 		tr := s.TextureRenders.Get(entity)
@@ -46,6 +52,8 @@ func (s *TextureRenderMatrixSystem) Run() {
 				Origin:  spriteMatrix.Origin,
 				Frame:   currentAnimationFrame,
 				Dest: rl.Rectangle{
+					X:      position.X,
+					Y:      position.Y,
 					Width:  currentAnimationFrame.Width,
 					Height: currentAnimationFrame.Height,
 				},
@@ -56,10 +64,8 @@ func (s *TextureRenderMatrixSystem) Run() {
 			// Run spriteRender
 			tr.Texture = spriteMatrix.Texture
 			tr.Origin = spriteMatrix.Origin
-			tr.Dest = rl.Rectangle{
-				Width:  currentAnimationFrame.Width,
-				Height: currentAnimationFrame.Height,
-			}
+			tr.Dest.Width = currentAnimationFrame.Width
+			tr.Dest.Height = currentAnimationFrame.Height
 			tr.Frame = currentAnimationFrame
 		}
 		return true

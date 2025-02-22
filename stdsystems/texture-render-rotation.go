@@ -22,7 +22,7 @@ type TextureRenderRotationSystem struct {
 }
 
 func (s *TextureRenderRotationSystem) Init() {}
-func (s *TextureRenderRotationSystem) Run(interpolation float32) {
+func (s *TextureRenderRotationSystem) Run() {
 	// Run sprites and spriteRenders
 	s.TextureRenders.AllParallel(func(entity ecs.Entity, tr *stdcomponents.TextureRender) bool {
 		if tr == nil {

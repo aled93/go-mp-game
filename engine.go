@@ -50,19 +50,23 @@ func (e *Engine) Run(tickrate uint, framerate uint) {
 	e.Game.Init()
 	defer e.Game.Destroy()
 
-	lastUpdateAt := time.Now() // TODO: REMOVE?
-	nextFixedUpdateAt := time.Now()
+	var lastUpdateAt = time.Now() // TODO: REMOVE?
+	var nextFixedUpdateAt = time.Now()
+	var dt = time.Since(lastUpdateAt)
 
 	for !e.Game.ShouldDestroy() {
 		if renderTicker != nil {
 			<-renderTicker.C
 		}
+		dt = time.Since(lastUpdateAt)
+		lastUpdateAt = time.Now()
 
 		// Update
-		e.Game.Update(time.Since(lastUpdateAt))
+		e.Game.Update(dt)
 
 		// Fixed Update
 		loops := 0
+		// TODO: Refactor to work without for loop
 		for nextFixedUpdateAt.Compare(time.Now()) == -1 && loops < MaxFrameSkips {
 			e.Game.FixedUpdate(fixedUpdDuration)
 			e.lastFixedUpdateAt = nextFixedUpdateAt
@@ -74,10 +78,8 @@ func (e *Engine) Run(tickrate uint, framerate uint) {
 		}
 
 		// Render
-
-		sinceLastFixedUpdateAt := time.Since(e.lastFixedUpdateAt)
-		interpolation := float32(sinceLastFixedUpdateAt.Microseconds()) / float32(fixedUpdDuration.Microseconds())
-		e.Game.Render(interpolation)
-		lastUpdateAt = time.Now()
+		//sinceLastFixedUpdateAt := time.Since(e.lastFixedUpdateAt)
+		//interpolation := float32(sinceLastFixedUpdateAt.Microseconds()) / float32(fixedUpdDuration.Microseconds())
+		e.Game.Render(dt)
 	}
 }
