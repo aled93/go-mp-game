@@ -36,16 +36,19 @@ func (s *RenderSystem) Run() bool {
 
 	rl.ClearBackground(rl.Black)
 
-	s.TextureRenders.AllData(func(tr *stdcomponents.TextureRender) bool {
-		texture := *tr.Texture
-		rl.DrawTexturePro(texture, tr.Frame, tr.Dest, tr.Origin, tr.Rotation, tr.Tint)
-		return true
-	})
+	//s.TextureRenders.AllData(func(tr *stdcomponents.TextureRender) bool {
+	//	rl.DrawTexturePro(*tr.Texture, tr.Frame, tr.Dest, tr.Origin, tr.Rotation, tr.Tint)
+	//	return true
+	//})
 
-	s.Positions.AllData(func(position *stdcomponents.Position) bool {
-		rl.DrawRectangle(int32(position.X), int32(position.Y), 10, 10, rl.Red)
-		return true
-	})
+	for tr := range s.TextureRenders.AllData {
+		rl.DrawTexturePro(*tr.Texture, tr.Frame, tr.Dest, tr.Origin, tr.Rotation, tr.Tint)
+	}
+
+	//s.Positions.AllData(func(position *stdcomponents.Position) bool {
+	//	rl.DrawRectangle(int32(position.X), int32(position.Y), 10, 10, rl.Red)
+	//	return true
+	//})
 
 	// rl.DrawRectangle(0, 0, 120, 120, rl.DarkGray)
 	rl.DrawFPS(10, 10)

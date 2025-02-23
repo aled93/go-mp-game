@@ -28,5 +28,5 @@ func main() {
 	game.CurrentSceneId = scenes.MainSceneId
 
 	engine := gomp.NewEngine(&game)
-	engine.Run(50, 600)
+	engine.Run(20, 0)
 }

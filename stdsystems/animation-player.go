@@ -7,7 +7,6 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package stdsystems
 
 import (
-	"fmt"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"time"
@@ -32,7 +31,7 @@ func (s *AnimationPlayerSystem) Run() {
 	s.AnimationPlayers.AllDataParallel(func(animation *stdcomponents.AnimationPlayer) bool {
 		animation.ElapsedTime += time.Duration(float32(dt.Microseconds())*animation.Speed) * time.Microsecond
 
-		assert.True(animation.FrameDuration > 0, fmt.Errorf("frame duration must be greater than 0 (got %v)", animation.FrameDuration))
+		assert.True(animation.FrameDuration > 0, "frame duration must be greater than 0")
 
 		// Check if animation is playing backwards
 		if animation.Speed < 0 {

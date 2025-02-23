@@ -25,6 +25,8 @@ type TextureRenderPositionSystem struct {
 
 func (s *TextureRenderPositionSystem) Init() {}
 func (s *TextureRenderPositionSystem) Run(dt time.Duration) {
+
+	dts := dt.Seconds()
 	s.TextureRenders.AllParallel(func(entity ecs.Entity, tr *stdcomponents.TextureRender) bool {
 		if tr == nil {
 			return true
@@ -35,15 +37,15 @@ func (s *TextureRenderPositionSystem) Run(dt time.Duration) {
 			return true
 		}
 
-		decay := 100.0
-		tr.Dest.X = float32(expDecay(float64(tr.Dest.X), float64(position.X), decay, dt))
-		tr.Dest.Y = float32(expDecay(float64(tr.Dest.Y), float64(position.Y), decay, dt))
+		decay := 40.0 // DECAY IS TICKRATE DEPENDENT
+		tr.Dest.X = float32(expDecay(float64(tr.Dest.X), float64(position.X), decay, dts))
+		tr.Dest.Y = float32(expDecay(float64(tr.Dest.Y), float64(position.Y), decay, dts))
 
 		return true
 	})
 }
 func (s *TextureRenderPositionSystem) Destroy() {}
 
-func expDecay(a, b, decay float64, dt time.Duration) float64 {
-	return b + (a-b)*(math.Exp(-decay*dt.Seconds()))
+func expDecay(a, b, decay, dt float64) float64 {
+	return b + (a-b)*(math.Exp(-decay*dt))
 }

@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	MaxFrameSkips = 10
+	MaxFrameSkips = 50
 )
 
 func NewEngine(game AnyGame) Engine {
@@ -33,8 +33,6 @@ func NewEngine(game AnyGame) Engine {
 
 type Engine struct {
 	Game AnyGame
-
-	lastFixedUpdateAt time.Time
 }
 
 func (e *Engine) Run(tickrate uint, framerate uint) {
@@ -69,7 +67,6 @@ func (e *Engine) Run(tickrate uint, framerate uint) {
 		// TODO: Refactor to work without for loop
 		for nextFixedUpdateAt.Compare(time.Now()) == -1 && loops < MaxFrameSkips {
 			e.Game.FixedUpdate(fixedUpdDuration)
-			e.lastFixedUpdateAt = nextFixedUpdateAt
 			nextFixedUpdateAt = nextFixedUpdateAt.Add(fixedUpdDuration)
 			loops++
 		}
@@ -78,8 +75,6 @@ func (e *Engine) Run(tickrate uint, framerate uint) {
 		}
 
 		// Render
-		//sinceLastFixedUpdateAt := time.Since(e.lastFixedUpdateAt)
-		//interpolation := float32(sinceLastFixedUpdateAt.Microseconds()) / float32(fixedUpdDuration.Microseconds())
 		e.Game.Render(dt)
 	}
 }
