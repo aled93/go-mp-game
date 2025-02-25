@@ -25,36 +25,26 @@ type RenderSystem struct {
 
 func (s *RenderSystem) Init() {
 	rl.InitWindow(1024, 768, "raylib [core] ebiten-ecs - basic window")
-	//currentMonitorRefreshRate := int32(rl.GetMonitorRefreshRate(rl.GetCurrentMonitor()))
-	//rl.SetTargetFPS(12)
 }
 func (s *RenderSystem) Run() bool {
 	if rl.WindowShouldClose() {
 		return false
 	}
-	rl.BeginDrawing()
 
+	rl.BeginDrawing()
 	rl.ClearBackground(rl.Black)
 
-	//s.TextureRenders.AllData(func(tr *stdcomponents.TextureRender) bool {
-	//	rl.DrawTexturePro(*tr.Texture, tr.Frame, tr.Dest, tr.Origin, tr.Rotation, tr.Tint)
-	//	return true
-	//})
-
-	for tr := range s.TextureRenders.AllData {
+	s.TextureRenders.EachComponent(func(tr *stdcomponents.TextureRender) bool {
 		rl.DrawTexturePro(*tr.Texture, tr.Frame, tr.Dest, tr.Origin, tr.Rotation, tr.Tint)
-	}
+		return true
+	})
 
-	//s.Positions.AllData(func(position *stdcomponents.Position) bool {
-	//	rl.DrawRectangle(int32(position.X), int32(position.Y), 10, 10, rl.Red)
-	//	return true
-	//})
-
-	// rl.DrawRectangle(0, 0, 120, 120, rl.DarkGray)
+	rl.DrawRectangle(0, 0, 200, 60, rl.DarkBrown)
 	rl.DrawFPS(10, 10)
-	rl.DrawText(fmt.Sprintf("%d", s.EntityManager.Size()), 10, 30, 20, rl.Red)
+	rl.DrawText(fmt.Sprintf("%d entities", s.EntityManager.Size()), 10, 30, 20, rl.RayWhite)
 
 	rl.EndDrawing()
+
 	return true
 }
 

@@ -24,10 +24,18 @@ type VelocitySystem struct {
 func (s *VelocitySystem) Init() {}
 func (s *VelocitySystem) Run(dt time.Duration) {
 	dtSec := float32(dt.Seconds())
-	s.Velocities.AllParallel(func(entity ecs.Entity, v *stdcomponents.Velocity) bool {
-		position := s.Positions.Get(entity)
-		position.X += v.X * dtSec
-		position.Y += v.Y * dtSec
+	//s.Velocities.AllParallel(func(entity ecs.Entity, v *stdcomponents.Velocity) bool {
+	//	position := s.Positions.Get(entity)
+	//	position.X += v.X * dtSec
+	//	position.Y += v.Y * dtSec
+	//	return true
+	//})
+	s.Velocities.EachEntity(func(e ecs.Entity) bool {
+		velocity := s.Velocities.Get(e)
+		position := s.Positions.Get(e)
+
+		position.X += velocity.X * dtSec
+		position.Y += velocity.Y * dtSec
 		return true
 	})
 }

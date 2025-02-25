@@ -26,19 +26,20 @@ func (e *Entity) IsVersion(version EntityVersion) bool {
 }
 
 func (e *Entity) SetVersion(version EntityVersion) {
-	assert.True(version <= MaxEntityVersionId, "version is too high")
-	*e = Entity(entityType(*e) - entityType(e.GetVersion()<<(entityPower-versionPower)) | entityType(version)<<(entityPower-versionPower))
+	assert.True(version <= MaxEntityGenerationId, "version is too high")
+	*e = Entity(entityType(*e) - entityType(e.GetVersion()<<(entityPower-generationPower)) | entityType(version)<<(entityPower-generationPower))
 }
 
 func (e *Entity) GetVersion() EntityVersion {
-	return EntityVersion(*e >> (entityPower - versionPower))
+	return EntityVersion(*e >> (entityPower - generationPower))
 }
 
 const (
-	entityPower                      = 32
-	versionPower                     = 2
-	MaxEntityVersionId EntityVersion = 1<<versionPower - 1
-	MaxEntityId        Entity        = 1<<(entityPower-versionPower) - 1
-	ent                Entity        = 35 | 3<<(entityPower-versionPower)
-	ent2               Entity        = 3221225507 - 3<<(entityPower-versionPower) | 1<<(entityPower-versionPower)
+	entityPower                         = 32
+	generationPower                     = 2
+	MaxEntityGenerationId EntityVersion = 1<<generationPower - 1
+	NumOfGenerations                    = MaxEntityGenerationId + 1
+	MaxEntityId           Entity        = 1<<(entityPower-generationPower) - 1
+	ent                   Entity        = 35 | 3<<(entityPower-generationPower)
+	ent2                  Entity        = 3221225507 - 3<<(entityPower-generationPower) | 1<<(entityPower-generationPower)
 )

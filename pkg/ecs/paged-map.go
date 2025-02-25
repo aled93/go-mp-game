@@ -26,8 +26,8 @@ type MapValue[V any] struct {
 	ok    bool
 }
 
-func NewPagedMap[K Entity, V any]() *PagedMap[K, V] {
-	return &PagedMap[K, V]{
+func NewPagedMap[K Entity, V any]() PagedMap[K, V] {
+	return PagedMap[K, V]{
 		book: make([]SlicePage[MapValue[V]], book_size),
 	}
 }

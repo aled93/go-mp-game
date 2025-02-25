@@ -44,12 +44,12 @@ import (
 )
 
 const (
-	PREALLOC_DELETED_ENTITIES uint32 = 1 << 10
+	PREALLOC_DEFAULT uint32 = 1 << 10
 )
 
 func NewEntityManager() EntityManager {
 	entityManager := EntityManager{
-		deletedEntityIDs: make([]Entity, 0, PREALLOC_DELETED_ENTITIES),
+		deletedEntityIDs: make([]Entity, 0, PREALLOC_DEFAULT),
 		components:       make(map[ComponentId]AnyComponentManagerPtr),
 	}
 

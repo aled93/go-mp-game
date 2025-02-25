@@ -20,8 +20,7 @@ type PagedArray[T any] struct {
 	parallelCount    uint8
 }
 
-func NewPagedArray[T any]() (a *PagedArray[T]) {
-	a = new(PagedArray[T])
+func NewPagedArray[T any]() (a PagedArray[T]) {
 	a.book = make([]ArrayPage[T], 2, book_size)
 	a.parallelCount = uint8(runtime.NumCPU()) / 2
 
@@ -214,6 +213,26 @@ func (a *PagedArray[T]) AllData(yield func(*T) bool) {
 
 		for j := page.len - 1; j >= 0; j-- {
 			if !yield(&page.data[j]) {
+				return
+			}
+		}
+	}
+}
+
+func (a *PagedArray[T]) AllDataValue(yield func(T) bool) {
+	var page *ArrayPage[T]
+
+	book := a.book
+
+	if a.len == 0 {
+		return
+	}
+
+	for i := a.currentPageIndex; i >= 0; i-- {
+		page = &book[i]
+
+		for j := page.len - 1; j >= 0; j-- {
+			if !yield(page.data[j]) {
 				return
 			}
 		}

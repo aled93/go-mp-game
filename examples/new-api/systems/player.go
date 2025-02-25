@@ -36,7 +36,7 @@ type PlayerSystem struct {
 }
 
 func (s *PlayerSystem) Init() {
-	for range 100 {
+	for range 1 {
 		s.Player = entities.CreatePlayer(
 			s.EntityManager, s.SpriteMatrixes, s.Positions, s.Rotations, s.Scales,
 			s.Velocities, s.AnimationPlayers, s.AnimationStates, s.Tints, s.Flips,
@@ -60,7 +60,7 @@ func (s *PlayerSystem) Run() {
 	s.Player.Velocity.X = 0
 	s.Player.Velocity.Y = 0
 
-	s.Controllers.AllData(func(c *components.Controller) bool {
+	for range s.Controllers.EachComponent {
 		if rl.IsKeyDown(rl.KeySpace) {
 			*animationState = entities.PlayerStateJump
 		} else {
@@ -88,8 +88,7 @@ func (s *PlayerSystem) Run() {
 		if rl.IsKeyPressed(rl.KeyK) {
 			s.EntityManager.Delete(s.Player.Entity)
 		}
-		return true
-	})
+	}
 
 }
 func (s *PlayerSystem) Destroy() {}
