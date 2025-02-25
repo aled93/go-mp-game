@@ -11,14 +11,14 @@ import (
 )
 
 const (
-	page_size_shift int32 = 10
-	page_size       int32 = 1 << page_size_shift
-	book_size       int32 = 1 << 10
+	page_size_shift int = 14
+	page_size       int = 1 << page_size_shift
+	book_size       int = 1 << 10
 )
 
 type MapPage[K Entity, V any] map[K]V
 type PagedMap[K Entity, V any] struct {
-	len  int32
+	len  int
 	book []SlicePage[MapValue[V]]
 }
 type MapValue[V any] struct {
@@ -83,10 +83,10 @@ func (m *PagedMap[K, V]) Delete(key K) {
 
 func (m *PagedMap[K, V]) getPageIdAndIndex(key K) (page_id int, index int) {
 	page_id = int(key) >> page_size_shift
-	index = int(int32(key) % page_size)
+	index = int(key) % page_size
 	return
 }
 
-func (m *PagedMap[K, V]) Len() int32 {
+func (m *PagedMap[K, V]) Len() int {
 	return m.len
 }

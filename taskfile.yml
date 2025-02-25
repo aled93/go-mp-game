@@ -37,3 +37,9 @@ tasks:
   pprof-cpu:
     cmds:
       - go tool pprof -http=":8000" ./cpu.out
+
+  build:
+    env:
+      CGO_ENABLED: 0
+    cmds:
+      - go build examples/new-api/game.go

@@ -36,7 +36,7 @@ type PlayerSystem struct {
 }
 
 func (s *PlayerSystem) Init() {
-	for range 1 {
+	for range 100_000 {
 		s.Player = entities.CreatePlayer(
 			s.EntityManager, s.SpriteMatrixes, s.Positions, s.Rotations, s.Scales,
 			s.Velocities, s.AnimationPlayers, s.AnimationStates, s.Tints, s.Flips,

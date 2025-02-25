@@ -41,7 +41,7 @@ func NewComponentManager[T any](id ComponentId) ComponentManager[T] {
 	newManager := ComponentManager[T]{
 		components: NewPagedArray[T](),
 		entities:   NewPagedArray[Entity](),
-		lookup:     NewPagedMap[Entity, int32](),
+		lookup:     NewPagedMap[Entity, int](),
 
 		id:            id,
 		isInitialized: true,
@@ -59,7 +59,7 @@ type ComponentManager[T any] struct {
 	mx         sync.Mutex
 	components PagedArray[T]
 	entities   PagedArray[Entity]
-	lookup     PagedMap[Entity, int32]
+	lookup     PagedMap[Entity, int]
 
 	entityManager         *EntityManager
 	entityComponentBitSet *ComponentBitSet
@@ -80,7 +80,7 @@ type ComponentManager[T any] struct {
 
 // ComponentChanges with byte encoded Components
 type ComponentChanges struct {
-	Len        int32
+	Len        int
 	Components []byte
 	Entities   []Entity
 }
@@ -318,7 +318,7 @@ func (c *ComponentManager[T]) All(yield func(Entity, *T) bool) {
 	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
 	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
 
-	c.components.All(func(i int32, d *T) bool {
+	c.components.All(func(i int, d *T) bool {
 		assert.True(d != nil)
 		entity := c.entities.Get(i)
 		assert.True(entity != nil)
@@ -337,7 +337,7 @@ func (c *ComponentManager[T]) AllParallel(yield func(Entity, *T) bool) {
 	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
 	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
 
-	c.components.AllParallel(func(i int32, t *T) bool {
+	c.components.AllParallel(func(i int, t *T) bool {
 		entity := c.entities.Get(i)
 		assert.True(entity != nil)
 		entId := *entity
@@ -362,7 +362,11 @@ func (c *ComponentManager[T]) AllDataParallel(yield func(*T) bool) {
 
 // Utils
 
-func (c *ComponentManager[T]) Len() int32 {
+func (c *ComponentManager[T]) RawComponents(ptr []T) {
+	c.components.Raw(ptr)
+}
+
+func (c *ComponentManager[T]) Len() int {
 	assert.True(c.isInitialized, "ComponentManager should be created with CreateComponentService()")
 
 	return c.components.Len()
