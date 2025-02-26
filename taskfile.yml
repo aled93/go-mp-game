@@ -38,8 +38,42 @@ tasks:
     cmds:
       - go tool pprof -http=":8000" ./cpu.out
 
-  build:
+  build-win64:
     env:
-      CGO_ENABLED: 0
+      CGO_ENABLED: 1
     cmds:
-      - go build examples/new-api/game.go
+      - go build examples/new-api/game.go -o ./.dist/game-win64.exe
+
+  build-mac:
+    - task: build-darwin-amd64
+    - task: build-darwin-arm64
+    - task: build-darwin-universal
+    - task: sign-darwin-universal
+
+  build-darwin-amd64:
+    env:
+      CGO_ENABLED: 1
+    cmds:
+      - env CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -o ./.dist/game-darwin-amd64 examples/new-api/game.go
+      - chmod +x ./.dist/game-darwin-amd64
+
+  build-darwin-arm64:
+    env:
+      CGO_ENABLED: 1
+    cmds:
+      - env CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -o ./.dist/game-darwin-arm64 examples/new-api/game.go
+      - chmod +x ./.dist/game-darwin-arm64
+
+  build-darwin-universal:
+    cmds:
+      - lipo -create -output ./.dist/game-universal ./.dist/game-darwin-amd64 ./.dist/game-darwin-arm64
+      - chmod +x ./.dist/game-universal
+
+  sign-darwin-universal:
+    cmds:
+      - mkdir -p ./.dist/game.app/Contents/MacOS
+      - mv ./.dist/game-universal ./.dist/game.app/Contents/MacOS/game
+      - chmod +x ./.dist/game.app
+      - codesign --timestamp --options=runtime --deep -fs milanrodd-cert -v ./.dist/game.app
+      - xattr -cr ./.dist/game.app
+      - /usr/bin/ditto -c -k --keepParent ./.dist/game.app ./.dist/game.zip
