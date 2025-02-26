@@ -28,11 +28,25 @@ func (s *DebugSystem) Run() {
 		if s.pprofEnabled {
 			pprof.StopCPUProfile()
 			fmt.Println("CPU Profile Stopped")
+
+			// Create a memory profile file
+			memProfileFile, err := os.Create("mem.out")
+			if err != nil {
+				panic(err)
+			}
+			defer memProfileFile.Close()
+
+			// Write memory profile to file
+			if err := pprof.WriteHeapProfile(memProfileFile); err != nil {
+				panic(err)
+			}
+			fmt.Println("Memory profile written to mem.prof")
 		} else {
 			f, err := os.Create("cpu.out")
 			if err != nil {
 				log.Fatal(err)
 			}
+
 			err = pprof.StartCPUProfile(f)
 			if err != nil {
 				log.Fatal(err)

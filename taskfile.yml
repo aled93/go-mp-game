@@ -30,19 +30,23 @@ tasks:
     cmds:
       - protoc --go_out=. internal/**/*.proto
 
-  pprof:
-    cmds:
-      - go tool pprof -http=":8000" 'http://localhost:3000/debug/pprof/profile?seconds=10'
-
   pprof-cpu:
     cmds:
       - go tool pprof -http=":8000" ./cpu.out
+
+  pprof-mem:
+    cmds:
+      - go tool pprof -http=":8001" ./mem.out
+
+  pprof-trace:
+    cmds:
+      - go tool trace trace.out
 
   build-win64:
     env:
       CGO_ENABLED: 1
     cmds:
-      - go build examples/new-api/game.go -o ./.dist/game-win64.exe
+      - go build -o ./.dist/game-win64.exe examples/new-api/game.go
 
   build-mac:
     - task: build-darwin-amd64
