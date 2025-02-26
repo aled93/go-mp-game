@@ -14,10 +14,11 @@ Thank you for your support!
 
 package components
 
-import "gomp/pkg/ecs"
+import (
+	"gomp/stdcomponents"
+)
 
 const (
-	InvalidComponentId ecs.ComponentId = iota
-	HealthComponentId
+	HealthComponentId = iota + stdcomponents.StdComponentIds
 	ControllerComponentId
 )

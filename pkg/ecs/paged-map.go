@@ -13,7 +13,7 @@ import (
 const (
 	page_size_shift int = 14
 	page_size       int = 1 << page_size_shift
-	book_size       int = 1 << 10
+	book_size       int = 1 << 4
 )
 
 type MapPage[K Entity, V any] map[K]V

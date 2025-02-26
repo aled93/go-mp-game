@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	InvalidComponentId ecs.ComponentId = 1<<16 - 1 - iota
+	InvalidComponentId ecs.ComponentId = iota
 	PositionComponentId
 	RotationComponentId
 	ScaleComponentId
@@ -26,4 +26,5 @@ const (
 	AnimationStateComponentId
 	TintComponentId
 	NetworkComponentId
+	StdComponentIds
 )
