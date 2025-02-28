@@ -27,6 +27,7 @@ require (
 	github.com/google/pprof v0.0.0-20210407192527-94a9f03dee38 // indirect
 	github.com/gorilla/context v1.1.2 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
+	github.com/jfreymuth/go-sdl3 v0.1.3-0.20250226211328-622f8250e21c // indirect
 	github.com/jupiterrider/purego-sdl3 v0.0.0-20250223121749-61a56748f345 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect

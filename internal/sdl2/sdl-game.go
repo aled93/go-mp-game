@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/veandco/go-sdl2/ttf"
 	"log"
 	"os"
 	"time"
@@ -21,8 +20,7 @@ var winWidth, winHeight int32 = 800, 600
 func run() int {
 	var window *sdl.Window
 	var renderer *sdl.Renderer
-	var font *ttf.Font
-	var text *sdl.Surface
+
 	var rects []sdl.FRect = make([]sdl.FRect, 100_000)
 
 	window, err := sdl.CreateWindow(winTitle, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
@@ -43,20 +41,6 @@ func run() int {
 	for i := range len(rects) {
 		rects[i] = sdl.FRect{X: float32(i%780) + 10, Y: float32(i / 780), W: 1, H: 1}
 	}
-
-	// Load the font for our text
-	if font, err = ttf.OpenFont(fontPath, fontSize); err != nil {
-		return 0
-	}
-	defer font.Close()
-
-	// Create a red text with the font
-	if text, err = font.RenderUTF8Blended("Hello, World!", sdl.Color{R: 255, G: 0, B: 0, A: 255}); err != nil {
-		return 0
-	}
-	defer text.Free()
-
-	// Draw the text around the center of the window
 
 	var dt time.Duration = time.Second
 	var fps int64

@@ -25,8 +25,8 @@ func main() {
 	fmt.Println("CPU Profile Started")
 	defer fmt.Println("CPU Profile Stopped")
 
-	//if !sdl3.SetHint(sdl3.HintFramebufferAcceleration, "1") {
-	//	panic(sdl3.GetError())
+	//if !sdl3-pure.SetHint(sdl3-pure.HintFramebufferAcceleration, "1") {
+	//	panic(sdl3-pure.GetError())
 	//}
 
 	defer sdl.Quit()
