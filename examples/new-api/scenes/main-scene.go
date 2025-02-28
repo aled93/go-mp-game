@@ -45,7 +45,6 @@ func (s *MainScene) Init() {
 
 	// Scenes
 	s.World.Systems.Player.Init()
-
 	s.World.Systems.Velocity.Init()
 
 	// Network patches
@@ -55,18 +54,7 @@ func (s *MainScene) Init() {
 	s.World.Systems.AnimationSpriteMatrix.Init()
 	s.World.Systems.AnimationPlayer.Init()
 
-	// Prerender init
-	s.World.Systems.TextureRenderSprite.Init()
-	s.World.Systems.TextureRenderSpriteSheet.Init()
-	s.World.Systems.TextureRenderMatrix.Init()
-
-	// Prerender fill
-	s.World.Systems.TextureRenderAnimation.Init()
-	s.World.Systems.TextureRenderFlip.Init()
-	s.World.Systems.TextureRenderPosition.Init()
-	s.World.Systems.TextureRenderRotation.Init()
-	s.World.Systems.TextureRenderScale.Init()
-	s.World.Systems.TextureRenderTint.Init()
+	s.World.Systems.SpriteMatrix.Init()
 
 	// Render
 	s.World.Systems.Render.Init()
@@ -95,24 +83,11 @@ func (s *MainScene) Render(dt time.Duration) {
 	s.World.Systems.AnimationSpriteMatrix.Run()
 	s.World.Systems.AnimationPlayer.Run()
 
-	// Prerender init
-	s.World.Systems.TextureRenderSprite.Run()
-	s.World.Systems.TextureRenderSpriteSheet.Run()
-	s.World.Systems.TextureRenderMatrix.Run()
-
-	// Prerender fill
-	s.World.Systems.TextureRenderAnimation.Run()
-	s.World.Systems.TextureRenderFlip.Run()
-	s.World.Systems.TextureRenderPosition.Run(dt)
-	s.World.Systems.TextureRenderRotation.Run()
-	s.World.Systems.TextureRenderScale.Run()
-	s.World.Systems.TextureRenderTint.Run()
-
-	// Render
+	s.World.Systems.SpriteMatrix.Run()
 	s.World.Systems.Debug.Run()
-
 	s.World.Systems.AssetLib.Run()
-	shouldContinue := s.World.Systems.Render.Run()
+
+	shouldContinue := s.World.Systems.Render.Run(dt)
 	if !shouldContinue {
 		s.Game.SetShouldDestroy(true)
 		return
@@ -134,18 +109,7 @@ func (s *MainScene) Destroy() {
 	s.World.Systems.AnimationSpriteMatrix.Destroy()
 	s.World.Systems.AnimationPlayer.Destroy()
 
-	// Prerender init
-	s.World.Systems.TextureRenderSprite.Destroy()
-	s.World.Systems.TextureRenderSpriteSheet.Destroy()
-	s.World.Systems.TextureRenderMatrix.Destroy()
-
-	// Prerender fill
-	s.World.Systems.TextureRenderAnimation.Destroy()
-	s.World.Systems.TextureRenderFlip.Destroy()
-	s.World.Systems.TextureRenderPosition.Destroy()
-	s.World.Systems.TextureRenderRotation.Destroy()
-	s.World.Systems.TextureRenderScale.Destroy()
-	s.World.Systems.TextureRenderTint.Destroy()
+	s.World.Systems.SpriteMatrix.Destroy()
 
 	// Render
 	s.World.Systems.Debug.Destroy()

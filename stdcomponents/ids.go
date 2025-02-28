@@ -15,16 +15,16 @@ const (
 	PositionComponentId
 	RotationComponentId
 	ScaleComponentId
-	ViewPositionId
 	FlipComponentId
 	VelocityComponentId
 	SpriteComponentId
 	SpriteSheetComponentId
 	SpriteMatrixComponentId
-	TextureRenderComponentId
+	RLTextureProComponentId
 	AnimationPlayerComponentId
 	AnimationStateComponentId
 	TintComponentId
 	NetworkComponentId
+	RenderableComponentId
 	StdComponentIds
 )

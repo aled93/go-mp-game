@@ -33,13 +33,14 @@ type PlayerSystem struct {
 	Flips            *stdcomponents.FlipComponentManager
 	HP               *components.HealthComponentManager
 	Controllers      *components.ControllerComponentManager
+	Renderables      *stdcomponents.RenderableComponentManager
 }
 
 func (s *PlayerSystem) Init() {
-	for range 100_000 {
+	for range 20_000 {
 		s.Player = entities.CreatePlayer(
 			s.EntityManager, s.SpriteMatrixes, s.Positions, s.Rotations, s.Scales,
-			s.Velocities, s.AnimationPlayers, s.AnimationStates, s.Tints, s.Flips,
+			s.Velocities, s.AnimationPlayers, s.AnimationStates, s.Tints, s.Flips, s.Renderables,
 		)
 
 		s.Player.Position.X = 100 + rand.Float32()*700

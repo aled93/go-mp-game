@@ -247,6 +247,42 @@ func (a *PagedArray[T]) AllDataValue(yield func(T) bool) {
 	}
 }
 
+func (a *PagedArray[T]) AllDataValueParallel(yield func(T) bool) {
+	var page *ArrayPage[T]
+	var data *[page_size]T
+
+	book := a.book
+	wg := new(sync.WaitGroup)
+	gorutineBudget := a.parallelCount
+	runner := func(data *[page_size]T, startIndex int, wg *sync.WaitGroup) {
+		defer wg.Done()
+		for j := startIndex; j >= 0; j-- {
+			if !yield((data[j])) {
+				return
+			}
+		}
+	}
+
+	if a.len == 0 {
+		return
+	}
+
+	wg.Add(int(a.currentPageIndex) + 1)
+	for i := a.currentPageIndex; i >= 0; i-- {
+		page = &book[i]
+		data = &page.data
+
+		if gorutineBudget > 0 {
+			go runner(data, page.len-1, wg)
+			gorutineBudget--
+			continue
+		}
+
+		runner(data, page.len-1, wg)
+	}
+	wg.Wait()
+}
+
 func (a *PagedArray[T]) AllDataParallel(yield func(*T) bool) {
 	var page *ArrayPage[T]
 	var data *[page_size]T

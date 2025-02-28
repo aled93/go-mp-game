@@ -25,7 +25,8 @@ type AnimationSpriteMatrixSystem struct {
 
 func (s *AnimationSpriteMatrixSystem) Init() {}
 func (s *AnimationSpriteMatrixSystem) Run() {
-	s.AnimationPlayers.AllParallel(func(e ecs.Entity, animationPlayer *stdcomponents.AnimationPlayer) bool {
+	s.AnimationPlayers.EachEntityParallel(func(e ecs.Entity) bool {
+		animationPlayer := s.AnimationPlayers.Get(e)
 		spriteMatrix := s.SpriteMatrixes.Get(e)
 		if spriteMatrix == nil {
 			return true

@@ -34,6 +34,7 @@ type Player struct {
 	AnimationPlayer *stdcomponents.AnimationPlayer
 	AnimationState  *stdcomponents.AnimationState
 	Flip            *stdcomponents.Flip
+	Renderable      *stdcomponents.Renderable
 }
 
 var playerSpriteMatrix = stdcomponents.SpriteMatrix{
@@ -76,6 +77,7 @@ func CreatePlayer(
 	animationStates *stdcomponents.AnimationStateComponentManager,
 	tints *stdcomponents.TintComponentManager,
 	flips *stdcomponents.FlipComponentManager,
+	renderables *stdcomponents.RenderableComponentManager,
 ) (player Player) {
 	// Creating new player
 
@@ -117,6 +119,9 @@ func CreatePlayer(
 
 	// Adding Flip component
 	player.Flip = flips.Create(entity, stdcomponents.Flip{})
+
+	// Adding renderable component
+	player.Renderable = renderables.Create(entity, stdcomponents.SpriteMatrixRenderableType)
 
 	return player
 }

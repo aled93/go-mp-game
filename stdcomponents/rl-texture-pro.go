@@ -20,7 +20,7 @@ import (
 	"image/color"
 )
 
-type TextureRender struct {
+type RLTexturePro struct {
 	Texture  *rl.Texture2D
 	Frame    rl.Rectangle
 	Origin   rl.Vector2
@@ -29,8 +29,8 @@ type TextureRender struct {
 	Rotation float32
 }
 
-type TextureRenderComponentManager = ecs.ComponentManager[TextureRender]
+type RLTextureProComponentManager = ecs.ComponentManager[RLTexturePro]
 
-func NewTextureRenderComponentManager() TextureRenderComponentManager {
-	return ecs.NewComponentManager[TextureRender](TextureRenderComponentId)
+func NewRlTextureProComponentManager() RLTextureProComponentManager {
+	return ecs.NewComponentManager[RLTexturePro](RLTextureProComponentId)
 }

@@ -31,7 +31,7 @@ func NewDesktopComponents() DesktopComponents {
 		Tint:            stdcomponents.NewTintComponentManager(),
 		AnimationPlayer: stdcomponents.NewAnimationPlayerComponentManager(),
 		AnimationState:  stdcomponents.NewAnimationStateComponentManager(),
-		TextureRender:   stdcomponents.NewTextureRenderComponentManager(),
+		RlTexturePro:    stdcomponents.NewRlTextureProComponentManager(),
 		Network:         stdcomponents.NewNetworkComponentManager(),
 	}
 }
@@ -48,6 +48,6 @@ type DesktopComponents struct {
 	Tint            stdcomponents.TintComponentManager
 	AnimationPlayer stdcomponents.AnimationPlayerComponentManager
 	AnimationState  stdcomponents.AnimationStateComponentManager
-	TextureRender   stdcomponents.TextureRenderComponentManager
+	RlTexturePro    stdcomponents.RLTextureProComponentManager
 	Network         stdcomponents.NetworkComponentManager
 }

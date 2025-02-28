@@ -301,12 +301,34 @@ func (c *ComponentManager[T]) EachComponent(yield func(*T) bool) {
 	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
 }
 
+func (c *ComponentManager[T]) EachComponentParallel(yield func(*T) bool) {
+	assert.True(c.isInitialized, "ComponentManager should be created with CreateComponentService()")
+	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
+	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
+
+	c.components.AllDataParallel(yield)
+
+	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
+	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
+}
+
 func (c *ComponentManager[T]) EachEntity(yield func(Entity) bool) {
 	assert.True(c.isInitialized, "ComponentManager should be created with CreateComponentService()")
 	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
 	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
 
 	c.entities.AllDataValue(yield)
+
+	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
+	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
+}
+
+func (c *ComponentManager[T]) EachEntityParallel(yield func(Entity) bool) {
+	assert.True(c.isInitialized, "ComponentManager should be created with CreateComponentService()")
+	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
+	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
+
+	c.entities.AllDataValueParallel(yield)
 
 	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
 	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")

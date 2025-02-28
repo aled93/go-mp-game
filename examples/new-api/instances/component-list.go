@@ -31,8 +31,9 @@ type ComponentList struct {
 	Tint            stdcomponents.TintComponentManager
 	AnimationPlayer stdcomponents.AnimationPlayerComponentManager
 	AnimationState  stdcomponents.AnimationStateComponentManager
-	TextureRender   stdcomponents.TextureRenderComponentManager
+	RLTexturePro    stdcomponents.RLTextureProComponentManager
 	Network         stdcomponents.NetworkComponentManager
+	Renderable      stdcomponents.RenderableComponentManager
 
 	Health     components.HealthComponentManager
 	Controller components.ControllerComponentManager
@@ -51,8 +52,9 @@ func NewComponentList() ComponentList {
 		Tint:            stdcomponents.NewTintComponentManager(),
 		AnimationPlayer: stdcomponents.NewAnimationPlayerComponentManager(),
 		AnimationState:  stdcomponents.NewAnimationStateComponentManager(),
-		TextureRender:   stdcomponents.NewTextureRenderComponentManager(),
+		RLTexturePro:    stdcomponents.NewRlTextureProComponentManager(),
 		Network:         stdcomponents.NewNetworkComponentManager(),
+		Renderable:      stdcomponents.NewRenderableComponentManager(),
 
 		Health:     components.NewHealthComponentManager(),
 		Controller: components.NewControllerComponentManager(),

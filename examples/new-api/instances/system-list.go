@@ -33,13 +33,7 @@ func NewSystemList() SystemList {
 		AnimationPlayer:          stdsystems.NewAnimationPlayerSystem(),
 		TextureRenderSprite:      stdsystems.NewTextureRenderSpriteSystem(),
 		TextureRenderSpriteSheet: stdsystems.NewTextureRenderSpriteSheetSystem(),
-		TextureRenderMatrix:      stdsystems.NewTextureRenderMatrixSystem(),
-		TextureRenderAnimation:   stdsystems.NewTextureRenderAnimationSystem(),
-		TextureRenderFlip:        stdsystems.NewTextureRenderFlipSystem(),
-		TextureRenderPosition:    stdsystems.NewTextureRenderPositionSystem(),
-		TextureRenderRotation:    stdsystems.NewTextureRenderRotationSystem(),
-		TextureRenderScale:       stdsystems.NewTextureRenderScaleSystem(),
-		TextureRenderTint:        stdsystems.NewTextureRenderTintSystem(),
+		SpriteMatrix:             stdsystems.NewSpriteMatrixSystem(),
 		AssetLib:                 stdsystems.NewAssetLibSystem([]gomp.AnyAssetLibrary{assets.Textures}),
 		Render:                   stdsystems.NewRenderSystem(),
 	}
@@ -58,13 +52,7 @@ type SystemList struct {
 	AnimationPlayer          stdsystems.AnimationPlayerSystem
 	TextureRenderSprite      stdsystems.TextureRenderSpriteSystem
 	TextureRenderSpriteSheet stdsystems.TextureRenderSpriteSheetSystem
-	TextureRenderMatrix      stdsystems.TextureRenderMatrixSystem
-	TextureRenderAnimation   stdsystems.TextureRenderAnimationSystem
-	TextureRenderFlip        stdsystems.TextureRenderFlipSystem
-	TextureRenderPosition    stdsystems.TextureRenderPositionSystem
-	TextureRenderRotation    stdsystems.TextureRenderRotationSystem
-	TextureRenderScale       stdsystems.TextureRenderScaleSystem
-	TextureRenderTint        stdsystems.TextureRenderTintSystem
+	SpriteMatrix             stdsystems.SpriteMatrixSystem
 	AssetLib                 stdsystems.AssetLibSystem
 	Render                   stdsystems.RenderSystem
 }
