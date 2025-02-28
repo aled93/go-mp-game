@@ -143,16 +143,18 @@ func (s *RenderSystem) prepareFlips(wg *sync.WaitGroup) {
 
 func (s *RenderSystem) preparePositions(wg *sync.WaitGroup, dt time.Duration) {
 	defer wg.Done()
-	dts := dt.Seconds()
+	//dts := dt.Seconds()
 	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
 		texturePro := s.RlTexturePros.Get(entity)
 		position := s.Positions.Get(entity)
 		if position == nil {
 			return true
 		}
-		decay := 40.0 // DECAY IS TICKRATE DEPENDENT
-		texturePro.Dest.X = float32(s.expDecay(float64(texturePro.Dest.X), float64(position.X), decay, dts))
-		texturePro.Dest.Y = float32(s.expDecay(float64(texturePro.Dest.Y), float64(position.Y), decay, dts))
+		//decay := 16.0 // DECAY IS TICKRATE DEPENDENT
+		//texturePro.Dest.X = float32(s.expDecay(float64(texturePro.Dest.X), float64(position.X), decay, dts))
+		//texturePro.Dest.Y = float32(s.expDecay(float64(texturePro.Dest.Y), float64(position.Y), decay, dts))
+		texturePro.Dest.X = position.X
+		texturePro.Dest.Y = position.Y
 
 		return true
 	})
