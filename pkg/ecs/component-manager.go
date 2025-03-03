@@ -110,10 +110,9 @@ func (c *ComponentManager[T]) Create(entity Entity, value T) (component *T) {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 
-	assert.True(c.isInitialized, "ComponentManager should be created with CreateComponentService()")
 	assert.False(c.Has(entity), "Only one of component per entity allowed!")
-	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
-	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
+	c.assertBegin()
+	defer c.assertEnd()
 
 	var index = c.components.Len()
 
@@ -129,7 +128,7 @@ func (c *ComponentManager[T]) Create(entity Entity, value T) (component *T) {
 }
 
 func (c *ComponentManager[T]) Get(entity Entity) (component *T) {
-	assert.True(c.isInitialized, "ComponentManager should be created with CreateComponentService()")
+	assert.True(c.isInitialized, "ComponentManager should be created with NewComponentManager()")
 
 	index, ok := c.lookup.Get(entity)
 	if !ok {
@@ -140,7 +139,7 @@ func (c *ComponentManager[T]) Get(entity Entity) (component *T) {
 }
 
 func (c *ComponentManager[T]) Set(entity Entity, value T) *T {
-	assert.True(c.isInitialized, "ComponentManager should be created with CreateComponentService()")
+	assert.True(c.isInitialized, "ComponentManager should be created with NewComponentManager()")
 
 	index, ok := c.lookup.Get(entity)
 	if !ok {
@@ -158,9 +157,8 @@ func (c *ComponentManager[T]) Remove(entity Entity) {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 
-	assert.True(c.isInitialized, "ComponentManager should be created with CreateComponentService()")
-	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
-	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
+	c.assertBegin()
+	defer c.assertEnd()
 
 	index, _ := c.lookup.Get(entity)
 
@@ -183,9 +181,6 @@ func (c *ComponentManager[T]) Remove(entity Entity) {
 	c.entityComponentBitSet.Unset(entity, c.id)
 
 	c.deletedEntities.Append(entity)
-
-	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
-	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
 }
 
 func (c *ComponentManager[T]) Has(entity Entity) bool {
@@ -193,24 +188,88 @@ func (c *ComponentManager[T]) Has(entity Entity) bool {
 	return ok
 }
 
+func (c *ComponentManager[T]) Len() int {
+	assert.True(c.isInitialized, "ComponentManager should be created with CreateComponentService()")
+	return c.components.Len()
+}
+
+func (c *ComponentManager[T]) Clean() {
+	// c.entityComponentBitSet.Clean()
+	//c.components.Clean()
+	// c.entities.Clean()
+}
+
+// ========================================================
+// Iterators
+// ========================================================
+
+func (c *ComponentManager[T]) EachComponent(yield func(*T) bool) {
+	c.assertBegin()
+	defer c.assertEnd()
+	c.components.AllData(yield)
+}
+
+func (c *ComponentManager[T]) EachEntity(yield func(Entity) bool) {
+	c.assertBegin()
+	defer c.assertEnd()
+	c.entities.AllDataValue(yield)
+}
+
+func (c *ComponentManager[T]) Each(yield func(Entity, *T) bool) {
+	c.assertBegin()
+	defer c.assertEnd()
+	c.components.All(func(i int, d *T) bool {
+		entity := c.entities.Get(i)
+		entId := *entity
+		shouldContinue := yield(entId, d)
+		return shouldContinue
+	})
+}
+
+// ========================================================
+// Iterators Parallel
+// ========================================================
+
+func (c *ComponentManager[T]) EachComponentParallel(yield func(*T) bool) {
+	c.assertBegin()
+	defer c.assertEnd()
+	c.components.AllDataParallel(yield)
+}
+
+func (c *ComponentManager[T]) EachEntityParallel(yield func(Entity) bool) {
+	c.assertBegin()
+	defer c.assertEnd()
+	c.entities.AllDataValueParallel(yield)
+}
+
+func (c *ComponentManager[T]) EachParallel(yield func(Entity, *T) bool) {
+	c.assertBegin()
+	defer c.assertEnd()
+	c.components.AllParallel(func(i int, t *T) bool {
+		entity := c.entities.Get(i)
+		entId := *entity
+		shouldContinue := yield(entId, t)
+		return shouldContinue
+	})
+}
+
+// ========================================================
 // Patches
+// ========================================================
 
 func (c *ComponentManager[T]) PatchAdd(entity Entity) {
 	assert.True(c.TrackChanges)
-
 	c.patchedEntities.Append(entity)
 }
 
 func (c *ComponentManager[T]) PatchGet() ComponentPatch {
 	assert.True(c.TrackChanges)
-
 	patch := ComponentPatch{
 		ID:      c.id,
 		Created: c.getChangesBinary(&c.createdEntities),
 		Patched: c.getChangesBinary(&c.patchedEntities),
 		Deleted: c.getChangesBinary(&c.deletedEntities),
 	}
-
 	return patch
 }
 
@@ -242,7 +301,6 @@ func (c *ComponentManager[T]) PatchApply(patch ComponentPatch) {
 
 func (c *ComponentManager[T]) PatchReset() {
 	assert.True(c.TrackChanges)
-
 	c.createdEntities.Reset()
 	c.patchedEntities.Reset()
 	c.deletedEntities.Reset()
@@ -288,114 +346,21 @@ func (c *ComponentManager[T]) IsTrackingChanges() bool {
 	return c.TrackChanges
 }
 
-// Iterators
-
-func (c *ComponentManager[T]) EachComponent(yield func(*T) bool) {
-	assert.True(c.isInitialized, "ComponentManager should be created with CreateComponentService()")
-	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
-	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
-
-	c.components.AllData(yield)
-
-	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
-	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
-}
-
-func (c *ComponentManager[T]) EachComponentParallel(yield func(*T) bool) {
-	assert.True(c.isInitialized, "ComponentManager should be created with CreateComponentService()")
-	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
-	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
-
-	c.components.AllDataParallel(yield)
-
-	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
-	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
-}
-
-func (c *ComponentManager[T]) EachEntity(yield func(Entity) bool) {
-	assert.True(c.isInitialized, "ComponentManager should be created with CreateComponentService()")
-	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
-	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
-
-	c.entities.AllDataValue(yield)
-
-	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
-	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
-}
-
-func (c *ComponentManager[T]) EachEntityParallel(yield func(Entity) bool) {
-	assert.True(c.isInitialized, "ComponentManager should be created with CreateComponentService()")
-	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
-	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
-
-	c.entities.AllDataValueParallel(yield)
-
-	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
-	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
-}
-
-func (c *ComponentManager[T]) All(yield func(Entity, *T) bool) {
-	assert.True(c.isInitialized, "ComponentManager should be created with CreateComponentService()")
-
-	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
-	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
-
-	c.components.All(func(i int, d *T) bool {
-		assert.True(d != nil)
-		entity := c.entities.Get(i)
-		assert.True(entity != nil)
-		entId := *entity
-		shouldContinue := yield(entId, d)
-		return shouldContinue
-	})
-
-	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
-	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
-}
-
-func (c *ComponentManager[T]) AllParallel(yield func(Entity, *T) bool) {
-	assert.True(c.isInitialized, "ComponentManager should be created with CreateComponentService()")
-
-	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
-	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
-
-	c.components.AllParallel(func(i int, t *T) bool {
-		entity := c.entities.Get(i)
-		assert.True(entity != nil)
-		entId := *entity
-		shouldContinue := yield(entId, t)
-		return shouldContinue
-	})
-
-	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
-	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
-}
-
-func (c *ComponentManager[T]) AllDataParallel(yield func(*T) bool) {
-	assert.True(c.isInitialized, "ComponentManager should be created with CreateComponentService()")
-	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
-	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
-
-	c.components.AllDataParallel(yield)
-
-	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
-	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
-}
-
+// ========================================================
 // Utils
+// ========================================================
 
 func (c *ComponentManager[T]) RawComponents(ptr []T) {
 	c.components.Raw(ptr)
 }
 
-func (c *ComponentManager[T]) Len() int {
-	assert.True(c.isInitialized, "ComponentManager should be created with CreateComponentService()")
-
-	return c.components.Len()
+func (c *ComponentManager[T]) assertBegin() {
+	assert.True(c.isInitialized, "ComponentManager should be created with NewComponentManager()")
+	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
+	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
 }
 
-func (c *ComponentManager[T]) Clean() {
-	// c.entityComponentBitSet.Clean()
-	// c.components.Clean()
-	// c.entities.Clean()
+func (c *ComponentManager[T]) assertEnd() {
+	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
+	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
 }

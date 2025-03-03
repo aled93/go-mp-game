@@ -16,8 +16,8 @@ const (
 	book_size       int = 1 << 2
 )
 
-type MapPage[K Entity, V any] map[K]V
-type PagedMap[K Entity, V any] struct {
+type MapPage[K Entity | SharedComponentInstanceId, V any] map[K]V
+type PagedMap[K Entity | SharedComponentInstanceId, V any] struct {
 	len  int
 	book []SlicePage[MapValue[V]]
 }
@@ -26,7 +26,7 @@ type MapValue[V any] struct {
 	ok    bool
 }
 
-func NewPagedMap[K Entity, V any]() PagedMap[K, V] {
+func NewPagedMap[K Entity | SharedComponentInstanceId, V any]() PagedMap[K, V] {
 	return PagedMap[K, V]{
 		book: make([]SlicePage[MapValue[V]], book_size),
 	}

@@ -33,7 +33,7 @@ func main() {
 	must(sdl.Init(sdl.InitVideo))
 	defer sdl.Quit()
 
-	w, r, e := sdl.CreateWindowAndRenderer("sld c-go", 640, 480, sdl.WindowVulkan)
+	w, r, e := sdl.CreateWindowAndRenderer("sld c-go", 2560, 1440, sdl.WindowResizable)
 	must(e)
 	defer w.Destroy()
 	defer r.Destroy()

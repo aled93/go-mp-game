@@ -7,8 +7,7 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package entities
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
-	"gomp/examples/new-api/assets"
+	"gomp/examples/new-api/sprites"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 )
@@ -35,35 +34,6 @@ type Player struct {
 	AnimationState  *stdcomponents.AnimationState
 	Flip            *stdcomponents.Flip
 	Renderable      *stdcomponents.Renderable
-}
-
-var playerSpriteMatrix = stdcomponents.SpriteMatrix{
-	Texture: assets.Textures.Get("milansheet.png"),
-	Origin:  rl.Vector2{X: 0.5, Y: 0.5},
-	FPS:     12,
-	Animations: []stdcomponents.SpriteMatrixAnimation{
-		{
-			Name:        "idle",
-			Frame:       rl.Rectangle{X: 0, Y: 0, Width: 96, Height: 128},
-			NumOfFrames: 1,
-			Vertical:    false,
-			Loop:        true,
-		},
-		{
-			Name:        "walk",
-			Frame:       rl.Rectangle{X: 0, Y: 512, Width: 96, Height: 128},
-			NumOfFrames: 8,
-			Vertical:    false,
-			Loop:        true,
-		},
-		{
-			Name:        "jump",
-			Frame:       rl.Rectangle{X: 96, Y: 0, Width: 96, Height: 128},
-			NumOfFrames: 1,
-			Vertical:    false,
-			Loop:        false,
-		},
-	},
 }
 
 func CreatePlayer(
@@ -108,7 +78,7 @@ func CreatePlayer(
 	player.Tint = tints.Create(entity, tint)
 
 	// Adding sprite matrix component
-	player.SpriteMatrix = spriteMatrixes.Create(entity, playerSpriteMatrix)
+	player.SpriteMatrix = spriteMatrixes.Set(entity, sprites.PlayerSpriteSharedComponentId)
 
 	// Adding animation player component
 	animation := stdcomponents.AnimationPlayer{}

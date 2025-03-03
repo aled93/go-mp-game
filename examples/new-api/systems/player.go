@@ -10,6 +10,7 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/examples/new-api/components"
 	"gomp/examples/new-api/entities"
+	"gomp/examples/new-api/sprites"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"math/rand"
@@ -37,6 +38,8 @@ type PlayerSystem struct {
 }
 
 func (s *PlayerSystem) Init() {
+	s.SpriteMatrixes.Create(sprites.PlayerSpriteSharedComponentId, sprites.PlayerSpriteMatrix)
+
 	for range 20_000 {
 		s.Player = entities.CreatePlayer(
 			s.EntityManager, s.SpriteMatrixes, s.Positions, s.Rotations, s.Scales,

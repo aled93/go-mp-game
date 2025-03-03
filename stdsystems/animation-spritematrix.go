@@ -18,9 +18,9 @@ func NewAnimationSpriteMatrixSystem() AnimationSpriteMatrixSystem {
 
 type AnimationSpriteMatrixSystem struct {
 	World            *ecs.EntityManager
-	AnimationPlayers *ecs.ComponentManager[stdcomponents.AnimationPlayer]
-	AnimationStates  *ecs.ComponentManager[stdcomponents.AnimationState]
-	SpriteMatrixes   *ecs.ComponentManager[stdcomponents.SpriteMatrix]
+	AnimationPlayers *stdcomponents.AnimationPlayerComponentManager
+	AnimationStates  *stdcomponents.AnimationStateComponentManager
+	SpriteMatrixes   *stdcomponents.SpriteMatrixComponentManager
 }
 
 func (s *AnimationSpriteMatrixSystem) Init() {}

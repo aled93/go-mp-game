@@ -31,7 +31,7 @@ type TextureRenderSpriteSystem struct {
 func (s *TextureRenderSpriteSystem) Init() {}
 func (s *TextureRenderSpriteSystem) Run() {
 	// Run sprites and spriteRenders
-	//s.Sprites.AllParallel(func(entity ecs.Entity, sprite *stdcomponents.Sprite) bool {
+	//s.Sprites.EachParallel(func(entity ecs.Entity, sprite *stdcomponents.Sprite) bool {
 	//	if sprite == nil {
 	//		return true
 	//	}

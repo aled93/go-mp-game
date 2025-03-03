@@ -41,6 +41,16 @@ func (a *PagedArray[T]) Get(index int) *T {
 	return &(page.data[index])
 }
 
+func (a *PagedArray[T]) GetValue(index int) T {
+	assert.True(index >= 0, "index out of range")
+	assert.True(index < a.len, "index out of range")
+
+	pageId, index := a.getPageIdAndIndex(index)
+	page := &a.book[pageId]
+
+	return (page.data[index])
+}
+
 func (a *PagedArray[T]) Set(index int, value T) *T {
 	assert.True(index >= 0, "index out of range")
 	assert.True(index < a.len, "index out of range")

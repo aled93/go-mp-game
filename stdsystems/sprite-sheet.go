@@ -22,7 +22,7 @@ type TextureRenderSpriteSheetSystem struct {
 
 func (s *TextureRenderSpriteSheetSystem) Init() {}
 func (s *TextureRenderSpriteSheetSystem) Run() {
-	//s.SpriteSheets.AllParallel(func(entity ecs.Entity, spriteSheet *stdcomponents.SpriteSheet) bool {
+	//s.SpriteSheets.EachParallel(func(entity ecs.Entity, spriteSheet *stdcomponents.SpriteSheet) bool {
 	//	if spriteSheet == nil {
 	//		return true
 	//	}

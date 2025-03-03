@@ -34,8 +34,8 @@ type SpriteMatrix struct {
 	Animations []SpriteMatrixAnimation
 }
 
-type SpriteMatrixComponentManager = ecs.ComponentManager[SpriteMatrix]
+type SpriteMatrixComponentManager = ecs.SharedComponentManager[SpriteMatrix]
 
 func NewSpriteMatrixComponentManager() SpriteMatrixComponentManager {
-	return ecs.NewComponentManager[SpriteMatrix](SpriteMatrixComponentId)
+	return ecs.NewSharedComponentManager[SpriteMatrix](SpriteMatrixComponentId)
 }
