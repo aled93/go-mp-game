@@ -31,7 +31,7 @@ func (s *TextureRenderSpriteSheetSystem) Run() {
 	//	if tr == nil {
 	//		// Create new spriteRender
 	//		newRender := stdcomponents.RLTexturePro{
-	//			Texture: spriteSheet.Texture,
+	//			TextureId: spriteSheet.TextureId,
 	//			Frame:   spriteSheet.Frame,
 	//			Origin:  spriteSheet.Origin,
 	//			Dest: rl.NewRectangle(
@@ -45,7 +45,7 @@ func (s *TextureRenderSpriteSheetSystem) Run() {
 	//		s.RlTexturePros.Create(entity, newRender)
 	//	} else {
 	//		// Run spriteRender
-	//		tr.Texture = spriteSheet.Texture
+	//		tr.TextureId = spriteSheet.TextureId
 	//		tr.Frame = spriteSheet.Frame
 	//		tr.Origin = spriteSheet.Origin
 	//	}

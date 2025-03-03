@@ -44,7 +44,7 @@ func (s *TextureRenderSpriteSystem) Run() {
 	//	if tr == nil {
 	//		// Create new spriteRender
 	//		newRender := stdcomponents.RLTexturePro{
-	//			Texture: sprite.Texture,
+	//			TextureId: sprite.TextureId,
 	//			Frame:   sprite.Frame,
 	//			Origin:  sprite.Origin,
 	//			Tint:    sprite.Tint,
@@ -59,7 +59,7 @@ func (s *TextureRenderSpriteSystem) Run() {
 	//		s.RlTexturePros.Create(entity, newRender)
 	//	} else {
 	//		// Run spriteRender
-	//		// tr.Texture = sprite.Texture
+	//		// tr.TextureId = sprite.TextureId
 	//		trFrame := &tr.Frame
 	//		trFrame.X = spriteFrame.X
 	//		trFrame.Y = spriteFrame.Y

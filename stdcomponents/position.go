@@ -17,7 +17,7 @@ package stdcomponents
 import "gomp/pkg/ecs"
 
 type Position struct {
-	X, Y float32
+	X, Y, Z float32
 }
 
 type PositionComponentManager = ecs.ComponentManager[Position]
