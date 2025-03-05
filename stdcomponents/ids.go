@@ -28,5 +28,8 @@ const (
 	RenderableComponentId
 	YSortComponentId
 	RenderOrderComponentId
+	CollisionComponentId
+	ColliderBoxComponentId
+	ColliderCircleComponentId
 	StdComponentIds
 )

@@ -137,12 +137,14 @@ func (a *PagedArray[T]) Last() *T {
 	return a.Get(index)
 }
 
-func (a *PagedArray[T]) Raw(result []T) {
+func (a *PagedArray[T]) Raw(result []T) []T {
 	result = result[:0]
 	for i := 0; i <= a.currentPageIndex; i++ {
 		page := &a.book[i]
 		result = append(result[:i*1024], append(result[i*1024:], page.data[:page.len]...)...)
 	}
+
+	return result
 }
 
 func (a *PagedArray[T]) getPageIdAndIndex(index int) (int, int) {

@@ -37,20 +37,23 @@ type PlayerSystem struct {
 	Renderables      *stdcomponents.RenderableComponentManager
 	YSorts           *stdcomponents.YSortComponentManager
 	RenderOrders     *stdcomponents.RenderOrderComponentManager
+	BoxColliders     *stdcomponents.ColliderBoxComponentManager
+	Collisions       *stdcomponents.CollisionComponentManager
 }
 
 func (s *PlayerSystem) Init() {
 	s.SpriteMatrixes.Create(sprites.PlayerSpriteSharedComponentId, sprites.PlayerSpriteMatrix)
 
-	for range 20_000 {
+	for range 2_000 {
 		s.Player = entities.CreatePlayer(
 			s.EntityManager, s.SpriteMatrixes, s.Positions, s.Rotations, s.Scales,
 			s.Velocities, s.AnimationPlayers, s.AnimationStates, s.Tints, s.Flips, s.Renderables,
-			s.YSorts, s.RenderOrders,
+			s.YSorts, s.RenderOrders, s.BoxColliders, s.Collisions,
 		)
 
 		s.Player.Position.X = 100 + rand.Float32()*700
 		s.Player.Position.Y = 100 + rand.Float32()*500
+		s.Player.AnimationPlayer.Current = uint8(rand.Intn(7))
 	}
 
 	s.Player.Position.X = 100

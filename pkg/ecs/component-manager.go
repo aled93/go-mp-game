@@ -354,6 +354,10 @@ func (c *ComponentManager[T]) RawComponents(ptr []T) {
 	c.components.Raw(ptr)
 }
 
+func (c *ComponentManager[T]) RawEntities(ptr []Entity) []Entity {
+	return c.entities.Raw(ptr)
+}
+
 func (c *ComponentManager[T]) assertBegin() {
 	assert.True(c.isInitialized, "ComponentManager should be created with NewComponentManager()")
 	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")

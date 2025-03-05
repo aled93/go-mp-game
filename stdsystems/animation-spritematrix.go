@@ -44,8 +44,6 @@ func (s *AnimationSpriteMatrixSystem) Run() {
 
 		currentAnimation := spriteMatrix.Animations[animationState]
 
-		animationPlayer.First = 0
-		animationPlayer.Current = 0
 		animationPlayer.Last = currentAnimation.NumOfFrames - 1
 		animationPlayer.Loop = currentAnimation.Loop
 		animationPlayer.Vertical = currentAnimation.Vertical
