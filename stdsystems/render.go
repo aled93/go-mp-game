@@ -19,7 +19,8 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
-	"sort"
+	"math"
+	"slices"
 	"sync"
 	"time"
 )
@@ -40,6 +41,7 @@ type RenderSystem struct {
 	Renderables      *stdcomponents.RenderableComponentManager
 	AnimationStates  *stdcomponents.AnimationStateComponentManager
 	SpriteMatrixes   *stdcomponents.SpriteMatrixComponentManager
+	RenderOrders     *stdcomponents.RenderOrderComponentManager
 	renderList       []RenderEntry
 	instanceData     []stdcomponents.RLTexturePro
 	camera           rl.Camera2D
@@ -91,23 +93,20 @@ func (s *RenderSystem) render() {
 	}
 	s.Renderables.EachEntity(func(e ecs.Entity) bool {
 		sprite := s.SpriteMatrixes.Get(e)
-		pos := s.Positions.Get(e)
+		renderOrder := s.RenderOrders.Get(e)
 		s.renderList = append(s.renderList, RenderEntry{
 			Entity:    e,
 			TextureId: int(sprite.Texture.ID),
-			ZIndex:    pos.Z,
+			ZIndex:    renderOrder.CalculatedZ,
 		})
 		return true
 	})
 
-	// Sort by texture, then Z-index
-	sort.SliceStable(s.renderList, func(i, j int) bool {
-		a := s.renderList[i]
-		b := s.renderList[j]
+	slices.SortStableFunc(s.renderList, func(a, b RenderEntry) int {
 		if a.TextureId == b.TextureId {
-			return a.ZIndex < b.ZIndex
+			return int(math.Floor(float64(a.ZIndex - b.ZIndex)))
 		}
-		return a.TextureId < b.TextureId
+		return int(a.TextureId - b.TextureId)
 	})
 
 	// Batch and render

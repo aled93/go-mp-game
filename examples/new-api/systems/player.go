@@ -35,6 +35,8 @@ type PlayerSystem struct {
 	HP               *components.HealthComponentManager
 	Controllers      *components.ControllerComponentManager
 	Renderables      *stdcomponents.RenderableComponentManager
+	YSorts           *stdcomponents.YSortComponentManager
+	RenderOrders     *stdcomponents.RenderOrderComponentManager
 }
 
 func (s *PlayerSystem) Init() {
@@ -44,6 +46,7 @@ func (s *PlayerSystem) Init() {
 		s.Player = entities.CreatePlayer(
 			s.EntityManager, s.SpriteMatrixes, s.Positions, s.Rotations, s.Scales,
 			s.Velocities, s.AnimationPlayers, s.AnimationStates, s.Tints, s.Flips, s.Renderables,
+			s.YSorts, s.RenderOrders,
 		)
 
 		s.Player.Position.X = 100 + rand.Float32()*700

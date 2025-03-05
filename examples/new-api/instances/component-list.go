@@ -25,8 +25,6 @@ type ComponentList struct {
 	Scale           stdcomponents.ScaleComponentManager
 	Velocity        stdcomponents.VelocityComponentManager
 	Flip            stdcomponents.FlipComponentManager
-	Sprite          stdcomponents.SpriteComponentManager
-	SpriteSheet     stdcomponents.SpriteSheetComponentManager
 	SpriteMatrix    stdcomponents.SpriteMatrixComponentManager
 	Tint            stdcomponents.TintComponentManager
 	AnimationPlayer stdcomponents.AnimationPlayerComponentManager
@@ -34,6 +32,8 @@ type ComponentList struct {
 	RLTexturePro    stdcomponents.RLTextureProComponentManager
 	Network         stdcomponents.NetworkComponentManager
 	Renderable      stdcomponents.RenderableComponentManager
+	YSort           stdcomponents.YSortComponentManager
+	RenderOrder     stdcomponents.RenderOrderComponentManager
 
 	Health     components.HealthComponentManager
 	Controller components.ControllerComponentManager
@@ -46,8 +46,6 @@ func NewComponentList() ComponentList {
 		Scale:           stdcomponents.NewScaleComponentManager(),
 		Velocity:        stdcomponents.NewVelocityComponentManager(),
 		Flip:            stdcomponents.NewFlipComponentManager(),
-		Sprite:          stdcomponents.NewSpriteComponentManager(),
-		SpriteSheet:     stdcomponents.NewSpriteSheetComponentManager(),
 		SpriteMatrix:    stdcomponents.NewSpriteMatrixComponentManager(),
 		Tint:            stdcomponents.NewTintComponentManager(),
 		AnimationPlayer: stdcomponents.NewAnimationPlayerComponentManager(),
@@ -55,6 +53,8 @@ func NewComponentList() ComponentList {
 		RLTexturePro:    stdcomponents.NewRlTextureProComponentManager(),
 		Network:         stdcomponents.NewNetworkComponentManager(),
 		Renderable:      stdcomponents.NewRenderableComponentManager(),
+		YSort:           stdcomponents.NewYSortComponentManager(),
+		RenderOrder:     stdcomponents.NewRenderOrderComponentManager(),
 
 		Health:     components.NewHealthComponentManager(),
 		Controller: components.NewControllerComponentManager(),

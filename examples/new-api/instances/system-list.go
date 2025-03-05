@@ -35,6 +35,7 @@ func NewSystemList() SystemList {
 		TextureRenderSpriteSheet: stdsystems.NewTextureRenderSpriteSheetSystem(),
 		SpriteMatrix:             stdsystems.NewSpriteMatrixSystem(),
 		AssetLib:                 stdsystems.NewAssetLibSystem([]gomp.AnyAssetLibrary{assets.Textures}),
+		YSort:                    stdsystems.NewYSortSystem(),
 		Render:                   stdsystems.NewRenderSystem(),
 	}
 
@@ -54,5 +55,6 @@ type SystemList struct {
 	TextureRenderSpriteSheet stdsystems.TextureRenderSpriteSheetSystem
 	SpriteMatrix             stdsystems.SpriteMatrixSystem
 	AssetLib                 stdsystems.AssetLibSystem
+	YSort                    stdsystems.YSortSystem
 	Render                   stdsystems.RenderSystem
 }

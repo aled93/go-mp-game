@@ -26,5 +26,7 @@ const (
 	TintComponentId
 	NetworkComponentId
 	RenderableComponentId
+	YSortComponentId
+	RenderOrderComponentId
 	StdComponentIds
 )

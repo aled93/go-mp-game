@@ -1,0 +1,50 @@
+/*
+This Source Code Form is subject to the terms of the Mozilla
+Public License, v. 2.0. If a copy of the MPL was not distributed
+with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+===-===-===-===-===-===-===-===-===-===
+Donations during this file development:
+-===-===-===-===-===-===-===-===-===-===
+
+none :)
+
+Thank you for your support!
+*/
+
+package stdsystems
+
+import (
+	"gomp/pkg/ecs"
+	"gomp/stdcomponents"
+)
+
+const ySortOffsetScale float32 = 0.001
+
+func NewYSortSystem() YSortSystem {
+	return YSortSystem{}
+}
+
+type YSortSystem struct {
+	EntityManager *ecs.EntityManager
+	YSorts        *stdcomponents.YSortComponentManager
+	Positions     *stdcomponents.PositionComponentManager
+	RenderOrders  *stdcomponents.RenderOrderComponentManager
+}
+
+func (s *YSortSystem) Init() {}
+func (s *YSortSystem) Run() {
+	s.YSorts.EachEntity(func(entity ecs.Entity) bool {
+		pos := s.Positions.Get(entity)
+		renderOrder := s.RenderOrders.Get(entity)
+
+		// Calculate depth based on Y position
+		yDepth := pos.Y * ySortOffsetScale
+
+		// Preserve original Z layer but add Y-based offset
+		renderOrder.CalculatedZ = float32(int(pos.Z)) + yDepth
+
+		return true
+	})
+}
+func (s *YSortSystem) Destroy() {}

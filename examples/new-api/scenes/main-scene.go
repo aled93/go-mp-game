@@ -55,6 +55,7 @@ func (s *MainScene) Init() {
 	s.World.Systems.AnimationPlayer.Init()
 
 	s.World.Systems.SpriteMatrix.Init()
+	s.World.Systems.YSort.Init()
 
 	// Render
 	s.World.Systems.Render.Init()
@@ -86,6 +87,7 @@ func (s *MainScene) Render(dt time.Duration) {
 	s.World.Systems.SpriteMatrix.Run()
 	s.World.Systems.Debug.Run()
 	s.World.Systems.AssetLib.Run()
+	s.World.Systems.YSort.Run()
 
 	shouldContinue := s.World.Systems.Render.Run(dt)
 	if !shouldContinue {
@@ -110,6 +112,7 @@ func (s *MainScene) Destroy() {
 	s.World.Systems.AnimationPlayer.Destroy()
 
 	s.World.Systems.SpriteMatrix.Destroy()
+	s.World.Systems.YSort.Destroy()
 
 	// Render
 	s.World.Systems.Debug.Destroy()
