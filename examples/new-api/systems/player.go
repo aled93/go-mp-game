@@ -38,7 +38,7 @@ type PlayerSystem struct {
 	YSorts           *stdcomponents.YSortComponentManager
 	RenderOrders     *stdcomponents.RenderOrderComponentManager
 	BoxColliders     *stdcomponents.ColliderBoxComponentManager
-	Collisions       *stdcomponents.CollisionComponentManager
+	GenericCollider  *stdcomponents.GenericColliderComponentManager
 }
 
 func (s *PlayerSystem) Init() {
@@ -48,7 +48,7 @@ func (s *PlayerSystem) Init() {
 		s.Player = entities.CreatePlayer(
 			s.EntityManager, s.SpriteMatrixes, s.Positions, s.Rotations, s.Scales,
 			s.Velocities, s.AnimationPlayers, s.AnimationStates, s.Tints, s.Flips, s.Renderables,
-			s.YSorts, s.RenderOrders, s.BoxColliders, s.Collisions,
+			s.YSorts, s.RenderOrders, s.BoxColliders, s.GenericCollider,
 		)
 
 		s.Player.Position.X = 100 + rand.Float32()*700

@@ -45,12 +45,12 @@ func NewColliderCircleComponentManager() ColliderCircleComponentManager {
 	return ecs.NewComponentManager[ColliderCircle](ColliderCircleComponentId)
 }
 
-type Collision struct {
+type GenericCollider struct {
 	Shape ColliderShape
 }
 
-type CollisionComponentManager = ecs.ComponentManager[Collision]
+type GenericColliderComponentManager = ecs.ComponentManager[GenericCollider]
 
-func NewCollisionComponentManager() CollisionComponentManager {
-	return ecs.NewComponentManager[Collision](CollisionComponentId)
+func NewGenericColliderComponentManager() GenericColliderComponentManager {
+	return ecs.NewComponentManager[GenericCollider](GenericColliderComponentId)
 }

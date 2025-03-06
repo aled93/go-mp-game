@@ -34,9 +34,10 @@ type ComponentList struct {
 	Renderable      stdcomponents.RenderableComponentManager
 	YSort           stdcomponents.YSortComponentManager
 	RenderOrder     stdcomponents.RenderOrderComponentManager
-	Collision       stdcomponents.CollisionComponentManager
+	GenericCollider stdcomponents.GenericColliderComponentManager
 	ColliderBox     stdcomponents.ColliderBoxComponentManager
 	ColliderCircle  stdcomponents.ColliderCircleComponentManager
+	Collision       stdcomponents.CollisionComponentManager
 
 	Health     components.HealthComponentManager
 	Controller components.ControllerComponentManager
@@ -58,9 +59,10 @@ func NewComponentList() ComponentList {
 		Renderable:      stdcomponents.NewRenderableComponentManager(),
 		YSort:           stdcomponents.NewYSortComponentManager(),
 		RenderOrder:     stdcomponents.NewRenderOrderComponentManager(),
-		Collision:       stdcomponents.NewCollisionComponentManager(),
+		GenericCollider: stdcomponents.NewGenericColliderComponentManager(),
 		ColliderBox:     stdcomponents.NewColliderBoxComponentManager(),
 		ColliderCircle:  stdcomponents.NewColliderCircleComponentManager(),
+		Collision:       stdcomponents.NewCollisionComponentManager(),
 
 		Health:     components.NewHealthComponentManager(),
 		Controller: components.NewControllerComponentManager(),
