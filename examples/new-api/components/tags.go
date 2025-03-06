@@ -14,12 +14,13 @@ Thank you for your support!
 
 package components
 
-import (
-	"gomp/stdcomponents"
-)
+import "gomp/pkg/ecs"
 
-const (
-	HealthComponentId = iota + stdcomponents.StdComponentIds
-	ControllerComponentId
-	PlayerTagComponentId
-)
+type PlayerTag struct {
+}
+
+type PlayerTagComponentManager = ecs.ComponentManager[PlayerTag]
+
+func NewPlayerTagComponentManager() PlayerTagComponentManager {
+	return ecs.NewComponentManager[PlayerTag](PlayerTagComponentId)
+}

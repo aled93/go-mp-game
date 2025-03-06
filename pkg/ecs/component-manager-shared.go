@@ -14,6 +14,8 @@ import (
 
 type SharedComponentInstanceId uint16
 
+var _ AnyComponentManagerPtr = &SharedComponentManager[any]{}
+
 func NewSharedComponentManager[T any](id ComponentId) SharedComponentManager[T] {
 	newManager := SharedComponentManager[T]{
 		components:          NewPagedArray[T](),
@@ -63,6 +65,26 @@ type SharedComponentManager[T any] struct {
 
 	encoder func([]T) []byte
 	decoder func([]byte) []T
+}
+
+func (c *SharedComponentManager[T]) PatchAdd(entity Entity) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *SharedComponentManager[T]) PatchGet() ComponentPatch {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *SharedComponentManager[T]) PatchApply(patch ComponentPatch) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *SharedComponentManager[T]) PatchReset() {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (c *SharedComponentManager[T]) Id() ComponentId {
@@ -138,6 +160,7 @@ func (c *SharedComponentManager[T]) Set(entity Entity, instanceId SharedComponen
 	componentIndex, _ := c.instanceToComponent.Get(instanceId)
 	c.entityToComponent.Set(entity, componentIndex)
 	c.patchedEntities.Append(entity)
+	c.entityComponentBitSet.Set(entity, c.id)
 	return c.components.Get(componentIndex)
 }
 
@@ -185,7 +208,7 @@ func (c *SharedComponentManager[T]) Len() int {
 func (c *SharedComponentManager[T]) Clean() {
 	// c.entityComponentBitSet.Clean()
 	//c.components.Clean()
-	// c.entities.Clean()
+	// c.Entities.Clean()
 }
 
 // ========================================================

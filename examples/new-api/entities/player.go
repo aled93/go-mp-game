@@ -109,8 +109,8 @@ func CreatePlayer(
 
 	// Adding ColliderBox component
 	player.ColliderBox = boxColliders.Create(entity, stdcomponents.ColliderBox{
-		Width:  16,
-		Height: 16,
+		Width:  96,
+		Height: 128,
 	})
 
 	// Adding GenericCollider component

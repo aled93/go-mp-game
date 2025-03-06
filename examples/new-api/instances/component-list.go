@@ -41,6 +41,7 @@ type ComponentList struct {
 
 	Health     components.HealthComponentManager
 	Controller components.ControllerComponentManager
+	PlayerTag  components.PlayerTagComponentManager
 }
 
 func NewComponentList() ComponentList {
@@ -66,5 +67,6 @@ func NewComponentList() ComponentList {
 
 		Health:     components.NewHealthComponentManager(),
 		Controller: components.NewControllerComponentManager(),
+		PlayerTag:  components.NewPlayerTagComponentManager(),
 	}
 }

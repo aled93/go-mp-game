@@ -78,7 +78,8 @@ func (s *MainScene) FixedUpdate(dt time.Duration) {
 	s.World.Systems.Network.Run(dt)
 
 	s.World.Systems.Velocity.Run(dt)
-	s.World.Systems.Collision.Run(dt)
+	s.World.Systems.SpatialCollision.Run(dt)
+	s.World.Systems.CollisionHandler.Run(dt)
 	s.World.Systems.NetworkSend.Run(dt)
 }
 

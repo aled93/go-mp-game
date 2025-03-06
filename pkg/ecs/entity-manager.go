@@ -72,6 +72,8 @@ type EntityManager struct {
 type Patch []ComponentPatch
 
 func (e *EntityManager) Create() Entity {
+	e.mx.Lock()
+	defer e.mx.Unlock()
 	var newId = e.generateEntityID()
 
 	e.size++
@@ -80,6 +82,8 @@ func (e *EntityManager) Create() Entity {
 }
 
 func (e *EntityManager) Delete(entity Entity) {
+	e.mx.Lock()
+	defer e.mx.Unlock()
 	e.componentBitSet.AllSet(entity, func(id ComponentId) bool {
 		e.components[id].Remove(entity)
 		return true

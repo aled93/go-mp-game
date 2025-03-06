@@ -22,7 +22,6 @@ func NewPlayerSystem() PlayerSystem {
 
 type PlayerSystem struct {
 	EntityManager    *ecs.EntityManager
-	Player           entities.Player
 	SpriteMatrixes   *stdcomponents.SpriteMatrixComponentManager
 	Positions        *stdcomponents.PositionComponentManager
 	Rotations        *stdcomponents.RotationComponentManager
@@ -39,64 +38,74 @@ type PlayerSystem struct {
 	RenderOrders     *stdcomponents.RenderOrderComponentManager
 	BoxColliders     *stdcomponents.ColliderBoxComponentManager
 	GenericCollider  *stdcomponents.GenericColliderComponentManager
+	Players          *components.PlayerTagComponentManager
 }
 
 func (s *PlayerSystem) Init() {
 	s.SpriteMatrixes.Create(sprites.PlayerSpriteSharedComponentId, sprites.PlayerSpriteMatrix)
 
-	for range 2_000 {
-		s.Player = entities.CreatePlayer(
+	for range 50 {
+		npc := entities.CreatePlayer(
 			s.EntityManager, s.SpriteMatrixes, s.Positions, s.Rotations, s.Scales,
 			s.Velocities, s.AnimationPlayers, s.AnimationStates, s.Tints, s.Flips, s.Renderables,
 			s.YSorts, s.RenderOrders, s.BoxColliders, s.GenericCollider,
 		)
 
-		s.Player.Position.X = 100 + rand.Float32()*700
-		s.Player.Position.Y = 100 + rand.Float32()*500
-		s.Player.AnimationPlayer.Current = uint8(rand.Intn(7))
+		npc.Position.X = 100 + rand.Float32()*700
+		npc.Position.Y = 100 + rand.Float32()*500
+		npc.AnimationPlayer.Current = uint8(rand.Intn(7))
 	}
 
-	s.Player.Position.X = 100
-	s.Player.Position.Y = 100
+	player := entities.CreatePlayer(
+		s.EntityManager, s.SpriteMatrixes, s.Positions, s.Rotations, s.Scales,
+		s.Velocities, s.AnimationPlayers, s.AnimationStates, s.Tints, s.Flips, s.Renderables,
+		s.YSorts, s.RenderOrders, s.BoxColliders, s.GenericCollider,
+	)
+	player.Position.X = 100
+	player.Position.Y = 100
 
-	s.Controllers.Create(s.Player.Entity, components.Controller{})
+	s.Controllers.Create(player.Entity, components.Controller{})
+	s.Players.Create(player.Entity, components.PlayerTag{})
 
 }
 func (s *PlayerSystem) Run() {
-	animationState := s.AnimationStates.Get(s.Player.Entity)
 
 	var speed float32 = 300
 
-	s.Player.Velocity.X = 0
-	s.Player.Velocity.Y = 0
+	for e := range s.Controllers.EachEntity {
+		velocity := s.Velocities.Get(e)
+		flip := s.Flips.Get(e)
+		animationState := s.AnimationStates.Get(e)
 
-	for range s.Controllers.EachComponent {
+		velocity.X = 0
+		velocity.Y = 0
+
 		if rl.IsKeyDown(rl.KeySpace) {
 			*animationState = entities.PlayerStateJump
 		} else {
 			*animationState = entities.PlayerStateIdle
 			if rl.IsKeyDown(rl.KeyD) {
 				*animationState = entities.PlayerStateWalk
-				s.Player.Velocity.X = speed
-				s.Player.Flip.X = false
+				velocity.X = speed
+				flip.X = false
 			}
 			if rl.IsKeyDown(rl.KeyA) {
 				*animationState = entities.PlayerStateWalk
-				s.Player.Velocity.X = -speed
-				s.Player.Flip.X = true
+				velocity.X = -speed
+				flip.X = true
 			}
 			if rl.IsKeyDown(rl.KeyW) {
 				*animationState = entities.PlayerStateWalk
-				s.Player.Velocity.Y = -speed
+				velocity.Y = -speed
 			}
 			if rl.IsKeyDown(rl.KeyS) {
 				*animationState = entities.PlayerStateWalk
-				s.Player.Velocity.Y = speed
+				velocity.Y = speed
 			}
 		}
 
 		if rl.IsKeyPressed(rl.KeyK) {
-			s.EntityManager.Delete(s.Player.Entity)
+			s.EntityManager.Delete(e)
 		}
 	}
 

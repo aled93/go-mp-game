@@ -196,7 +196,7 @@ func (c *ComponentManager[T]) Len() int {
 func (c *ComponentManager[T]) Clean() {
 	// c.entityComponentBitSet.Clean()
 	//c.components.Clean()
-	// c.entities.Clean()
+	// c.Entities.Clean()
 }
 
 // ========================================================

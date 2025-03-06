@@ -42,6 +42,7 @@ type RenderSystem struct {
 	AnimationStates  *stdcomponents.AnimationStateComponentManager
 	SpriteMatrixes   *stdcomponents.SpriteMatrixComponentManager
 	RenderOrders     *stdcomponents.RenderOrderComponentManager
+	ColliderBoxes    *stdcomponents.ColliderBoxComponentManager
 	renderList       []RenderEntry
 	instanceData     []stdcomponents.RLTexturePro
 	camera           rl.Camera2D
@@ -73,7 +74,22 @@ func (s *RenderSystem) Run(dt time.Duration) bool {
 
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.Black)
+	// draw grid
+	const gridSize = 256
+	for i := int32(1); i < 1024/gridSize; i++ {
+		rl.DrawLine(i*gridSize, 0, i*gridSize, 768, rl.Green)
+	}
+	for i := int32(1); i < 768/gridSize; i++ {
+		rl.DrawLine(0, i*gridSize, 1024, i*gridSize, rl.Green)
+	}
 	s.render()
+	s.ColliderBoxes.EachEntity(func(e ecs.Entity) bool {
+		box := s.ColliderBoxes.Get(e)
+		pos := s.Positions.Get(e)
+
+		rl.DrawRectangleLines(int32(pos.X), int32(pos.Y), int32(box.Width), int32(box.Height), rl.Red)
+		return true
+	})
 	rl.DrawRectangle(0, 0, 200, 60, rl.DarkBrown)
 	rl.DrawFPS(10, 10)
 	rl.DrawText(fmt.Sprintf("%d entities", s.EntityManager.Size()), 10, 30, 20, rl.RayWhite)
