@@ -12,21 +12,12 @@ none :)
 Thank you for your support!
 */
 
-package main
+package config
 
-import (
-	"gomp"
-	"gomp/examples/new-api/scenes"
+import "gomp/stdcomponents"
+
+const (
+	DefaultCollisionLayer stdcomponents.CollisionLayer = iota
+	PlayerCollisionLayer
+	EnemyCollisionLayer
 )
-
-func main() {
-	sceneList := scenes.NewSceneList()
-
-	game := gomp.NewGame(
-		&sceneList.Main,
-	)
-	game.CurrentSceneId = scenes.MainSceneId
-
-	engine := gomp.NewEngine(&game)
-	engine.Run(20, 0)
-}

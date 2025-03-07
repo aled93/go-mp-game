@@ -9,6 +9,7 @@ package systems
 import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/examples/new-api/components"
+	"gomp/examples/new-api/config"
 	"gomp/examples/new-api/entities"
 	"gomp/examples/new-api/sprites"
 	"gomp/pkg/ecs"
@@ -44,7 +45,7 @@ type PlayerSystem struct {
 func (s *PlayerSystem) Init() {
 	s.SpriteMatrixes.Create(sprites.PlayerSpriteSharedComponentId, sprites.PlayerSpriteMatrix)
 
-	for range 50 {
+	for range 5_000 {
 		npc := entities.CreatePlayer(
 			s.EntityManager, s.SpriteMatrixes, s.Positions, s.Rotations, s.Scales,
 			s.Velocities, s.AnimationPlayers, s.AnimationStates, s.Tints, s.Flips, s.Renderables,
@@ -63,6 +64,8 @@ func (s *PlayerSystem) Init() {
 	)
 	player.Position.X = 100
 	player.Position.Y = 100
+	player.GenericCollider.Layer = config.PlayerCollisionLayer
+	player.GenericCollider.Mask = 1 << config.EnemyCollisionLayer
 
 	s.Controllers.Create(player.Entity, components.Controller{})
 	s.Players.Create(player.Entity, components.PlayerTag{})

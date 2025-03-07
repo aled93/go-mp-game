@@ -43,6 +43,7 @@ type RenderSystem struct {
 	SpriteMatrixes   *stdcomponents.SpriteMatrixComponentManager
 	RenderOrders     *stdcomponents.RenderOrderComponentManager
 	ColliderBoxes    *stdcomponents.ColliderBoxComponentManager
+	Collisions       *stdcomponents.CollisionComponentManager
 	renderList       []RenderEntry
 	instanceData     []stdcomponents.RLTexturePro
 	camera           rl.Camera2D
@@ -88,6 +89,11 @@ func (s *RenderSystem) Run(dt time.Duration) bool {
 		pos := s.Positions.Get(e)
 
 		rl.DrawRectangleLines(int32(pos.X), int32(pos.Y), int32(box.Width), int32(box.Height), rl.Red)
+		return true
+	})
+	s.Collisions.EachEntity(func(entity ecs.Entity) bool {
+		pos := s.Positions.Get(entity)
+		rl.DrawRectangle(int32(pos.X), int32(pos.Y), 16, 16, rl.Red)
 		return true
 	})
 	rl.DrawRectangle(0, 0, 200, 60, rl.DarkBrown)

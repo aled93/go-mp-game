@@ -21,7 +21,7 @@ type PagedArray[T any] struct {
 }
 
 func NewPagedArray[T any]() (a PagedArray[T]) {
-	a.book = make([]ArrayPage[T], 2, book_size)
+	a.book = make([]ArrayPage[T], 2, initialBookSize)
 	a.parallelCount = uint8(runtime.NumCPU()) / 2
 
 	return a
@@ -74,7 +74,7 @@ func (a *PagedArray[T]) Append(value T) *T {
 	page.data[page.len] = value
 	result := &page.data[page.len]
 	page.len++
-	if page.len == page_size {
+	if page.len == pageSize {
 		a.currentPageIndex++
 	}
 	a.len++
@@ -148,11 +148,11 @@ func (a *PagedArray[T]) Raw(result []T) []T {
 }
 
 func (a *PagedArray[T]) getPageIdAndIndex(index int) (int, int) {
-	pageId := index >> page_size_shift
+	pageId := index >> pageSizeShift
 	assert.True(pageId < len(a.book), "index out of range")
 
-	index %= page_size
-	assert.True(index < page_size, "index out of range")
+	index %= pageSize
+	assert.True(index < pageSize, "index out of range")
 
 	return pageId, index
 }
@@ -169,7 +169,7 @@ func (a *PagedArray[T]) All(yield func(int, *T) bool) {
 
 	for i := a.currentPageIndex; i >= 0; i-- {
 		page = &book[i]
-		index_offset = i << page_size_shift
+		index_offset = i << pageSizeShift
 
 		for j := page.len - 1; j >= 0; j-- {
 			if !yield(index_offset+j, &page.data[j]) {
@@ -181,14 +181,14 @@ func (a *PagedArray[T]) All(yield func(int, *T) bool) {
 
 func (a *PagedArray[T]) AllParallel(yield func(int, *T) bool) {
 	var page *ArrayPage[T]
-	var data *[page_size]T
+	var data *[pageSize]T
 	var index_offset int
 
 	book := a.book
 	wg := new(sync.WaitGroup)
 	gorutineBudget := a.parallelCount
 
-	runner := func(data *[page_size]T, offset int, startIndex int, wg *sync.WaitGroup) {
+	runner := func(data *[pageSize]T, offset int, startIndex int, wg *sync.WaitGroup) {
 		defer wg.Done()
 		for j := startIndex; j >= 0; j-- {
 			if !yield(offset+j, &(data[j])) {
@@ -205,7 +205,7 @@ func (a *PagedArray[T]) AllParallel(yield func(int, *T) bool) {
 	for i := a.currentPageIndex; i >= 0; i-- {
 		page = &book[i]
 		data = &page.data
-		index_offset = int(i) << page_size_shift
+		index_offset = int(i) << pageSizeShift
 
 		if gorutineBudget > 0 {
 			go runner(data, index_offset, page.len-1, wg)
@@ -261,12 +261,12 @@ func (a *PagedArray[T]) AllDataValue(yield func(T) bool) {
 
 func (a *PagedArray[T]) AllDataValueParallel(yield func(T) bool) {
 	var page *ArrayPage[T]
-	var data *[page_size]T
+	var data *[pageSize]T
 
 	book := a.book
 	wg := new(sync.WaitGroup)
 	gorutineBudget := a.parallelCount
-	runner := func(data *[page_size]T, startIndex int, wg *sync.WaitGroup) {
+	runner := func(data *[pageSize]T, startIndex int, wg *sync.WaitGroup) {
 		defer wg.Done()
 		for j := startIndex; j >= 0; j-- {
 			if !yield((data[j])) {
@@ -297,12 +297,12 @@ func (a *PagedArray[T]) AllDataValueParallel(yield func(T) bool) {
 
 func (a *PagedArray[T]) AllDataParallel(yield func(*T) bool) {
 	var page *ArrayPage[T]
-	var data *[page_size]T
+	var data *[pageSize]T
 
 	book := a.book
 	wg := new(sync.WaitGroup)
 	gorutineBudget := a.parallelCount
-	runner := func(data *[page_size]T, startIndex int, wg *sync.WaitGroup) {
+	runner := func(data *[pageSize]T, startIndex int, wg *sync.WaitGroup) {
 		defer wg.Done()
 		for j := startIndex; j >= 0; j-- {
 			if !yield(&(data[j])) {
@@ -338,5 +338,5 @@ type SlicePage[T any] struct {
 
 type ArrayPage[T any] struct {
 	len  int
-	data [page_size]T
+	data [pageSize]T
 }

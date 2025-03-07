@@ -16,12 +16,20 @@ package stdcomponents
 
 import "gomp/pkg/ecs"
 
-type ColliderShape = uint8
+type ColliderShape uint8
 
 const (
 	InvalidColliderShape ColliderShape = iota
 	BoxColliderShape
 	CircleColliderShape
+)
+
+type CollisionMask uint64
+
+type CollisionLayer = CollisionMask
+
+const (
+	ColliderLayerNone CollisionLayer = 0
 )
 
 type ColliderBox struct {
@@ -47,6 +55,8 @@ func NewColliderCircleComponentManager() ColliderCircleComponentManager {
 
 type GenericCollider struct {
 	Shape ColliderShape
+	Layer CollisionLayer
+	Mask  CollisionMask
 }
 
 type GenericColliderComponentManager = ecs.ComponentManager[GenericCollider]

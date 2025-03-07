@@ -32,5 +32,6 @@ const (
 	ColliderBoxComponentId
 	ColliderCircleComponentId
 	CollisionComponentId
+	SpatialIndexComponentId
 	StdComponentIds
 )

@@ -36,10 +36,10 @@ func NewSystemList() SystemList {
 		SpriteMatrix:             stdsystems.NewSpriteMatrixSystem(),
 		AssetLib:                 stdsystems.NewAssetLibSystem([]gomp.AnyAssetLibrary{assets.Textures}),
 		YSort:                    stdsystems.NewYSortSystem(),
-		Collision:                stdsystems.NewCollisionSystem(),
-		SpatialCollision:         stdsystems.NewSpatialCollisionSystem(),
-		CollisionHandler:         systems.NewCollisionHandlerSystem(),
+		CollisionDetection:       stdsystems.NewCollisionDetectionSystem(),
 		Render:                   stdsystems.NewRenderSystem(),
+
+		CollisionHandler: systems.NewCollisionHandlerSystem(),
 	}
 
 	return newSystemList
@@ -59,8 +59,8 @@ type SystemList struct {
 	SpriteMatrix             stdsystems.SpriteMatrixSystem
 	AssetLib                 stdsystems.AssetLibSystem
 	YSort                    stdsystems.YSortSystem
-	Collision                stdsystems.CollisionSystem
-	CollisionHandler         systems.CollisionHandlerSystem
-	SpatialCollision         stdsystems.SpatialCollisionSystem
+	CollisionDetection       stdsystems.CollisionDetectionSystem
 	Render                   stdsystems.RenderSystem
+
+	CollisionHandler systems.CollisionHandlerSystem
 }

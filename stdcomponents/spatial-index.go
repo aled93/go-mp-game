@@ -12,21 +12,16 @@ none :)
 Thank you for your support!
 */
 
-package main
+package stdcomponents
 
-import (
-	"gomp"
-	"gomp/examples/new-api/scenes"
-)
+import "gomp/pkg/ecs"
 
-func main() {
-	sceneList := scenes.NewSceneList()
+type SpatialIndex struct {
+	X, Y int
+}
 
-	game := gomp.NewGame(
-		&sceneList.Main,
-	)
-	game.CurrentSceneId = scenes.MainSceneId
+type SpatialIndexComponentManager = ecs.ComponentManager[SpatialIndex]
 
-	engine := gomp.NewEngine(&game)
-	engine.Run(20, 0)
+func NewSpatialIndexComponentManager() SpatialIndexComponentManager {
+	return ecs.NewComponentManager[SpatialIndex](SpatialIndexComponentId)
 }

@@ -7,6 +7,7 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package entities
 
 import (
+	"gomp/examples/new-api/config"
 	"gomp/examples/new-api/sprites"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
@@ -116,6 +117,8 @@ func CreatePlayer(
 	// Adding GenericCollider component
 	player.GenericCollider = genericColliders.Create(entity, stdcomponents.GenericCollider{
 		Shape: stdcomponents.BoxColliderShape,
+		Layer: config.EnemyCollisionLayer,
+		Mask:  1 << config.PlayerCollisionLayer,
 	})
 
 	return player

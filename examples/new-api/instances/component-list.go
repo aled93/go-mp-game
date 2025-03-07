@@ -38,6 +38,7 @@ type ComponentList struct {
 	ColliderBox     stdcomponents.ColliderBoxComponentManager
 	ColliderCircle  stdcomponents.ColliderCircleComponentManager
 	Collision       stdcomponents.CollisionComponentManager
+	SpatialIndex    stdcomponents.SpatialIndexComponentManager
 
 	Health     components.HealthComponentManager
 	Controller components.ControllerComponentManager
@@ -64,6 +65,7 @@ func NewComponentList() ComponentList {
 		ColliderBox:     stdcomponents.NewColliderBoxComponentManager(),
 		ColliderCircle:  stdcomponents.NewColliderCircleComponentManager(),
 		Collision:       stdcomponents.NewCollisionComponentManager(),
+		SpatialIndex:    stdcomponents.NewSpatialIndexComponentManager(),
 
 		Health:     components.NewHealthComponentManager(),
 		Controller: components.NewControllerComponentManager(),
