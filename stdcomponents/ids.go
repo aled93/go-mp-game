@@ -28,5 +28,11 @@ const (
 	RenderableComponentId
 	YSortComponentId
 	RenderOrderComponentId
+	SpatialComponentId
+	SpatialSpaceComponentId
+	BoundsComponentId
+	ColliderComponentId
+	PhysObjectComponentId
+	PhysSpaceComponentId
 	StdComponentIds
 )

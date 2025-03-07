@@ -37,6 +37,7 @@ func NewSystemList() SystemList {
 		AssetLib:                 stdsystems.NewAssetLibSystem([]gomp.AnyAssetLibrary{assets.Textures}),
 		YSort:                    stdsystems.NewYSortSystem(),
 		Render:                   stdsystems.NewRenderSystem(),
+		PhysSpaceSync:            stdsystems.PhysSpaceSyncSystem{},
 	}
 
 	return newSystemList
@@ -57,4 +58,5 @@ type SystemList struct {
 	AssetLib                 stdsystems.AssetLibSystem
 	YSort                    stdsystems.YSortSystem
 	Render                   stdsystems.RenderSystem
+	PhysSpaceSync            stdsystems.PhysSpaceSyncSystem
 }

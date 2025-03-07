@@ -16,13 +16,15 @@ package stdsystems
 
 import (
 	"fmt"
-	rl "github.com/gen2brain/raylib-go/raylib"
+	"gomp/pkg/debugdraw"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"math"
 	"slices"
 	"sync"
 	"time"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 func NewRenderSystem() RenderSystem {
@@ -74,6 +76,7 @@ func (s *RenderSystem) Run(dt time.Duration) bool {
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.Black)
 	s.render()
+	debugdraw.Render(s.camera)
 	rl.DrawRectangle(0, 0, 200, 60, rl.DarkBrown)
 	rl.DrawFPS(10, 10)
 	rl.DrawText(fmt.Sprintf("%d entities", s.EntityManager.Size()), 10, 30, 20, rl.RayWhite)

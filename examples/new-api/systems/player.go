@@ -7,13 +7,15 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package systems
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/examples/new-api/components"
 	"gomp/examples/new-api/entities"
+	"gomp/examples/new-api/ids"
 	"gomp/examples/new-api/sprites"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"math/rand"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 func NewPlayerSystem() PlayerSystem {
@@ -37,16 +39,17 @@ type PlayerSystem struct {
 	Renderables      *stdcomponents.RenderableComponentManager
 	YSorts           *stdcomponents.YSortComponentManager
 	RenderOrders     *stdcomponents.RenderOrderComponentManager
+	PhysSpaces       *stdcomponents.PhysSpaceComponentManager
 }
 
 func (s *PlayerSystem) Init() {
-	s.SpriteMatrixes.Create(sprites.PlayerSpriteSharedComponentId, sprites.PlayerSpriteMatrix)
+	s.SpriteMatrixes.Create(ids.PlayerSpriteSharedComponentId, sprites.PlayerSpriteMatrix)
 
-	for range 20_000 {
+	for range 2_000 {
 		s.Player = entities.CreatePlayer(
 			s.EntityManager, s.SpriteMatrixes, s.Positions, s.Rotations, s.Scales,
 			s.Velocities, s.AnimationPlayers, s.AnimationStates, s.Tints, s.Flips, s.Renderables,
-			s.YSorts, s.RenderOrders,
+			s.YSorts, s.RenderOrders, s.PhysSpaces,
 		)
 
 		s.Player.Position.X = 100 + rand.Float32()*700
@@ -62,7 +65,7 @@ func (s *PlayerSystem) Init() {
 func (s *PlayerSystem) Run() {
 	animationState := s.AnimationStates.Get(s.Player.Entity)
 
-	var speed float32 = 300
+	var speed float32 = 100
 
 	s.Player.Velocity.X = 0
 	s.Player.Velocity.Y = 0

@@ -12,11 +12,12 @@ none :)
 Thank you for your support!
 */
 
-package sprites
+package ids
 
 import "gomp/pkg/ecs"
 
 const (
 	InvalidSharedComponentId ecs.SharedComponentInstanceId = iota
 	PlayerSpriteSharedComponentId
+	DefaultPhysSpaceSharedComponentId
 )

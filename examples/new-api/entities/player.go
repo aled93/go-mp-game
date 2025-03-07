@@ -7,7 +7,7 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package entities
 
 import (
-	"gomp/examples/new-api/sprites"
+	"gomp/examples/new-api/ids"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 )
@@ -36,6 +36,7 @@ type Player struct {
 	Renderable      *stdcomponents.Renderable
 	YSort           *stdcomponents.YSort
 	RenderOrder     *stdcomponents.RenderOrder
+	PhysSpace       *stdcomponents.PhysSpace
 }
 
 func CreatePlayer(
@@ -52,6 +53,7 @@ func CreatePlayer(
 	renderables *stdcomponents.RenderableComponentManager,
 	ySorts *stdcomponents.YSortComponentManager,
 	renderOrders *stdcomponents.RenderOrderComponentManager,
+	physspaces *stdcomponents.PhysSpaceComponentManager,
 ) (player Player) {
 	// Creating new player
 
@@ -82,7 +84,7 @@ func CreatePlayer(
 	player.Tint = tints.Create(entity, tint)
 
 	// Adding sprite matrix component
-	player.SpriteMatrix = spriteMatrixes.Set(entity, sprites.PlayerSpriteSharedComponentId)
+	player.SpriteMatrix = spriteMatrixes.Set(entity, ids.PlayerSpriteSharedComponentId)
 
 	// Adding animation player component
 	animation := stdcomponents.AnimationPlayer{}
@@ -102,6 +104,9 @@ func CreatePlayer(
 
 	// Adding RenderOrder component
 	player.RenderOrder = renderOrders.Create(entity, stdcomponents.RenderOrder{})
+
+	// Adding very usefull comment
+	player.PhysSpace = physspaces.Set(entity, ids.DefaultPhysSpaceSharedComponentId)
 
 	return player
 }

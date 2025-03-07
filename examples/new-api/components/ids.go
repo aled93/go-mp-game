@@ -21,4 +21,5 @@ import (
 const (
 	HealthComponentId = iota + stdcomponents.StdComponentIds
 	ControllerComponentId
+	SelectedComponentId
 )

@@ -34,6 +34,8 @@ type ComponentList struct {
 	Renderable      stdcomponents.RenderableComponentManager
 	YSort           stdcomponents.YSortComponentManager
 	RenderOrder     stdcomponents.RenderOrderComponentManager
+	PhysSpace       stdcomponents.PhysSpaceComponentManager
+	PhysObject      stdcomponents.PhysObjectComponentManager
 
 	Health     components.HealthComponentManager
 	Controller components.ControllerComponentManager
@@ -55,6 +57,8 @@ func NewComponentList() ComponentList {
 		Renderable:      stdcomponents.NewRenderableComponentManager(),
 		YSort:           stdcomponents.NewYSortComponentManager(),
 		RenderOrder:     stdcomponents.NewRenderOrderComponentManager(),
+		PhysSpace:       stdcomponents.NewPhysSpaceComponentManager(),
+		PhysObject:      stdcomponents.NewPhysObjectComponentManager(),
 
 		Health:     components.NewHealthComponentManager(),
 		Controller: components.NewControllerComponentManager(),

@@ -16,8 +16,12 @@ package scenes
 
 import (
 	"gomp"
+	"gomp/examples/new-api/ids"
 	"gomp/examples/new-api/instances"
+	"gomp/pkg/collision"
 	"gomp/pkg/ecs"
+	"gomp/pkg/spatial"
+	"gomp/stdcomponents"
 	"time"
 )
 
@@ -38,6 +42,13 @@ func (s *MainScene) Id() gomp.SceneId {
 
 func (s *MainScene) Init() {
 	s.World.Init()
+
+	s.World.Components.PhysSpace.Create(ids.DefaultPhysSpaceSharedComponentId, stdcomponents.PhysSpace{
+		InitParams: collision.SpaceCreateParams{
+			Partitioner:   spatial.NewBoundlessGrid2D[*collision.Object](128.0),
+			MaxObjectSize: 256.0,
+		},
+	})
 
 	// Network receive
 	s.World.Systems.Network.Init()
@@ -75,6 +86,7 @@ func (s *MainScene) FixedUpdate(dt time.Duration) {
 	// Network send
 	s.World.Systems.Network.Run(dt)
 
+	s.World.Systems.PhysSpaceSync.Run()
 	s.World.Systems.Velocity.Run(dt)
 	s.World.Systems.NetworkSend.Run(dt)
 }

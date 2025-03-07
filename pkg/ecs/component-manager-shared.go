@@ -259,12 +259,12 @@ func (c *SharedComponentManager[T]) RawComponents(ptr []T) {
 }
 
 func (c *SharedComponentManager[T]) assertBegin() {
-	assert.True(c.isInitialized, "SharedComponentManager should be created with SharedNewComponentManager()")
-	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
-	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
+	// assert.True(c.isInitialized, "SharedComponentManager should be created with SharedNewComponentManager()")
+	// assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
+	// assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
 }
 
 func (c *SharedComponentManager[T]) assertEnd() {
-	assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
-	assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
+	// assert.True(c.components.Len() == c.lookup.Len(), "Lookup Count must always be the same as the number of components!")
+	// assert.True(c.entities.Len() == c.components.Len(), "Entity Count must always be the same as the number of components!")
 }

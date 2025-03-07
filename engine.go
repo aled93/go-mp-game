@@ -16,8 +16,11 @@ Thank you for your support!
 package gomp
 
 import (
+	"gomp/pkg/debugdraw"
 	"log"
 	"time"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 const (
@@ -60,6 +63,10 @@ func (e *Engine) Run(tickrate uint, framerate uint) {
 		dt = time.Since(lastUpdateAt)
 		lastUpdateAt = time.Now()
 
+		if rl.IsKeyPressed(rl.KeyF8) {
+			debugdraw.SetEnabled(!debugdraw.IsEnabled())
+		}
+
 		// Update
 		e.Game.Update(dt)
 
@@ -67,7 +74,9 @@ func (e *Engine) Run(tickrate uint, framerate uint) {
 		loops := 0
 		// TODO: Refactor to work without for loop
 		for nextFixedUpdateAt.Compare(time.Now()) == -1 && loops < MaxFrameSkips {
+			debugdraw.SetFixedUpdate(true)
 			e.Game.FixedUpdate(fixedUpdDuration)
+			debugdraw.SetFixedUpdate(false)
 			nextFixedUpdateAt = nextFixedUpdateAt.Add(fixedUpdDuration)
 			loops++
 		}
@@ -77,5 +86,6 @@ func (e *Engine) Run(tickrate uint, framerate uint) {
 
 		// Render
 		e.Game.Render(dt)
+		debugdraw.Decay()
 	}
 }
