@@ -45,7 +45,7 @@ type PlayerSystem struct {
 func (s *PlayerSystem) Init() {
 	s.SpriteMatrixes.Create(sprites.PlayerSpriteSharedComponentId, sprites.PlayerSpriteMatrix)
 
-	for range 5_000 {
+	for range 16_000 {
 		npc := entities.CreatePlayer(
 			s.EntityManager, s.SpriteMatrixes, s.Positions, s.Rotations, s.Scales,
 			s.Velocities, s.AnimationPlayers, s.AnimationStates, s.Tints, s.Flips, s.Renderables,

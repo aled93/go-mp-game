@@ -17,13 +17,16 @@ package stdsystems
 import (
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
+	"runtime"
+	"sync"
 	"time"
 )
 
 func NewCollisionDetectionSystem() CollisionDetectionSystem {
 	return CollisionDetectionSystem{
-		cellSizeX: 96,
-		cellSizeY: 128,
+		cellSizeX:      96,
+		cellSizeY:      128,
+		spatialBuckets: make(map[stdcomponents.SpatialIndex][]ecs.Entity, 32),
 	}
 }
 
@@ -52,9 +55,21 @@ type AABB struct {
 func (s *CollisionDetectionSystem) Init() {
 	s.activeCollisions = make(map[CollisionPair]ecs.Entity)
 }
+
+type CollisionEvent struct {
+	entityA, entityB ecs.Entity
+	posX, posY       float32
+}
+
 func (s *CollisionDetectionSystem) Run(dt time.Duration) {
-	s.entityToCell = make(map[ecs.Entity]stdcomponents.SpatialIndex, s.GenericCollider.Len())
-	s.spatialBuckets = make(map[stdcomponents.SpatialIndex][]ecs.Entity, 32)
+	if len(s.entityToCell) < s.GenericCollider.Len() {
+		s.entityToCell = make(map[ecs.Entity]stdcomponents.SpatialIndex, s.GenericCollider.Len())
+	}
+	// Reuse spatialBuckets to reduce allocations
+	for k := range s.spatialBuckets {
+		delete(s.spatialBuckets, k)
+	}
+	s.currentCollisions = make(map[CollisionPair]struct{})
 
 	// Build spatial buckets and entity-to-cell map
 	s.GenericCollider.EachEntity(func(entity ecs.Entity) bool {
@@ -81,21 +96,81 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 		return true
 	})
 
-	s.currentCollisions = make(map[CollisionPair]struct{})
+	// Create collision channel
+	collisionChan := make(chan CollisionEvent, 4096)
+	doneChan := make(chan struct{})
 
-	s.GenericCollider.EachEntity(func(entity ecs.Entity) bool {
-		collider := s.GenericCollider.Get(entity)
+	// Start result collector
+	go func() {
+		for event := range collisionChan {
+			pair := CollisionPair{event.entityA, event.entityB}.Normalize()
+			s.currentCollisions[pair] = struct{}{}
 
-		switch collider.Shape {
-		case stdcomponents.BoxColliderShape:
-			s.boxToXCollision(entity)
-		case stdcomponents.CircleColliderShape:
-			s.circleToXCollision(entity)
-		default:
-			panic("Unknown collider shape")
+			if _, exists := s.activeCollisions[pair]; !exists {
+				proxy := s.EntityManager.Create()
+				s.Collisions.Create(proxy, stdcomponents.Collision{E1: pair.E1, E2: pair.E2, State: stdcomponents.CollisionStateEnter})
+				s.Positions.Create(proxy, stdcomponents.Position{X: event.posX, Y: event.posY})
+				s.activeCollisions[pair] = proxy
+			} else {
+				proxy := s.activeCollisions[pair]
+				s.Collisions.Get(proxy).State = stdcomponents.CollisionStateStay
+				s.Positions.Get(proxy).X = event.posX
+				s.Positions.Get(proxy).Y = event.posY
+			}
 		}
-		return true
-	})
+		close(doneChan)
+	}()
+
+	entities := s.GenericCollider.RawEntities(make([]ecs.Entity, 0, s.GenericCollider.Len()))
+
+	// Worker pool setup
+	numWorkers := runtime.NumCPU() * 4
+	var wg sync.WaitGroup
+	wg.Add(numWorkers)
+
+	chunkSize := (len(entities) + numWorkers - 1) / numWorkers
+	for i := 0; i < numWorkers; i++ {
+		go func(workerID int) {
+			defer wg.Done()
+			start := workerID * chunkSize
+			end := start + chunkSize
+			if end > len(entities) {
+				end = len(entities)
+			}
+
+			for _, entityA := range entities[start:end] {
+				collider := s.GenericCollider.Get(entityA)
+
+				switch collider.Shape {
+				case stdcomponents.BoxColliderShape:
+					s.boxToXCollision(entityA, collisionChan)
+				case stdcomponents.CircleColliderShape:
+					s.circleToXCollision(entityA)
+				default:
+					panic("Unknown collider shape")
+				}
+			}
+		}(i)
+	}
+
+	// Wait for workers and close collision channel
+	wg.Wait()
+	close(collisionChan)
+	<-doneChan // Wait for result collector
+
+	//s.GenericCollider.EachEntity(func(entity ecs.Entity) bool {
+	//	collider := s.GenericCollider.Get(entity)
+	//
+	//	switch collider.Shape {
+	//	case stdcomponents.BoxColliderShape:
+	//		s.boxToXCollision(entity)
+	//	case stdcomponents.CircleColliderShape:
+	//		s.circleToXCollision(entity)
+	//	default:
+	//		panic("Unknown collider shape")
+	//	}
+	//	return true
+	//})
 
 	s.processExitStates()
 }
@@ -133,7 +208,7 @@ func (s *CollisionDetectionSystem) processExitStates() {
 	}
 }
 
-func (s *CollisionDetectionSystem) boxToXCollision(entityA ecs.Entity) {
+func (s *CollisionDetectionSystem) boxToXCollision(entityA ecs.Entity, collisionChan chan<- CollisionEvent) {
 	position1 := s.Positions.Get(entityA)
 	spatialIndex1 := s.entityToCell[entityA]
 	genericCollider1 := s.GenericCollider.Get(entityA)
@@ -159,7 +234,8 @@ func (s *CollisionDetectionSystem) boxToXCollision(entityA ecs.Entity) {
 
 			// Broad Phase
 			genericCollider2 := s.GenericCollider.Get(entityB)
-			if genericCollider1.Mask&(1<<genericCollider2.Layer) == 0 && genericCollider2.Mask&(1<<genericCollider1.Layer) == 0 {
+			if genericCollider1.Mask&(1<<genericCollider2.Layer) == 0 &&
+				genericCollider2.Mask&(1<<genericCollider1.Layer) == 0 {
 				continue
 			}
 
@@ -181,7 +257,9 @@ func (s *CollisionDetectionSystem) boxToXCollision(entityA ecs.Entity) {
 					continue
 				}
 
-				s.registerCollision(entityA, entityB, (position1.X+position2.X)/2, (position1.Y+position2.Y)/2)
+				posX := (position1.X + position2.X) / 2
+				posY := (position1.Y + position2.Y) / 2
+				collisionChan <- CollisionEvent{entityA, entityB, posX, posY}
 			case stdcomponents.CircleColliderShape:
 				panic("Circle-Box collision not implemented")
 			default:
