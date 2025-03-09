@@ -37,7 +37,7 @@ type Player struct {
 	Renderable      *stdcomponents.Renderable
 	YSort           *stdcomponents.YSort
 	RenderOrder     *stdcomponents.RenderOrder
-	ColliderBox     *stdcomponents.ColliderBox
+	ColliderBox     *stdcomponents.BoxCollider
 	GenericCollider *stdcomponents.GenericCollider
 }
 
@@ -55,7 +55,7 @@ func CreatePlayer(
 	renderables *stdcomponents.RenderableComponentManager,
 	ySorts *stdcomponents.YSortComponentManager,
 	renderOrders *stdcomponents.RenderOrderComponentManager,
-	boxColliders *stdcomponents.ColliderBoxComponentManager,
+	boxColliders *stdcomponents.BoxColliderComponentManager,
 	genericColliders *stdcomponents.GenericColliderComponentManager,
 ) (player Player) {
 	// Creating new player
@@ -108,8 +108,8 @@ func CreatePlayer(
 	// Adding RenderOrder component
 	player.RenderOrder = renderOrders.Create(entity, stdcomponents.RenderOrder{})
 
-	// Adding ColliderBox component
-	player.ColliderBox = boxColliders.Create(entity, stdcomponents.ColliderBox{
+	// Adding BoxCollider component
+	player.ColliderBox = boxColliders.Create(entity, stdcomponents.BoxCollider{
 		Width:  96,
 		Height: 128,
 	})

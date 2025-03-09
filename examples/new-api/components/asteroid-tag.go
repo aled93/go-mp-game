@@ -12,20 +12,15 @@ none :)
 Thank you for your support!
 */
 
-package stdcomponents
+package components
 
 import "gomp/pkg/ecs"
 
-const (
-	InvalidRenderableType Renderable = iota
-	SpriteRenderableType
-	SpriteMatrixRenderableType
-)
+type AsteroidTag struct {
+}
 
-type Renderable uint8
+type AsteroidComponentManager = ecs.ComponentManager[AsteroidTag]
 
-type RenderableComponentManager = ecs.ComponentManager[Renderable]
-
-func NewRenderableComponentManager() RenderableComponentManager {
-	return ecs.NewComponentManager[Renderable](RenderableComponentId)
+func NewAsteroidTagComponentManager() AsteroidComponentManager {
+	return ecs.NewComponentManager[AsteroidTag](AsteroidTagComponentId)
 }

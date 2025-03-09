@@ -2,9 +2,17 @@
 This Source Code Form is subject to the terms of the Mozilla
 Public License, v. 2.0. If a copy of the MPL was not distributed
 with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+===-===-===-===-===-===-===-===-===-===
+Donations during this file development:
+-===-===-===-===-===-===-===-===-===-===
+
+none :)
+
+Thank you for your support!
 */
 
-package stdsystems
+package systems
 
 import (
 	"fmt"
@@ -12,37 +20,42 @@ import (
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"math"
+	"slices"
 	"sync"
 	"time"
 )
 
-const (
-	batchSize = 1 << 13 // Maximum batch size supported by Raylib
-)
-
-func NewRlRenderSystem() RlRenderSystem {
-	return RlRenderSystem{}
+func NewRenderBogdanSystem() RenderBogdanSystem {
+	return RenderBogdanSystem{}
 }
 
-type RlRenderSystem struct {
+type RenderBogdanSystem struct {
 	EntityManager    *ecs.EntityManager
 	RlTexturePros    *stdcomponents.RLTextureProComponentManager
 	Positions        *stdcomponents.PositionComponentManager
-	AnimationPlayers *stdcomponents.AnimationPlayerComponentManager
-	AnimationStates  *stdcomponents.AnimationStateComponentManager
 	Rotations        *stdcomponents.RotationComponentManager
 	Scales           *stdcomponents.ScaleComponentManager
+	AnimationPlayers *stdcomponents.AnimationPlayerComponentManager
 	Tints            *stdcomponents.TintComponentManager
 	Flips            *stdcomponents.FlipComponentManager
 	Renderables      *stdcomponents.RenderableComponentManager
+	AnimationStates  *stdcomponents.AnimationStateComponentManager
 	SpriteMatrixes   *stdcomponents.SpriteMatrixComponentManager
+	RenderOrders     *stdcomponents.RenderOrderComponentManager
+	ColliderBoxes    *stdcomponents.BoxColliderComponentManager
+	Collisions       *stdcomponents.CollisionComponentManager
+	renderList       []renderEntry
+	instanceData     []stdcomponents.RLTexturePro
 	camera           rl.Camera2D
 }
 
-func (s *RlRenderSystem) Init() {
-	rl.InitWindow(1024, 768, "raylib [core] ebiten-ecs - basic window")
-	//InitWindow(1024, 768, "raylib [core] ebiten-ecs - basic window")
+type renderEntry struct {
+	Entity    ecs.Entity
+	TextureId int
+	ZIndex    float32
+}
 
+func (s *RenderBogdanSystem) Init() {
 	s.camera = rl.Camera2D{
 		Target:   rl.NewVector2(0, 0),
 		Offset:   rl.NewVector2(0, 0),
@@ -50,8 +63,7 @@ func (s *RlRenderSystem) Init() {
 		Zoom:     1,
 	}
 }
-
-func (s *RlRenderSystem) Run(dt time.Duration) bool {
+func (s *RenderBogdanSystem) Run(dt time.Duration) bool {
 	if rl.WindowShouldClose() {
 		return false
 	}
@@ -60,40 +72,83 @@ func (s *RlRenderSystem) Run(dt time.Duration) bool {
 
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.Black)
-
-	rl.BeginMode2D(s.camera)
+	// draw grid
+	const gridSize = 256
+	for i := int32(1); i < 1024/gridSize; i++ {
+		rl.DrawLine(i*gridSize, 0, i*gridSize, 768, rl.Green)
+	}
+	for i := int32(1); i < 768/gridSize; i++ {
+		rl.DrawLine(0, i*gridSize, 1024, i*gridSize, rl.Green)
+	}
 	s.render()
-	rl.EndMode2D()
+	s.ColliderBoxes.EachEntity(func(e ecs.Entity) bool {
+		box := s.ColliderBoxes.Get(e)
+		pos := s.Positions.Get(e)
 
+		rl.DrawRectangleLines(int32(pos.X), int32(pos.Y), int32(box.Width), int32(box.Height), rl.Red)
+		return true
+	})
+	s.Collisions.EachEntity(func(entity ecs.Entity) bool {
+		pos := s.Positions.Get(entity)
+		rl.DrawRectangle(int32(pos.X), int32(pos.Y), 16, 16, rl.Red)
+		return true
+	})
 	rl.DrawRectangle(0, 0, 200, 60, rl.DarkBrown)
 	rl.DrawFPS(10, 10)
 	rl.DrawText(fmt.Sprintf("%d entities", s.EntityManager.Size()), 10, 30, 20, rl.RayWhite)
-
 	rl.EndDrawing()
 
 	return true
 }
 
-func (s *RlRenderSystem) Destroy() {
-	rl.CloseWindow()
-}
+func (s *RenderBogdanSystem) Destroy() {}
 
-func (s *RlRenderSystem) render() {
-	s.Renderables.EachEntity(func(entity ecs.Entity) bool {
-		renderable := s.Renderables.Get(entity)
-
-		switch *renderable {
-		case stdcomponents.SpriteMatrixRenderableType:
-			s.renderSpriteMatrix(entity)
-		default:
-			panic("unknown renderable type")
-		}
-
+func (s *RenderBogdanSystem) render() {
+	// Extract and sort entities
+	if cap(s.renderList) < s.Renderables.Len() {
+		s.renderList = append(s.renderList, make([]renderEntry, 0, s.Renderables.Len()-cap(s.renderList))...)
+	}
+	s.Renderables.EachEntity(func(e ecs.Entity) bool {
+		sprite := s.SpriteMatrixes.Get(e)
+		renderOrder := s.RenderOrders.Get(e)
+		s.renderList = append(s.renderList, renderEntry{
+			Entity:    e,
+			TextureId: int(sprite.Texture.ID),
+			ZIndex:    renderOrder.CalculatedZ,
+		})
 		return true
 	})
+
+	slices.SortStableFunc(s.renderList, func(a, b renderEntry) int {
+		if a.TextureId == b.TextureId {
+			return int(math.Floor(float64(a.ZIndex - b.ZIndex)))
+		}
+		return int(a.TextureId - b.TextureId)
+	})
+
+	// Batch and render
+	var currentTex = -1
+	var instanceData []stdcomponents.RLTexturePro = make([]stdcomponents.RLTexturePro, 0, 8192)
+	for i := range s.renderList {
+		entry := &s.renderList[i]
+		if entry.TextureId != currentTex || len(instanceData) >= 8192 {
+			if len(instanceData) > 0 {
+				s.submitBatch(currentTex, instanceData)
+				instanceData = instanceData[:0]
+			}
+			currentTex = entry.TextureId
+		}
+		instanceData = append(instanceData, s.getInstanceData(entry.Entity))
+	}
+	s.submitBatch(currentTex, instanceData) // Submit last batch
+	s.renderList = s.renderList[:0]
 }
 
-func (s *RlRenderSystem) prepareRender(dt time.Duration) {
+func (s *RenderBogdanSystem) getInstanceData(e ecs.Entity) stdcomponents.RLTexturePro {
+	return *s.RlTexturePros.Get(e)
+}
+
+func (s *RenderBogdanSystem) prepareRender(dt time.Duration) {
 	wg := new(sync.WaitGroup)
 	wg.Add(6)
 	s.prepareAnimations(wg)
@@ -105,7 +160,7 @@ func (s *RlRenderSystem) prepareRender(dt time.Duration) {
 	wg.Wait()
 }
 
-func (s *RlRenderSystem) prepareAnimations(wg *sync.WaitGroup) {
+func (s *RenderBogdanSystem) prepareAnimations(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
 		texturePro := s.RlTexturePros.Get(entity)
@@ -123,7 +178,7 @@ func (s *RlRenderSystem) prepareAnimations(wg *sync.WaitGroup) {
 	})
 }
 
-func (s *RlRenderSystem) prepareFlips(wg *sync.WaitGroup) {
+func (s *RenderBogdanSystem) prepareFlips(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
 		texturePro := s.RlTexturePros.Get(entity)
@@ -141,7 +196,7 @@ func (s *RlRenderSystem) prepareFlips(wg *sync.WaitGroup) {
 	})
 }
 
-func (s *RlRenderSystem) preparePositions(wg *sync.WaitGroup, dt time.Duration) {
+func (s *RenderBogdanSystem) preparePositions(wg *sync.WaitGroup, dt time.Duration) {
 	defer wg.Done()
 	//dts := dt.Seconds()
 	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
@@ -160,7 +215,7 @@ func (s *RlRenderSystem) preparePositions(wg *sync.WaitGroup, dt time.Duration) 
 	})
 }
 
-func (s *RlRenderSystem) prepareRotations(wg *sync.WaitGroup) {
+func (s *RenderBogdanSystem) prepareRotations(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
 		texturePro := s.RlTexturePros.Get(entity)
@@ -173,7 +228,7 @@ func (s *RlRenderSystem) prepareRotations(wg *sync.WaitGroup) {
 	})
 }
 
-func (s *RlRenderSystem) prepareScales(wg *sync.WaitGroup) {
+func (s *RenderBogdanSystem) prepareScales(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
 		texturePro := s.RlTexturePros.Get(entity)
@@ -187,7 +242,7 @@ func (s *RlRenderSystem) prepareScales(wg *sync.WaitGroup) {
 	})
 }
 
-func (s *RlRenderSystem) prepareTints(wg *sync.WaitGroup) {
+func (s *RenderBogdanSystem) prepareTints(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
 		tr := s.RlTexturePros.Get(entity)
@@ -204,11 +259,10 @@ func (s *RlRenderSystem) prepareTints(wg *sync.WaitGroup) {
 	})
 }
 
-func (s *RlRenderSystem) renderSpriteMatrix(entity ecs.Entity) {
-	texturePro := s.RlTexturePros.Get(entity)
-	rl.DrawTexturePro(*texturePro.Texture, texturePro.Frame, texturePro.Dest, texturePro.Origin, texturePro.Rotation, texturePro.Tint)
-}
-
-func (s *RlRenderSystem) expDecay(a, b, decay, dt float64) float64 {
-	return b + (a-b)*(math.Exp(-decay*dt))
+func (s *RenderBogdanSystem) submitBatch(texID int, data []stdcomponents.RLTexturePro) {
+	rl.BeginMode2D(s.camera)
+	for i := range data {
+		rl.DrawTexturePro(*data[i].Texture, data[i].Frame, data[i].Dest, data[i].Origin, data[i].Rotation, data[i].Tint)
+	}
+	rl.EndMode2D()
 }

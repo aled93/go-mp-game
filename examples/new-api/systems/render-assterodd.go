@@ -12,11 +12,12 @@ none :)
 Thank you for your support!
 */
 
-package stdsystems
+package systems
 
 import (
 	"fmt"
 	rl "github.com/gen2brain/raylib-go/raylib"
+	"gomp/examples/new-api/components"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"math"
@@ -25,11 +26,11 @@ import (
 	"time"
 )
 
-func NewRenderSystem() RenderSystem {
-	return RenderSystem{}
+func NewRenderAssteroddSystem() RenderAssteroddSystem {
+	return RenderAssteroddSystem{}
 }
 
-type RenderSystem struct {
+type RenderAssteroddSystem struct {
 	EntityManager    *ecs.EntityManager
 	RlTexturePros    *stdcomponents.RLTextureProComponentManager
 	Positions        *stdcomponents.PositionComponentManager
@@ -40,33 +41,33 @@ type RenderSystem struct {
 	Flips            *stdcomponents.FlipComponentManager
 	Renderables      *stdcomponents.RenderableComponentManager
 	AnimationStates  *stdcomponents.AnimationStateComponentManager
+	Sprites          *stdcomponents.SpriteComponentManager
 	SpriteMatrixes   *stdcomponents.SpriteMatrixComponentManager
 	RenderOrders     *stdcomponents.RenderOrderComponentManager
-	ColliderBoxes    *stdcomponents.ColliderBoxComponentManager
+	ColliderBoxes    *stdcomponents.BoxColliderComponentManager
 	Collisions       *stdcomponents.CollisionComponentManager
-	renderList       []RenderEntry
+	renderList       []renderEntry
 	instanceData     []stdcomponents.RLTexturePro
 	camera           rl.Camera2D
+	SceneManager     *components.AsteroidSceneManagerComponentManager
+
+	monitorWidth  int
+	monitorHeight int
+
+	Player *components.PlayerTagComponentManager
 }
 
-type RenderEntry struct {
-	Entity    ecs.Entity
-	TextureId int
-	ZIndex    float32
-}
-
-func (s *RenderSystem) Init() {
-	rl.InitWindow(1024, 768, "raylib [core] ebiten-ecs - basic window")
-	//InitWindow(1024, 768, "raylib [core] ebiten-ecs - basic window")
-
+func (s *RenderAssteroddSystem) Init() {
+	s.monitorWidth = rl.GetScreenWidth()
+	s.monitorHeight = rl.GetScreenHeight()
 	s.camera = rl.Camera2D{
-		Target:   rl.NewVector2(0, 0),
-		Offset:   rl.NewVector2(0, 0),
+		Target:   rl.NewVector2(float32(s.monitorWidth/2), float32(s.monitorHeight/2)),
+		Offset:   rl.NewVector2(float32(s.monitorWidth/2), float32(s.monitorHeight/2)),
 		Rotation: 0,
 		Zoom:     1,
 	}
 }
-func (s *RenderSystem) Run(dt time.Duration) bool {
+func (s *RenderAssteroddSystem) Run(dt time.Duration) bool {
 	if rl.WindowShouldClose() {
 		return false
 	}
@@ -75,56 +76,64 @@ func (s *RenderSystem) Run(dt time.Duration) bool {
 
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.Black)
-	// draw grid
-	const gridSize = 256
-	for i := int32(1); i < 1024/gridSize; i++ {
-		rl.DrawLine(i*gridSize, 0, i*gridSize, 768, rl.Green)
-	}
-	for i := int32(1); i < 768/gridSize; i++ {
-		rl.DrawLine(0, i*gridSize, 1024, i*gridSize, rl.Green)
-	}
 	s.render()
-	s.ColliderBoxes.EachEntity(func(e ecs.Entity) bool {
-		box := s.ColliderBoxes.Get(e)
-		pos := s.Positions.Get(e)
 
-		rl.DrawRectangleLines(int32(pos.X), int32(pos.Y), int32(box.Width), int32(box.Height), rl.Red)
-		return true
-	})
-	s.Collisions.EachEntity(func(entity ecs.Entity) bool {
-		pos := s.Positions.Get(entity)
-		rl.DrawRectangle(int32(pos.X), int32(pos.Y), 16, 16, rl.Red)
-		return true
-	})
-	rl.DrawRectangle(0, 0, 200, 60, rl.DarkBrown)
 	rl.DrawFPS(10, 10)
 	rl.DrawText(fmt.Sprintf("%d entities", s.EntityManager.Size()), 10, 30, 20, rl.RayWhite)
+	s.SceneManager.EachComponent(func(a *components.AsteroidSceneManager) bool {
+		rl.DrawText(fmt.Sprintf("Player HP: %d", a.PlayerHp), 10, 50, 20, rl.RayWhite)
+		rl.DrawText(fmt.Sprintf("Score: %d", a.PlayerScore), 10, 70, 20, rl.RayWhite)
+		if a.PlayerHp <= 0 {
+			text := "Game Over"
+			textSize := rl.MeasureTextEx(rl.GetFontDefault(), text, 96, 0)
+			x := (s.monitorWidth - int(textSize.X)) / 2
+			y := (s.monitorHeight - int(textSize.Y)) / 2
+			rl.DrawText(text, int32(x), int32(y), 96, rl.Red)
+
+		}
+		return false
+	})
+
 	rl.EndDrawing()
 
 	return true
 }
 
-func (s *RenderSystem) Destroy() {
-	rl.CloseWindow()
-}
+func (s *RenderAssteroddSystem) Destroy() {}
 
-func (s *RenderSystem) render() {
+func (s *RenderAssteroddSystem) render() {
+
 	// Extract and sort entities
 	if cap(s.renderList) < s.Renderables.Len() {
-		s.renderList = append(s.renderList, make([]RenderEntry, 0, s.Renderables.Len()-cap(s.renderList))...)
+		s.renderList = append(s.renderList, make([]renderEntry, 0, s.Renderables.Len()-cap(s.renderList))...)
 	}
 	s.Renderables.EachEntity(func(e ecs.Entity) bool {
-		sprite := s.SpriteMatrixes.Get(e)
 		renderOrder := s.RenderOrders.Get(e)
-		s.renderList = append(s.renderList, RenderEntry{
-			Entity:    e,
-			TextureId: int(sprite.Texture.ID),
-			ZIndex:    renderOrder.CalculatedZ,
-		})
-		return true
+
+		spriteMatrix := s.SpriteMatrixes.Get(e)
+		if spriteMatrix != nil {
+			s.renderList = append(s.renderList, renderEntry{
+				Entity:    e,
+				TextureId: int(spriteMatrix.Texture.ID),
+				ZIndex:    renderOrder.CalculatedZ,
+			})
+			return true
+		}
+
+		sprite := s.Sprites.Get(e)
+		if sprite != nil {
+			s.renderList = append(s.renderList, renderEntry{
+				Entity:    e,
+				TextureId: int(sprite.Texture.ID),
+				ZIndex:    renderOrder.CalculatedZ,
+			})
+			return true
+		}
+
+		panic("Unknown renderable type")
 	})
 
-	slices.SortStableFunc(s.renderList, func(a, b RenderEntry) int {
+	slices.SortStableFunc(s.renderList, func(a, b renderEntry) int {
 		if a.TextureId == b.TextureId {
 			return int(math.Floor(float64(a.ZIndex - b.ZIndex)))
 		}
@@ -147,13 +156,43 @@ func (s *RenderSystem) render() {
 	}
 	s.submitBatch(currentTex, instanceData) // Submit last batch
 	s.renderList = s.renderList[:0]
+
+	rl.BeginMode2D(s.camera)
+	s.Collisions.EachEntity(func(entity ecs.Entity) bool {
+		pos := s.Positions.Get(entity)
+		rl.DrawRectangle(int32(pos.X), int32(pos.Y), 16, 16, rl.Red)
+		return true
+	})
+	//s.ColliderBoxes.EachEntity(func(e ecs.Entity) bool {
+	//	box := s.ColliderBoxes.Get(e)
+	//	pos := s.Positions.Get(e)
+	//	scale := s.Scales.Get(e)
+	//	col := s.ColliderBoxes.Get(e)
+	//
+	//	rl.DrawRectangleLines(int32(pos.X-(col.OffsetX*scale.X)), int32(pos.Y-(col.OffsetY*scale.Y)), int32(box.Width*scale.X), int32(box.Height*scale.Y), rl.DarkGreen)
+	//	return true
+	//})
+	//s.Renderables.EachEntity(func(e ecs.Entity) bool {
+	//	position := s.Positions.Get(e)
+	//	rl.DrawRectangle(int32(position.X-2), int32(position.Y-2), 4, 4, rl.Red)
+	//	return true
+	//})
+	rl.EndMode2D()
 }
 
-func (s *RenderSystem) getInstanceData(e ecs.Entity) stdcomponents.RLTexturePro {
+func (s *RenderAssteroddSystem) submitBatch(texID int, data []stdcomponents.RLTexturePro) {
+	rl.BeginMode2D(s.camera)
+	for i := range data {
+		rl.DrawTexturePro(*data[i].Texture, data[i].Frame, data[i].Dest, data[i].Origin, data[i].Rotation, data[i].Tint)
+	}
+	rl.EndMode2D()
+}
+
+func (s *RenderAssteroddSystem) getInstanceData(e ecs.Entity) stdcomponents.RLTexturePro {
 	return *s.RlTexturePros.Get(e)
 }
 
-func (s *RenderSystem) prepareRender(dt time.Duration) {
+func (s *RenderAssteroddSystem) prepareRender(dt time.Duration) {
 	wg := new(sync.WaitGroup)
 	wg.Add(6)
 	s.prepareAnimations(wg)
@@ -165,7 +204,7 @@ func (s *RenderSystem) prepareRender(dt time.Duration) {
 	wg.Wait()
 }
 
-func (s *RenderSystem) prepareAnimations(wg *sync.WaitGroup) {
+func (s *RenderAssteroddSystem) prepareAnimations(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
 		texturePro := s.RlTexturePros.Get(entity)
@@ -183,7 +222,7 @@ func (s *RenderSystem) prepareAnimations(wg *sync.WaitGroup) {
 	})
 }
 
-func (s *RenderSystem) prepareFlips(wg *sync.WaitGroup) {
+func (s *RenderAssteroddSystem) prepareFlips(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
 		texturePro := s.RlTexturePros.Get(entity)
@@ -201,26 +240,31 @@ func (s *RenderSystem) prepareFlips(wg *sync.WaitGroup) {
 	})
 }
 
-func (s *RenderSystem) preparePositions(wg *sync.WaitGroup, dt time.Duration) {
+func (s *RenderAssteroddSystem) preparePositions(wg *sync.WaitGroup, dt time.Duration) {
 	defer wg.Done()
-	//dts := dt.Seconds()
+	dts := dt.Seconds()
 	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
 		texturePro := s.RlTexturePros.Get(entity)
 		position := s.Positions.Get(entity)
 		if position == nil {
 			return true
 		}
-		//decay := 16.0 // DECAY IS TICKRATE DEPENDENT
-		//texturePro.Dest.X = float32(s.expDecay(float64(texturePro.Dest.X), float64(position.X), decay, dts))
-		//texturePro.Dest.Y = float32(s.expDecay(float64(texturePro.Dest.Y), float64(position.Y), decay, dts))
-		texturePro.Dest.X = position.X
-		texturePro.Dest.Y = position.Y
+		decay := 40.0 // DECAY IS TICKRATE DEPENDENT
+		x := float32(s.expDecay(float64(texturePro.Dest.X), float64(position.X), decay, dts))
+		y := float32(s.expDecay(float64(texturePro.Dest.Y), float64(position.Y), decay, dts))
+		texturePro.Dest.X = x
+		texturePro.Dest.Y = y
+		player := s.Player.Get(entity)
+		if player != nil {
+			s.camera.Target.X = x
+			s.camera.Target.Y = y
+		}
 
 		return true
 	})
 }
 
-func (s *RenderSystem) prepareRotations(wg *sync.WaitGroup) {
+func (s *RenderAssteroddSystem) prepareRotations(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
 		texturePro := s.RlTexturePros.Get(entity)
@@ -233,7 +277,7 @@ func (s *RenderSystem) prepareRotations(wg *sync.WaitGroup) {
 	})
 }
 
-func (s *RenderSystem) prepareScales(wg *sync.WaitGroup) {
+func (s *RenderAssteroddSystem) prepareScales(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
 		texturePro := s.RlTexturePros.Get(entity)
@@ -247,7 +291,7 @@ func (s *RenderSystem) prepareScales(wg *sync.WaitGroup) {
 	})
 }
 
-func (s *RenderSystem) prepareTints(wg *sync.WaitGroup) {
+func (s *RenderAssteroddSystem) prepareTints(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
 		tr := s.RlTexturePros.Get(entity)
@@ -264,10 +308,6 @@ func (s *RenderSystem) prepareTints(wg *sync.WaitGroup) {
 	})
 }
 
-func (s *RenderSystem) submitBatch(texID int, data []stdcomponents.RLTexturePro) {
-	rl.BeginMode2D(s.camera)
-	for i := range data {
-		rl.DrawTexturePro(*data[i].Texture, data[i].Frame, data[i].Dest, data[i].Origin, data[i].Rotation, data[i].Tint)
-	}
-	rl.EndMode2D()
+func (s *RenderAssteroddSystem) expDecay(a, b, decay, dt float64) float64 {
+	return b + (a-b)*(math.Exp(-decay*dt))
 }

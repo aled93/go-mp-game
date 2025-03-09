@@ -16,10 +16,12 @@ package scenes
 
 func NewSceneList() SceneList {
 	return SceneList{
-		Main: NewMainScene(),
+		Main:      NewMainScene(),
+		Assterodd: NewAssteroddScene(),
 	}
 }
 
 type SceneList struct {
-	Main MainScene
+	Main      MainScene
+	Assterodd AssteroddScene
 }

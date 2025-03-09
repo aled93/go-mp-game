@@ -42,7 +42,8 @@ func NewGame(scenes ...AnyScene) Game {
 	}
 
 	game := Game{
-		Scenes: sceneSet,
+		Scenes:       sceneSet,
+		RenderSystem: NewRenderSystem(),
 	}
 
 	return game
@@ -53,6 +54,7 @@ type Game struct {
 	CurrentSceneId SceneId
 
 	shouldDestroy bool
+	RenderSystem  RenderSystem
 }
 
 func (g *Game) Init() {
@@ -62,6 +64,7 @@ func (g *Game) Init() {
 
 	scene, ok := g.Scenes[g.CurrentSceneId]
 	assert.True(ok, "Scene not found")
+	g.RenderSystem.Init()
 	scene.Init()
 }
 
@@ -89,6 +92,7 @@ func (g *Game) Destroy() {
 	scene, ok := g.Scenes[g.CurrentSceneId]
 	assert.True(ok, "Scene not found")
 	scene.Destroy()
+	g.RenderSystem.Destroy()
 }
 
 func (g *Game) ShouldDestroy() bool {

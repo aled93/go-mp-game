@@ -19,4 +19,5 @@ import "gomp"
 const (
 	MenuSceneId gomp.SceneId = iota
 	MainSceneId
+	AssteroddSceneId
 )

@@ -31,15 +31,21 @@ func NewSystemList() SystemList {
 		NetworkSend:              stdsystems.NewNetworkSendSystem(),
 		AnimationSpriteMatrix:    stdsystems.NewAnimationSpriteMatrixSystem(),
 		AnimationPlayer:          stdsystems.NewAnimationPlayerSystem(),
-		TextureRenderSprite:      stdsystems.NewTextureRenderSpriteSystem(),
 		TextureRenderSpriteSheet: stdsystems.NewTextureRenderSpriteSheetSystem(),
+		Sprite:                   stdsystems.NewSpriteSystem(),
 		SpriteMatrix:             stdsystems.NewSpriteMatrixSystem(),
 		AssetLib:                 stdsystems.NewAssetLibSystem([]gomp.AnyAssetLibrary{assets.Textures}),
 		YSort:                    stdsystems.NewYSortSystem(),
 		CollisionDetection:       stdsystems.NewCollisionDetectionSystem(),
-		Render:                   stdsystems.NewRenderSystem(),
+		ColliderSystem:           stdsystems.NewColliderSystem(),
+		RenderAssterodd:          systems.NewRenderAssteroddSystem(),
+		RenderBogdan:             systems.NewRenderBogdanSystem(),
 
+		AssteroddSystem:  systems.NewAssteroddSystem(),
 		CollisionHandler: systems.NewCollisionHandlerSystem(),
+		SpaceshipIntents: systems.NewSpaceshipIntentsSystem(),
+		SpaceSpawner:     systems.NewSpaceSpawnerSystem(),
+		Hp:               systems.NewHpSystem(),
 	}
 
 	return newSystemList
@@ -54,13 +60,19 @@ type SystemList struct {
 	NetworkSend              stdsystems.NetworkSendSystem
 	AnimationSpriteMatrix    stdsystems.AnimationSpriteMatrixSystem
 	AnimationPlayer          stdsystems.AnimationPlayerSystem
-	TextureRenderSprite      stdsystems.TextureRenderSpriteSystem
 	TextureRenderSpriteSheet stdsystems.TextureRenderSpriteSheetSystem
+	Sprite                   stdsystems.SpriteSystem
 	SpriteMatrix             stdsystems.SpriteMatrixSystem
 	AssetLib                 stdsystems.AssetLibSystem
 	YSort                    stdsystems.YSortSystem
 	CollisionDetection       stdsystems.CollisionDetectionSystem
-	Render                   stdsystems.RenderSystem
+	ColliderSystem           stdsystems.ColliderSystem
+	RenderAssterodd          systems.RenderAssteroddSystem
+	RenderBogdan             systems.RenderBogdanSystem
 
+	AssteroddSystem  systems.AssteroddSystem
 	CollisionHandler systems.CollisionHandlerSystem
+	SpaceshipIntents systems.SpaceshipIntentsSystem
+	SpaceSpawner     systems.SpaceSpawnerSystem
+	Hp               systems.HpSystem
 }

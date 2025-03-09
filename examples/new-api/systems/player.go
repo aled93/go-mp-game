@@ -32,12 +32,12 @@ type PlayerSystem struct {
 	AnimationStates  *stdcomponents.AnimationStateComponentManager
 	Tints            *stdcomponents.TintComponentManager
 	Flips            *stdcomponents.FlipComponentManager
-	HP               *components.HealthComponentManager
+	HP               *components.HpComponentManager
 	Controllers      *components.ControllerComponentManager
 	Renderables      *stdcomponents.RenderableComponentManager
 	YSorts           *stdcomponents.YSortComponentManager
 	RenderOrders     *stdcomponents.RenderOrderComponentManager
-	BoxColliders     *stdcomponents.ColliderBoxComponentManager
+	BoxColliders     *stdcomponents.BoxColliderComponentManager
 	GenericCollider  *stdcomponents.GenericColliderComponentManager
 	Players          *components.PlayerTagComponentManager
 }

@@ -12,20 +12,15 @@ none :)
 Thank you for your support!
 */
 
-package stdcomponents
+package components
 
 import "gomp/pkg/ecs"
 
-const (
-	InvalidRenderableType Renderable = iota
-	SpriteRenderableType
-	SpriteMatrixRenderableType
-)
+type Wall struct {
+}
 
-type Renderable uint8
+type WallTagComponentManager = ecs.ComponentManager[Wall]
 
-type RenderableComponentManager = ecs.ComponentManager[Renderable]
-
-func NewRenderableComponentManager() RenderableComponentManager {
-	return ecs.NewComponentManager[Renderable](RenderableComponentId)
+func NewWallComponentManager() WallTagComponentManager {
+	return ecs.NewComponentManager[Wall](WallComponentId)
 }

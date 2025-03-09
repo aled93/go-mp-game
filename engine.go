@@ -75,7 +75,7 @@ func (e *Engine) Run(tickrate uint, framerate uint) {
 			log.Println("Too many updates detected")
 		}
 
-		// Render
+		// RenderAssterodd
 		e.Game.Render(dt)
 	}
 }

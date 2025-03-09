@@ -24,8 +24,8 @@ import (
 
 func NewCollisionDetectionSystem() CollisionDetectionSystem {
 	return CollisionDetectionSystem{
-		cellSizeX:      96,
-		cellSizeY:      128,
+		cellSizeX:      192,
+		cellSizeY:      192,
 		spatialBuckets: make(map[stdcomponents.SpatialIndex][]ecs.Entity, 32),
 	}
 }
@@ -33,8 +33,9 @@ func NewCollisionDetectionSystem() CollisionDetectionSystem {
 type CollisionDetectionSystem struct {
 	EntityManager   *ecs.EntityManager
 	Positions       *stdcomponents.PositionComponentManager
+	Scales          *stdcomponents.ScaleComponentManager
 	GenericCollider *stdcomponents.GenericColliderComponentManager
-	BoxColliders    *stdcomponents.ColliderBoxComponentManager
+	BoxColliders    *stdcomponents.BoxColliderComponentManager
 	Collisions      *stdcomponents.CollisionComponentManager
 	SpatialIndex    *stdcomponents.SpatialIndexComponentManager
 
@@ -75,8 +76,11 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 	// Build spatial buckets and entity-to-cell map
 	s.GenericCollider.EachEntity(func(entity ecs.Entity) bool {
 		position := s.Positions.Get(entity)
-		cellX := int(position.X) / s.cellSizeX
-		cellY := int(position.Y) / s.cellSizeY
+		scale := s.Scales.Get(entity)
+
+		collider := s.GenericCollider.Get(entity)
+		cellX := int(position.X-(collider.OffsetX*scale.X)) / s.cellSizeX
+		cellY := int(position.Y-(collider.OffsetY*scale.Y)) / s.cellSizeY
 		cell := stdcomponents.SpatialIndex{X: cellX, Y: cellY}
 		s.entityToCell[entity] = cell
 		s.spatialBuckets[cell] = append(s.spatialBuckets[cell], entity)
@@ -88,12 +92,14 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 	s.BoxColliders.EachEntity(func(entity ecs.Entity) bool {
 		position := s.Positions.Get(entity)
 		collider := s.BoxColliders.Get(entity)
-		s.aabbs[entity] = AABB{
-			Left:   position.X,
-			Right:  position.X + collider.Width,
-			Top:    position.Y,
-			Bottom: position.Y + collider.Height,
+		scale := s.Scales.Get(entity)
+		newAABB := AABB{
+			Left:   position.X - (collider.OffsetX * scale.X),
+			Right:  position.X + (collider.Width-collider.OffsetX)*scale.X,
+			Top:    position.Y - (collider.OffsetY * scale.Y),
+			Bottom: position.Y + (collider.Height-collider.OffsetY)*scale.Y,
 		}
+		s.aabbs[entity] = newAABB
 		return true
 	})
 

@@ -12,20 +12,20 @@ none :)
 Thank you for your support!
 */
 
-package stdcomponents
+package components
 
-import "gomp/pkg/ecs"
-
-const (
-	InvalidRenderableType Renderable = iota
-	SpriteRenderableType
-	SpriteMatrixRenderableType
+import (
+	"gomp/pkg/ecs"
+	"time"
 )
 
-type Renderable uint8
+type SpaceSpawnerTag struct {
+	Cooldown     time.Duration
+	CooldownLeft time.Duration
+}
 
-type RenderableComponentManager = ecs.ComponentManager[Renderable]
+type SpaceSpawnerComponentManager = ecs.ComponentManager[SpaceSpawnerTag]
 
-func NewRenderableComponentManager() RenderableComponentManager {
-	return ecs.NewComponentManager[Renderable](RenderableComponentId)
+func NewSpaceSpawnerTagComponentManager() SpaceSpawnerComponentManager {
+	return ecs.NewComponentManager[SpaceSpawnerTag](SpaceSpawnerTagComponentId)
 }

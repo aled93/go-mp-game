@@ -25,6 +25,7 @@ type ComponentList struct {
 	Scale           stdcomponents.ScaleComponentManager
 	Velocity        stdcomponents.VelocityComponentManager
 	Flip            stdcomponents.FlipComponentManager
+	Sprite          stdcomponents.SpriteComponentManager
 	SpriteMatrix    stdcomponents.SpriteMatrixComponentManager
 	Tint            stdcomponents.TintComponentManager
 	AnimationPlayer stdcomponents.AnimationPlayerComponentManager
@@ -35,14 +36,21 @@ type ComponentList struct {
 	YSort           stdcomponents.YSortComponentManager
 	RenderOrder     stdcomponents.RenderOrderComponentManager
 	GenericCollider stdcomponents.GenericColliderComponentManager
-	ColliderBox     stdcomponents.ColliderBoxComponentManager
-	ColliderCircle  stdcomponents.ColliderCircleComponentManager
+	ColliderBox     stdcomponents.BoxColliderComponentManager
+	ColliderCircle  stdcomponents.CircleColliderComponentManager
 	Collision       stdcomponents.CollisionComponentManager
 	SpatialIndex    stdcomponents.SpatialIndexComponentManager
 
-	Health     components.HealthComponentManager
-	Controller components.ControllerComponentManager
-	PlayerTag  components.PlayerTagComponentManager
+	Health               components.HpComponentManager
+	Controller           components.ControllerComponentManager
+	PlayerTag            components.PlayerTagComponentManager
+	BulletTag            components.BulletTagComponentManager
+	AsteroidTag          components.AsteroidComponentManager
+	SpaceSpawnerTag      components.SpaceSpawnerComponentManager
+	Wall                 components.WallTagComponentManager
+	Weapon               components.WeaponComponentManager
+	SpaceshipIntent      components.SpaceshipIntentComponentManager
+	AsteroidSceneManager components.AsteroidSceneManagerComponentManager
 }
 
 func NewComponentList() ComponentList {
@@ -52,6 +60,7 @@ func NewComponentList() ComponentList {
 		Scale:           stdcomponents.NewScaleComponentManager(),
 		Velocity:        stdcomponents.NewVelocityComponentManager(),
 		Flip:            stdcomponents.NewFlipComponentManager(),
+		Sprite:          stdcomponents.NewSpriteComponentManager(),
 		SpriteMatrix:    stdcomponents.NewSpriteMatrixComponentManager(),
 		Tint:            stdcomponents.NewTintComponentManager(),
 		AnimationPlayer: stdcomponents.NewAnimationPlayerComponentManager(),
@@ -62,13 +71,20 @@ func NewComponentList() ComponentList {
 		YSort:           stdcomponents.NewYSortComponentManager(),
 		RenderOrder:     stdcomponents.NewRenderOrderComponentManager(),
 		GenericCollider: stdcomponents.NewGenericColliderComponentManager(),
-		ColliderBox:     stdcomponents.NewColliderBoxComponentManager(),
+		ColliderBox:     stdcomponents.NewBoxColliderComponentManager(),
 		ColliderCircle:  stdcomponents.NewColliderCircleComponentManager(),
 		Collision:       stdcomponents.NewCollisionComponentManager(),
 		SpatialIndex:    stdcomponents.NewSpatialIndexComponentManager(),
 
-		Health:     components.NewHealthComponentManager(),
-		Controller: components.NewControllerComponentManager(),
-		PlayerTag:  components.NewPlayerTagComponentManager(),
+		Health:               components.NewHealthComponentManager(),
+		Controller:           components.NewControllerComponentManager(),
+		PlayerTag:            components.NewPlayerTagComponentManager(),
+		BulletTag:            components.NewBulletTagComponentManager(),
+		Wall:                 components.NewWallComponentManager(),
+		AsteroidTag:          components.NewAsteroidTagComponentManager(),
+		SpaceSpawnerTag:      components.NewSpaceSpawnerTagComponentManager(),
+		Weapon:               components.NewWeaponComponentManager(),
+		SpaceshipIntent:      components.NewSpaceshipIntentComponentManager(),
+		AsteroidSceneManager: components.NewAsteroidSceneManagerComponentManager(),
 	}
 }

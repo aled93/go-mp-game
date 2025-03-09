@@ -12,20 +12,20 @@ none :)
 Thank you for your support!
 */
 
-package stdcomponents
+package components
 
 import "gomp/pkg/ecs"
 
-const (
-	InvalidRenderableType Renderable = iota
-	SpriteRenderableType
-	SpriteMatrixRenderableType
-)
+type SpaceshipIntent struct {
+	MoveUp      bool
+	MoveDown    bool
+	RotateLeft  bool
+	RotateRight bool
+	Fire        bool
+}
 
-type Renderable uint8
+type SpaceshipIntentComponentManager = ecs.ComponentManager[SpaceshipIntent]
 
-type RenderableComponentManager = ecs.ComponentManager[Renderable]
-
-func NewRenderableComponentManager() RenderableComponentManager {
-	return ecs.NewComponentManager[Renderable](RenderableComponentId)
+func NewSpaceshipIntentComponentManager() SpaceshipIntentComponentManager {
+	return ecs.NewComponentManager[SpaceshipIntent](SpaceshipIntentComponentId)
 }

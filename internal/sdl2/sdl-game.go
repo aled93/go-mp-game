@@ -14,7 +14,7 @@ const (
 	fontSize = 32
 )
 
-var winTitle string = "Go-SDL2 Render"
+var winTitle string = "Go-SDL2 RenderAssterodd"
 var winWidth, winHeight int32 = 800, 600
 
 func run() int {

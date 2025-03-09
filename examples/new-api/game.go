@@ -24,8 +24,9 @@ func main() {
 
 	game := gomp.NewGame(
 		&sceneList.Main,
+		&sceneList.Assterodd,
 	)
-	game.CurrentSceneId = scenes.MainSceneId
+	game.CurrentSceneId = scenes.AssteroddSceneId
 
 	engine := gomp.NewEngine(&game)
 	engine.Run(20, 0)

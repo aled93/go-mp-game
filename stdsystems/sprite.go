@@ -15,72 +15,64 @@ Thank you for your support!
 package stdsystems
 
 import (
+	rl "github.com/gen2brain/raylib-go/raylib"
+	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 )
 
-func NewTextureRenderSpriteSystem() TextureRenderSpriteSystem {
-	return TextureRenderSpriteSystem{}
+func NewSpriteSystem() SpriteSystem {
+	return SpriteSystem{}
 }
 
-// TextureRenderSpriteSystem is a system that prepares Sprite to be rendered
-type TextureRenderSpriteSystem struct {
-	Sprites        *stdcomponents.SpriteComponentManager
-	TextureRenders *stdcomponents.RLTextureProComponentManager
+// SpriteSystem is a system that prepares Sprite to be rendered
+type SpriteSystem struct {
+	Positions     *stdcomponents.PositionComponentManager
+	Scales        *stdcomponents.ScaleComponentManager
+	Sprites       *stdcomponents.SpriteComponentManager
+	RLTexturePros *stdcomponents.RLTextureProComponentManager
+	Renderables   *stdcomponents.RenderableComponentManager
+	RenderOrder   *stdcomponents.RenderOrderComponentManager
 }
 
-func (s *TextureRenderSpriteSystem) Init() {}
-func (s *TextureRenderSpriteSystem) Run() {
-	// Run sprites and spriteRenders
-	//s.Sprites.EachParallel(func(entity ecs.Entity, sprite *stdcomponents.Sprite) bool {
-	//	if sprite == nil {
-	//		return true
-	//	}
-	//
-	//	spriteFrame := sprite.Frame
-	//	spriteOrigin := sprite.Origin
-	//	spriteTint := sprite.Tint
-	//
-	//	tr := s.RlTexturePros.Get(entity)
-	//	if tr == nil {
-	//		// Create new spriteRender
-	//		newRender := stdcomponents.RLTexturePro{
-	//			TextureId: sprite.TextureId,
-	//			Frame:   sprite.Frame,
-	//			Origin:  sprite.Origin,
-	//			Tint:    sprite.Tint,
-	//			Dest: rl.NewRectangle(
-	//				0,
-	//				0,
-	//				sprite.Frame.Width,
-	//				sprite.Frame.Height,
-	//			),
-	//		}
-	//
-	//		s.RlTexturePros.Create(entity, newRender)
-	//	} else {
-	//		// Run spriteRender
-	//		// tr.TextureId = sprite.TextureId
-	//		trFrame := &tr.Frame
-	//		trFrame.X = spriteFrame.X
-	//		trFrame.Y = spriteFrame.Y
-	//		trFrame.Width = spriteFrame.Width
-	//		trFrame.Height = spriteFrame.Height
-	//
-	//		trOrigin := &tr.Origin
-	//		trOrigin.X = spriteOrigin.X
-	//		trOrigin.Y = spriteOrigin.Y
-	//
-	//		trTint := &tr.Tint
-	//		trTint.A = spriteTint.A
-	//		trTint.R = spriteTint.R
-	//		trTint.G = spriteTint.G
-	//		trTint.B = spriteTint.B
-	//
-	//		trDest := &tr.Dest
-	//		trDest.Width = spriteFrame.Width
-	//		trDest.Height = spriteFrame.Height
-	//	}
-	//	return true
-	//})
+func (s *SpriteSystem) Init() {}
+func (s *SpriteSystem) Run() {
+	s.Sprites.EachEntityParallel(func(entity ecs.Entity) bool {
+		sprite := s.Sprites.Get(entity) //
+		position := s.Positions.Get(entity)
+		scale := s.Scales.Get(entity)
+
+		renderable := s.Renderables.Get(entity)
+		if renderable == nil {
+			s.Renderables.Create(entity, stdcomponents.SpriteRenderableType)
+		}
+
+		renderOrder := s.RenderOrder.Get(entity)
+		if renderOrder == nil {
+			s.RenderOrder.Create(entity, stdcomponents.RenderOrder{})
+		}
+
+		tr := s.RLTexturePros.Get(entity)
+		if tr == nil {
+			s.RLTexturePros.Create(entity, stdcomponents.RLTexturePro{
+				Texture: sprite.Texture, //
+				Frame:   sprite.Frame,   //
+				Origin: rl.Vector2{
+					X: sprite.Origin.X * scale.X,
+					Y: sprite.Origin.Y * scale.Y,
+				},
+				Dest: rl.Rectangle{X: position.X, Y: position.Y, Width: sprite.Frame.Width, Height: sprite.Frame.Height}, //
+				Tint: stdcomponents.Tint{
+					R: 255,
+					G: 255,
+					B: 255,
+					A: 255,
+				},
+			})
+		} else {
+			tr.Dest.Width = sprite.Frame.Width
+			tr.Dest.Height = sprite.Frame.Height
+		}
+		return true
+	})
 }
-func (s *TextureRenderSpriteSystem) Destroy() {}
+func (s *SpriteSystem) Destroy() {}

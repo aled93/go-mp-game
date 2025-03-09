@@ -32,31 +32,39 @@ const (
 	ColliderLayerNone CollisionLayer = 0
 )
 
-type ColliderBox struct {
-	Width  float32
-	Height float32
+type BoxCollider struct {
+	Width   float32
+	Height  float32
+	OffsetX float32
+	OffsetY float32
+	Layer   CollisionLayer
+	Mask    CollisionMask
 }
 
-type ColliderBoxComponentManager = ecs.ComponentManager[ColliderBox]
+type BoxColliderComponentManager = ecs.ComponentManager[BoxCollider]
 
-func NewColliderBoxComponentManager() ColliderBoxComponentManager {
-	return ecs.NewComponentManager[ColliderBox](ColliderBoxComponentId)
+func NewBoxColliderComponentManager() BoxColliderComponentManager {
+	return ecs.NewComponentManager[BoxCollider](ColliderBoxComponentId)
 }
 
 type ColliderCircle struct {
 	Radius float32
+	Layer  CollisionLayer
+	Mask   CollisionMask
 }
 
-type ColliderCircleComponentManager = ecs.ComponentManager[ColliderCircle]
+type CircleColliderComponentManager = ecs.ComponentManager[ColliderCircle]
 
-func NewColliderCircleComponentManager() ColliderCircleComponentManager {
+func NewColliderCircleComponentManager() CircleColliderComponentManager {
 	return ecs.NewComponentManager[ColliderCircle](ColliderCircleComponentId)
 }
 
 type GenericCollider struct {
-	Shape ColliderShape
-	Layer CollisionLayer
-	Mask  CollisionMask
+	Shape   ColliderShape
+	Layer   CollisionLayer
+	Mask    CollisionMask
+	OffsetX float32
+	OffsetY float32
 }
 
 type GenericColliderComponentManager = ecs.ComponentManager[GenericCollider]

@@ -12,20 +12,21 @@ none :)
 Thank you for your support!
 */
 
-package stdcomponents
+package components
 
-import "gomp/pkg/ecs"
-
-const (
-	InvalidRenderableType Renderable = iota
-	SpriteRenderableType
-	SpriteMatrixRenderableType
+import (
+	"gomp/pkg/ecs"
+	"time"
 )
 
-type Renderable uint8
+type Weapon struct {
+	Damage       int
+	Cooldown     time.Duration
+	CooldownLeft time.Duration
+}
 
-type RenderableComponentManager = ecs.ComponentManager[Renderable]
+type WeaponComponentManager = ecs.ComponentManager[Weapon]
 
-func NewRenderableComponentManager() RenderableComponentManager {
-	return ecs.NewComponentManager[Renderable](RenderableComponentId)
+func NewWeaponComponentManager() WeaponComponentManager {
+	return ecs.NewComponentManager[Weapon](WeaponComponentId)
 }

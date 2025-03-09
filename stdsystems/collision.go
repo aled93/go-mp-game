@@ -29,7 +29,7 @@ type CollisionSystem struct {
 	EntityManager   *ecs.EntityManager
 	Positions       *stdcomponents.PositionComponentManager
 	GenericCollider *stdcomponents.GenericColliderComponentManager
-	BoxColliders    *stdcomponents.ColliderBoxComponentManager
+	BoxColliders    *stdcomponents.BoxColliderComponentManager
 	Collisions      *stdcomponents.CollisionComponentManager
 
 	activeCollisions    map[CollisionPair]ecs.Entity // Maps collision pairs to proxy entities

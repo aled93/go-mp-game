@@ -172,7 +172,7 @@ package tomb_mates_demo
 // 	// }
 
 // 	g.Mx.Lock()
-// 	components.Render.Each(g.EntityManager, func(e *ecs.Entry) {
+// 	components.RenderAssterodd.Each(g.EntityManager, func(e *ecs.Entry) {
 // 		body := components.Transform.GetValue(e)
 
 // 		op.GeoM.Reset()

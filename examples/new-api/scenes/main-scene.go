@@ -59,8 +59,8 @@ func (s *MainScene) Init() {
 	s.World.Systems.SpriteMatrix.Init()
 	s.World.Systems.YSort.Init()
 
-	// Render
-	s.World.Systems.Render.Init()
+	// RenderAssterodd
+	s.World.Systems.RenderBogdan.Init()
 	s.World.Systems.Debug.Init()
 	s.World.Systems.AssetLib.Init()
 }
@@ -93,7 +93,7 @@ func (s *MainScene) Render(dt time.Duration) {
 	s.World.Systems.AssetLib.Run()
 	s.World.Systems.YSort.Run()
 
-	shouldContinue := s.World.Systems.Render.Run(dt)
+	shouldContinue := s.World.Systems.RenderBogdan.Run(dt)
 	if !shouldContinue {
 		s.Game.SetShouldDestroy(true)
 		return
@@ -120,10 +120,10 @@ func (s *MainScene) Destroy() {
 	s.World.Systems.SpriteMatrix.Destroy()
 	s.World.Systems.YSort.Destroy()
 
-	// Render
+	// RenderAssterodd
 	s.World.Systems.Debug.Destroy()
 	s.World.Systems.AssetLib.Destroy()
-	s.World.Systems.Render.Destroy()
+	s.World.Systems.RenderBogdan.Destroy()
 }
 
 func (s *MainScene) OnEnter() {

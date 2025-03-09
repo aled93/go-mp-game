@@ -16,12 +16,12 @@ package components
 
 import "gomp/pkg/ecs"
 
-type Health struct {
+type Hp struct {
 	Hp, MaxHp int32
 }
 
-type HealthComponentManager = ecs.ComponentManager[Health]
+type HpComponentManager = ecs.ComponentManager[Hp]
 
-func NewHealthComponentManager() HealthComponentManager {
-	return ecs.NewComponentManager[Health](HealthComponentId)
+func NewHealthComponentManager() HpComponentManager {
+	return ecs.NewComponentManager[Hp](HealthComponentId)
 }

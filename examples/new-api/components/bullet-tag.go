@@ -12,20 +12,15 @@ none :)
 Thank you for your support!
 */
 
-package stdcomponents
+package components
 
 import "gomp/pkg/ecs"
 
-const (
-	InvalidRenderableType Renderable = iota
-	SpriteRenderableType
-	SpriteMatrixRenderableType
-)
+type BulletTag struct {
+}
 
-type Renderable uint8
+type BulletTagComponentManager = ecs.ComponentManager[BulletTag]
 
-type RenderableComponentManager = ecs.ComponentManager[Renderable]
-
-func NewRenderableComponentManager() RenderableComponentManager {
-	return ecs.NewComponentManager[Renderable](RenderableComponentId)
+func NewBulletTagComponentManager() BulletTagComponentManager {
+	return ecs.NewComponentManager[BulletTag](BulletTagComponentId)
 }

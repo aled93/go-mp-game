@@ -22,4 +22,11 @@ const (
 	HealthComponentId = iota + stdcomponents.StdComponentIds
 	ControllerComponentId
 	PlayerTagComponentId
+	BulletTagComponentId
+	WallComponentId
+	SpaceSpawnerTagComponentId
+	AsteroidTagComponentId
+	WeaponComponentId
+	SpaceshipIntentComponentId
+	AsteroidSceneManagerComponentId
 )

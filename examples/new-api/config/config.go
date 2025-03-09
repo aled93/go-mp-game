@@ -20,4 +20,5 @@ const (
 	DefaultCollisionLayer stdcomponents.CollisionLayer = iota
 	PlayerCollisionLayer
 	EnemyCollisionLayer
+	WallCollisionLayer
 )
