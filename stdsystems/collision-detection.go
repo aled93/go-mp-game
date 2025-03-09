@@ -136,7 +136,7 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 		wg.Add(1)
 
 		startIndex := i * chunkSize
-		endIndex := startIndex + chunkSize
+		endIndex := startIndex + chunkSize - 1
 		if i == numWorkers-1 { // have to set endIndex to entites lenght, if last worker
 			endIndex = entitiesLength
 		}
