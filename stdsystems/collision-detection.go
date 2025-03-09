@@ -7,7 +7,7 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 Donations during this file development:
 -===-===-===-===-===-===-===-===-===-===
 
-none :)
+none :)dw
 
 Thank you for your support!
 */
@@ -38,14 +38,15 @@ type CollisionDetectionSystem struct {
 	Collisions      *stdcomponents.CollisionComponentManager
 	SpatialIndex    *stdcomponents.SpatialIndexComponentManager
 
+	cellSizeX int
+	cellSizeY int
+
+	// Cache
 	activeCollisions  map[CollisionPair]ecs.Entity // Maps collision pairs to proxy entities
 	currentCollisions map[CollisionPair]struct{}
-	cellSizeX         int
-	cellSizeY         int
-
-	spatialBuckets map[stdcomponents.SpatialIndex][]ecs.Entity
-	aabbs          map[ecs.Entity]AABB
-	entityToCell   map[ecs.Entity]stdcomponents.SpatialIndex
+	spatialBuckets    map[stdcomponents.SpatialIndex][]ecs.Entity
+	entityToCell      map[ecs.Entity]stdcomponents.SpatialIndex
+	aabbs             map[ecs.Entity]AABB
 }
 
 type AABB struct {
@@ -129,14 +130,19 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 	wg.Add(numWorkers)
 
 	chunkSize := (len(entities) + numWorkers - 1) / numWorkers
-	for i := 0; i < numWorkers; i++ {
-		go func(workerID int) {
+	for workerId := 0; workerId < numWorkers; workerId++ {
+		startIndex := workerId * chunkSize
+		if startIndex >= len(entities) { // FIXME, probably chunkSize is invalid
+			wg.Done()
+			continue
+		}
+		endIndex := startIndex + chunkSize
+		if endIndex > len(entities) {
+			endIndex = len(entities)
+		}
+
+		go func(start, end int) {
 			defer wg.Done()
-			start := workerID * chunkSize
-			end := start + chunkSize
-			if end > len(entities) {
-				end = len(entities)
-			}
 
 			for _, entityA := range entities[start:end] {
 				collider := s.GenericCollider.Get(entityA)
@@ -150,7 +156,7 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 					panic("Unknown collider shape")
 				}
 			}
-		}(i)
+		}(startIndex, endIndex)
 	}
 
 	// Wait for workers and close collision channel
