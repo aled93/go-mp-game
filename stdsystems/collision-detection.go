@@ -125,23 +125,23 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 	entities := s.GenericCollider.RawEntities(make([]ecs.Entity, 0, s.GenericCollider.Len()))
 
 	// Worker pool setup
-	numWorkers := runtime.NumCPU() * 4
 	var wg sync.WaitGroup
-	wg.Add(numWorkers)
+	maxNumWorkers := runtime.NumCPU() * 4
+	entitiesLength := len(entities)
+	// get minimum 1 worker for small amount of entities, and maximum maxNumWorkers for a lot entities
+	numWorkers := max(min(entitiesLength/10, maxNumWorkers), 1)
+	chunkSize := entitiesLength / numWorkers
 
-	chunkSize := (len(entities) + numWorkers - 1) / numWorkers
-	for workerId := 0; workerId < numWorkers; workerId++ {
-		startIndex := workerId * chunkSize
-		if startIndex >= len(entities) { // FIXME, probably chunkSize is invalid
-			wg.Done()
-			continue
-		}
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+
+		startIndex := i * chunkSize
 		endIndex := startIndex + chunkSize
-		if endIndex > len(entities) {
-			endIndex = len(entities)
+		if i == numWorkers-1 { // have to set endIndex to entites lenght, if last worker
+			endIndex = entitiesLength
 		}
 
-		go func(start, end int) {
+		go func(start int, end int) {
 			defer wg.Done()
 
 			for _, entityA := range entities[start:end] {
