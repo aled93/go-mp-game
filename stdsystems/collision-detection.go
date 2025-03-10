@@ -129,12 +129,12 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 	maxNumWorkers := runtime.NumCPU() * 4
 	entitiesLength := len(entities)
 	// get minimum 1 worker for small amount of entities, and maximum maxNumWorkers for a lot entities
-	numWorkers := max(min(entitiesLength/10, maxNumWorkers), 1)
+	numWorkers := max(min(entitiesLength/32, maxNumWorkers), 1)
 	chunkSize := entitiesLength / numWorkers
 
-	for i := 0; i < numWorkers; i++ {
-		wg.Add(1)
+	wg.Add(numWorkers)
 
+	for i := 0; i < numWorkers; i++ {
 		startIndex := i * chunkSize
 		endIndex := startIndex + chunkSize - 1
 		if i == numWorkers-1 { // have to set endIndex to entites lenght, if last worker
