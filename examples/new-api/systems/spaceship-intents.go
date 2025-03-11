@@ -44,10 +44,9 @@ type SpaceshipIntentsSystem struct {
 
 func (s *SpaceshipIntentsSystem) Init() {}
 func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
-	var moveSpeedMax float32 = 300
-	var moveSpeedMaxBackwards float32 = -200
+	var thrustMain float32 = 10.0
+	var thrustBackwards float32 = -2.0
 	var rotateSpeed float32 = 10
-	var speedIncrement float32 = 10
 
 	var bulletSpeed float32 = 300
 
@@ -57,6 +56,8 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 		rot := s.Rotations.Get(entity)
 		pos := s.Positions.Get(entity)
 		weapon := s.Weapons.Get(entity)
+
+		rads := deg2rad(float64(rot.Angle)) + math.Pi
 
 		if pos.Y < 0 || pos.Y > 5000 || pos.X < 0 || pos.X > 5000 {
 			vel.X *= -1
@@ -71,30 +72,13 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 			rot.Angle += rotateSpeed
 		}
 		if intent.MoveUp {
-			s.moveSpeed += speedIncrement
-			if s.moveSpeed > moveSpeedMax {
-				s.moveSpeed = moveSpeedMax
-			}
+			vel.Y += float32(math.Cos(rads)) * thrustMain
+			vel.X += -float32(math.Sin(rads)) * thrustMain
 		}
 		if intent.MoveDown {
-			s.moveSpeed -= speedIncrement
-			if s.moveSpeed < moveSpeedMaxBackwards {
-				s.moveSpeed = moveSpeedMaxBackwards
-			}
+			vel.Y += float32(math.Cos(rads)) * thrustBackwards
+			vel.X += -float32(math.Sin(rads)) * thrustBackwards
 		}
-
-		if !intent.MoveUp && !intent.MoveDown {
-			if s.moveSpeed > 0 {
-				s.moveSpeed -= speedIncrement
-			} else if s.moveSpeed < 0 {
-				s.moveSpeed += speedIncrement
-			}
-		}
-
-		rads := deg2rad(float64(rot.Angle)) + math.Pi
-
-		vel.Y = float32(math.Cos(rads)) * s.moveSpeed
-		vel.X = -float32(math.Sin(rads)) * s.moveSpeed
 
 		bulletVelocityY := vel.Y + float32(math.Cos(rads))*bulletSpeed
 		bulletVelocityX := vel.X - float32(math.Sin(rads))*bulletSpeed
