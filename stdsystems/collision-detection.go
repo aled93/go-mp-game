@@ -7,7 +7,8 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 Donations during this file development:
 -===-===-===-===-===-===-===-===-===-===
 
-none :)dw
+<- SoundOfTheWind Donated 100 RUB
+<- Anonymous Donated 500 RUB
 
 Thank you for your support!
 */
@@ -43,19 +44,30 @@ type CollisionDetectionSystem struct {
 	cellSizeY int
 
 	// Cache
-	activeCollisions  map[CollisionPair]ecs.Entity // Maps collision pairs to proxy entities
-	currentCollisions map[CollisionPair]struct{}
+	activeCollisions  map[collisionPair]ecs.Entity // Maps collision pairs to proxy entities
+	currentCollisions map[collisionPair]struct{}
 	spatialBuckets    map[stdcomponents.SpatialIndex][]ecs.Entity
 	entityToCell      map[ecs.Entity]stdcomponents.SpatialIndex
-	aabbs             map[ecs.Entity]AABB
+	aabbs             map[ecs.Entity]aabb
 }
 
-type AABB struct {
+type aabb struct {
 	Left, Right, Top, Bottom float32
 }
 
+type collisionPair struct {
+	E1, E2 ecs.Entity
+}
+
+func (c collisionPair) Normalize() collisionPair {
+	if c.E1 > c.E2 {
+		return collisionPair{c.E2, c.E1}
+	}
+	return c
+}
+
 func (s *CollisionDetectionSystem) Init() {
-	s.activeCollisions = make(map[CollisionPair]ecs.Entity)
+	s.activeCollisions = make(map[collisionPair]ecs.Entity)
 }
 
 type CollisionEvent struct {
@@ -71,7 +83,7 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 	for k := range s.spatialBuckets {
 		delete(s.spatialBuckets, k)
 	}
-	s.currentCollisions = make(map[CollisionPair]struct{})
+	s.currentCollisions = make(map[collisionPair]struct{})
 
 	// Build spatial buckets and entity-to-cell map
 	s.GenericCollider.EachEntity(func(entity ecs.Entity) bool {
@@ -88,12 +100,12 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 	})
 
 	// Precompute AABBs for box colliders
-	s.aabbs = make(map[ecs.Entity]AABB, s.BoxColliders.Len())
+	s.aabbs = make(map[ecs.Entity]aabb, s.BoxColliders.Len())
 	s.BoxColliders.EachEntity(func(entity ecs.Entity) bool {
 		position := s.Positions.Get(entity)
 		collider := s.BoxColliders.Get(entity)
 		scale := s.Scales.Get(entity)
-		newAABB := AABB{
+		newAABB := aabb{
 			Left:   position.X - (collider.OffsetX * scale.X),
 			Right:  position.X + (collider.Width-collider.OffsetX)*scale.X,
 			Top:    position.Y - (collider.OffsetY * scale.Y),
@@ -110,7 +122,7 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 	// Start result collector
 	go func() {
 		for event := range collisionChan {
-			pair := CollisionPair{event.entityA, event.entityB}.Normalize()
+			pair := collisionPair{event.entityA, event.entityB}.Normalize()
 			s.currentCollisions[pair] = struct{}{}
 
 			if _, exists := s.activeCollisions[pair]; !exists {
@@ -189,7 +201,7 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 func (s *CollisionDetectionSystem) Destroy() {}
 
 func (s *CollisionDetectionSystem) registerCollision(entityA, entityB ecs.Entity, posX, posY float32) {
-	pair := CollisionPair{entityA, entityB}.Normalize()
+	pair := collisionPair{entityA, entityB}.Normalize()
 
 	s.currentCollisions[pair] = struct{}{}
 

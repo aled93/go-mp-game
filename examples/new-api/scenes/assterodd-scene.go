@@ -8,6 +8,9 @@ Donations during this file development:
 -===-===-===-===-===-===-===-===-===-===
 
 <- HromRu Donated 2 500 RUB
+<- kotyamatroskin Donated 400 RUB
+<- r_uslashk_a Donated 100 RUB
+<- mitwelve Donated 100 RUB
 
 Thank you for your support!
 */

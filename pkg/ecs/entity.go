@@ -7,7 +7,8 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 Donations during this file development:
 -===-===-===-===-===-===-===-===-===-===
 
-none :)
+<- Basserti Donated 250 RUB
+<- ubiblasosnalim Donated 100 RUB
 
 Thank you for your support!
 */
