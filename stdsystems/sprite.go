@@ -15,9 +15,10 @@ Thank you for your support!
 package stdsystems
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 func NewSpriteSystem() SpriteSystem {
@@ -40,6 +41,13 @@ func (s *SpriteSystem) Run() {
 		sprite := s.Sprites.Get(entity) //
 		position := s.Positions.Get(entity)
 		scale := s.Scales.Get(entity)
+
+		if scale == nil {
+			scale = &stdcomponents.Scale{
+				X: 1,
+				Y: 1,
+			}
+		}
 
 		renderable := s.Renderables.Get(entity)
 		if renderable == nil {

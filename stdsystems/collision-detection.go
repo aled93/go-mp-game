@@ -89,6 +89,12 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 	s.GenericCollider.EachEntity(func(entity ecs.Entity) bool {
 		position := s.Positions.Get(entity)
 		scale := s.Scales.Get(entity)
+		if scale == nil {
+			scale = &stdcomponents.Scale{
+				X: 1,
+				Y: 1,
+			}
+		}
 
 		collider := s.GenericCollider.Get(entity)
 		cellX := int(position.X-(collider.OffsetX*scale.X)) / s.cellSizeX
@@ -105,6 +111,12 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 		position := s.Positions.Get(entity)
 		collider := s.BoxColliders.Get(entity)
 		scale := s.Scales.Get(entity)
+		if scale == nil {
+			scale = &stdcomponents.Scale{
+				X: 1,
+				Y: 1,
+			}
+		}
 		newAABB := aabb{
 			Left:   position.X - (collider.OffsetX * scale.X),
 			Right:  position.X + (collider.Width-collider.OffsetX)*scale.X,
