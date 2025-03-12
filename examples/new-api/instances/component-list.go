@@ -51,6 +51,7 @@ type ComponentList struct {
 	Weapon               components.WeaponComponentManager
 	SpaceshipIntent      components.SpaceshipIntentComponentManager
 	AsteroidSceneManager components.AsteroidSceneManagerComponentManager
+	Pickups              components.PickupComponentManager
 }
 
 func NewComponentList() ComponentList {
@@ -86,5 +87,6 @@ func NewComponentList() ComponentList {
 		Weapon:               components.NewWeaponComponentManager(),
 		SpaceshipIntent:      components.NewSpaceshipIntentComponentManager(),
 		AsteroidSceneManager: components.NewAsteroidSceneManagerComponentManager(),
+		Pickups:              components.NewPickupComponentManager(),
 	}
 }

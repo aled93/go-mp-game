@@ -21,4 +21,5 @@ const (
 	PlayerCollisionLayer
 	EnemyCollisionLayer
 	WallCollisionLayer
+	PickupCollisionLayer
 )

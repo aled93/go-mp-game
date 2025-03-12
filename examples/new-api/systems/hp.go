@@ -16,7 +16,10 @@ package systems
 
 import (
 	"gomp/examples/new-api/components"
+	"gomp/examples/new-api/entities"
 	"gomp/pkg/ecs"
+	"gomp/stdcomponents"
+	"math/rand"
 	"time"
 )
 
@@ -31,6 +34,11 @@ type HpSystem struct {
 	Players              *components.PlayerTagComponentManager
 	Hp                   *components.HpComponentManager
 	AsteroidSceneManager *components.AsteroidSceneManagerComponentManager
+	Positions            *stdcomponents.PositionComponentManager
+	Velocities           *stdcomponents.VelocityComponentManager
+	BoxColliders         *stdcomponents.BoxColliderComponentManager
+	Sprites              *stdcomponents.SpriteComponentManager
+	Pickups              *components.PickupComponentManager
 }
 
 func (s *HpSystem) Init() {}
@@ -40,6 +48,25 @@ func (s *HpSystem) Run(dt time.Duration) {
 
 		if hp.Hp <= 0 {
 			asteroid := s.Asteroids.Get(e)
+			if asteroid != nil && rand.Intn(10) == 0 {
+				pos := s.Positions.Get(e)
+				vel := s.Velocities.Get(e)
+
+				if pos != nil && vel != nil {
+					entities.CreatePickup(entities.PickupManagers{
+						EntityManager: s.EntityManager,
+						Positions:     s.Positions,
+						Velocities:    s.Velocities,
+						BoxColliders:  s.BoxColliders,
+						Sprites:       s.Sprites,
+						Pickups:       s.Pickups,
+					}, pos.X, pos.Y, vel.X, vel.Y, components.Pickup{
+						Power:  components.PickupPower_Hp,
+						Amount: 1,
+					})
+				}
+			}
+
 			player := s.Players.Get(e)
 			s.AsteroidSceneManager.EachComponent(func(a *components.AsteroidSceneManager) bool {
 				if asteroid != nil {

@@ -43,6 +43,7 @@ type CollisionHandlerSystem struct {
 	Sprites          *stdcomponents.SpriteComponentManager
 	BoxColliders     *stdcomponents.BoxColliderComponentManager
 	WallTags         *components.WallTagComponentManager
+	Pickups          *components.PickupComponentManager
 }
 
 func (s *CollisionHandlerSystem) Init() {}
@@ -70,6 +71,14 @@ func (s *CollisionHandlerSystem) Run(dt time.Duration) {
 		return true
 	})
 
+	s.Pickups.EachEntity(func(entity ecs.Entity) bool {
+		pos := s.Positions.Get(entity)
+		if pos.Y > 5000 || pos.Y < 0 || pos.X > 5000 || pos.X < 0 {
+			s.EntityManager.Delete(entity)
+		}
+		return true
+	})
+
 	s.Collisions.EachComponent(func(collision *stdcomponents.Collision) bool {
 		switch collision.State {
 		case stdcomponents.CollisionStateEnter:
@@ -77,6 +86,9 @@ func (s *CollisionHandlerSystem) Run(dt time.Duration) {
 				return true
 			}
 			if s.checkPlayerCollisionEnter(collision.E1, collision.E2) {
+				return true
+			}
+			if s.checkPickupCollisionEnter(collision.E1, collision.E2) {
 				return true
 			}
 		case stdcomponents.CollisionStateExit:
@@ -163,4 +175,34 @@ func (s *CollisionHandlerSystem) checkBulletCollisionEnter(e1, e2 ecs.Entity) bo
 	}
 
 	return false
+}
+
+func (s *CollisionHandlerSystem) checkPickupCollisionEnter(e1, e2 ecs.Entity) bool {
+	var plyEnt, pickupEnt ecs.Entity
+	if s.Pickups.Has(e1) {
+		plyEnt = e2
+		pickupEnt = e1
+	} else if s.Pickups.Has(e2) {
+		plyEnt = e1
+		pickupEnt = e2
+	} else {
+		return false
+	}
+
+	if !s.PlayerTags.Has(plyEnt) {
+		return false
+	}
+
+	pickup := s.Pickups.Get(pickupEnt)
+	switch pickup.Power {
+	case components.PickupPower_Hp:
+		hp := s.Hps.Get(plyEnt)
+		hp.Hp += int32(pickup.Amount)
+
+	default:
+	}
+
+	s.EntityManager.Delete(pickupEnt)
+
+	return true
 }
