@@ -96,22 +96,29 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 		vel.Y = float32(math.Cos(rads)) * s.moveSpeed
 		vel.X = -float32(math.Sin(rads)) * s.moveSpeed
 
-		bulletVelocityY := vel.Y + float32(math.Cos(rads))*bulletSpeed
-		bulletVelocityX := vel.X - float32(math.Sin(rads))*bulletSpeed
-
 		if weapon.CooldownLeft <= 0 {
 			if intent.Fire {
-				entities.CreateBullet(entities.CreateBulletManagers{
-					EntityManager: s.EntityManager,
-					Positions:     s.Positions,
-					Rotations:     s.Rotations,
-					Scales:        s.Scales,
-					Velocities:    s.Velocities,
-					BoxColliders:  s.BoxColliders,
-					Sprites:       s.Sprites,
-					BulletTags:    s.BulletTags,
-					Hps:           s.Hps,
-				}, pos.X, pos.Y, rot.Angle, bulletVelocityX, bulletVelocityY)
+				count := 120
+				ofs := 1
+				startAngle := rot.Angle - float32(count*ofs/2)
+				for i := range count {
+					angle := startAngle + float32(i*ofs)
+					rads = deg2rad(float64(angle)) + math.Pi
+
+					bulletVelocityY := vel.Y + float32(math.Cos(rads))*bulletSpeed
+					bulletVelocityX := vel.X - float32(math.Sin(rads))*bulletSpeed
+					entities.CreateBullet(entities.CreateBulletManagers{
+						EntityManager: s.EntityManager,
+						Positions:     s.Positions,
+						Rotations:     s.Rotations,
+						Scales:        s.Scales,
+						Velocities:    s.Velocities,
+						BoxColliders:  s.BoxColliders,
+						Sprites:       s.Sprites,
+						BulletTags:    s.BulletTags,
+						Hps:           s.Hps,
+					}, pos.X, pos.Y, angle, bulletVelocityX, bulletVelocityY)
+				}
 				weapon.CooldownLeft = weapon.Cooldown
 			}
 		} else {

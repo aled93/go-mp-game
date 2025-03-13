@@ -71,12 +71,17 @@ func (a *PagedArray[T]) Append(value T) *T {
 
 	page := &a.book[a.currentPageIndex]
 
+	if page.len == pageSize {
+		a.currentPageIndex++
+		if a.currentPageIndex >= len(a.book) {
+			newBooks := make([]ArrayPage[T], len(a.book)*2)
+			a.book = append(a.book, newBooks...)
+		}
+		page = &a.book[a.currentPageIndex]
+	}
 	page.data[page.len] = value
 	result := &page.data[page.len]
 	page.len++
-	if page.len == pageSize {
-		a.currentPageIndex++
-	}
 	a.len++
 	return result
 }

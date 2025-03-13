@@ -90,7 +90,7 @@ func CreateSpaceShip(
 
 	props.Weapons.Create(spaceShip, components.Weapon{
 		Damage:       1,
-		Cooldown:     time.Millisecond * 200,
+		Cooldown:     time.Millisecond * 20,
 		CooldownLeft: 0,
 	})
 
