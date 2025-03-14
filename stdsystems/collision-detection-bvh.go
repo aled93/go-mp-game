@@ -100,7 +100,7 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 	s.buildBVH(entities, aabbs, mortonCodes)
 
 	// Create collision channel
-	collisionChan := make(chan CollisionEvent, 4096*runtime.NumCPU())
+	collisionChan := make(chan CollisionEvent, 4096)
 	doneChan := make(chan struct{})
 
 	// Start result collector
@@ -134,10 +134,10 @@ func (s *CollisionDetectionBVHSystem) Destroy() {}
 
 func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity, aabbs []stdcomponents.AABB, collisionChan chan<- CollisionEvent) {
 	var wg sync.WaitGroup
-	maxNumWorkers := runtime.NumCPU()
+	maxNumWorkers := runtime.NumCPU() - 2
 	entitiesLength := len(entities)
 	// get minimum 1 worker for small amount of entities, and maximum maxNumWorkers for a lot of entities
-	numWorkers := max(min(entitiesLength/32, maxNumWorkers), 1)
+	numWorkers := max(min(entitiesLength/128, maxNumWorkers), 1)
 	chunkSize := entitiesLength / numWorkers
 
 	wg.Add(numWorkers)
@@ -164,17 +164,19 @@ func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity
 
 func (s *CollisionDetectionBVHSystem) traverseBVHForCollisions(entities []ecs.Entity, aabbs []stdcomponents.AABB, i int, rootIndex int, collisionChan chan<- CollisionEvent) {
 	entityA := entities[i]
-	aabbA := aabbs[i]
+	aabbA := &aabbs[i]
 
 	stack := make([]int, 0, 64)
 	stack = append(stack, rootIndex)
+	lenstack := len(stack)
 
-	for len(stack) > 0 {
+	for lenstack > 0 {
 		// Pop the last node from the stack
 		nodeIndex := stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
+		lenstack--
 
-		node := s.nodes[nodeIndex]
+		node := &s.nodes[nodeIndex]
 
 		if node.Left == -1 && node.Right == -1 {
 			// Leaf node: Check collision with the current entity (i) if j > i
@@ -182,7 +184,7 @@ func (s *CollisionDetectionBVHSystem) traverseBVHForCollisions(entities []ecs.En
 			if j > i {
 				entityB := entities[j]
 				// Check AABB overlap between entityA and entityB
-				if s.aabbOverlap(aabbA, node.Bounds) {
+				if s.aabbOverlap(aabbA, &node.Bounds) {
 					colliderA := s.GenericCollider.Get(entityA)
 					colliderB := s.GenericCollider.Get(entityB)
 
@@ -206,15 +208,17 @@ func (s *CollisionDetectionBVHSystem) traverseBVHForCollisions(entities []ecs.En
 			}
 		} else {
 			// Internal node: Check children and push to stack if overlapping
-			leftNode := s.nodes[node.Left]
-			rightNode := s.nodes[node.Right]
+			leftNode := &s.nodes[node.Left]
+			rightNode := &s.nodes[node.Right]
 
 			// Push right first to process left first (stack is LIFO)
-			if s.aabbOverlap(aabbA, rightNode.Bounds) {
+			if s.aabbOverlap(aabbA, &rightNode.Bounds) {
 				stack = append(stack, node.Right)
+				lenstack++
 			}
-			if s.aabbOverlap(aabbA, leftNode.Bounds) {
+			if s.aabbOverlap(aabbA, &leftNode.Bounds) {
 				stack = append(stack, node.Left)
+				lenstack++
 			}
 		}
 	}
@@ -389,8 +393,8 @@ func findSplit(sortedMortonCodes []uint32, start, end int) int {
 	return split
 }
 
-// aabbOverlap checks if two AABBs intersect
-func (s *CollisionDetectionBVHSystem) aabbOverlap(a, b stdcomponents.AABB) bool {
+// go:inline aabbOverlap checks if two AABBs intersect
+func (s *CollisionDetectionBVHSystem) aabbOverlap(a, b *stdcomponents.AABB) bool {
 	// Check for non-overlap conditions first (early exit)
 	if a.Max.X < b.Min.X || a.Min.X > b.Max.X {
 		return false

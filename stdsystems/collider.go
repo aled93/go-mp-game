@@ -42,14 +42,13 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 
 		genCollider := s.GenericColliders.Get(entity)
 		if genCollider == nil {
-			s.GenericColliders.Create(entity, stdcomponents.GenericCollider{
-				Shape:   stdcomponents.BoxColliderShape,
-				Layer:   boxCollider.Layer,
-				Mask:    boxCollider.Mask,
-				OffsetX: boxCollider.OffsetX,
-				OffsetY: boxCollider.OffsetY,
-			})
+			genCollider = s.GenericColliders.Create(entity, stdcomponents.GenericCollider{})
 		}
+		genCollider.Layer = boxCollider.Layer
+		genCollider.Mask = boxCollider.Mask
+		genCollider.OffsetX = boxCollider.OffsetX
+		genCollider.OffsetY = boxCollider.OffsetY
+		genCollider.Shape = stdcomponents.BoxColliderShape
 
 		position := s.Positions.Get(entity)
 		scale := s.Scales.Get(entity)
@@ -57,7 +56,6 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		if aabb == nil {
 			aabb = s.AABB.Create(entity, stdcomponents.AABB{})
 		}
-
 		aabb.Min = vectors.Vec2{
 			X: position.X - (boxCollider.OffsetX * scale.X),
 			Y: position.Y - (boxCollider.OffsetY * scale.Y),

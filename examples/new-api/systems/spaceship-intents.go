@@ -58,11 +58,11 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 		pos := s.Positions.Get(entity)
 		weapon := s.Weapons.Get(entity)
 
-		if pos.Y < 0 || pos.Y > 5000 || pos.X < 0 || pos.X > 5000 {
-			vel.X *= -1
-			vel.Y *= -1
-			rot.Angle += 180
-		}
+		//if pos.Y < 0 || pos.Y > 5000 || pos.X < 0 || pos.X > 5000 {
+		//	vel.X *= -1
+		//	vel.Y *= -1
+		//	rot.Angle += 180
+		//}
 
 		if intent.RotateLeft {
 			rot.Angle -= rotateSpeed
@@ -98,7 +98,7 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 
 		if weapon.CooldownLeft <= 0 {
 			if intent.Fire {
-				count := 120
+				count := 360
 				ofs := 1
 				startAngle := rot.Angle - float32(count*ofs/2)
 				for i := range count {

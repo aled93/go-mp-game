@@ -27,7 +27,9 @@ import (
 )
 
 func NewRenderAssteroddSystem() RenderAssteroddSystem {
-	return RenderAssteroddSystem{}
+	return RenderAssteroddSystem{
+		instanceData: make([]stdcomponents.RLTexturePro, 0, 8192),
+	}
 }
 
 type RenderAssteroddSystem struct {
@@ -142,19 +144,18 @@ func (s *RenderAssteroddSystem) render() {
 
 	// Batch and render
 	var currentTex = -1
-	var instanceData []stdcomponents.RLTexturePro = make([]stdcomponents.RLTexturePro, 0, 8192)
 	for i := range s.renderList {
 		entry := &s.renderList[i]
-		if entry.TextureId != currentTex || len(instanceData) >= 8192 {
-			if len(instanceData) > 0 {
-				s.submitBatch(currentTex, instanceData)
-				instanceData = instanceData[:0]
+		if entry.TextureId != currentTex || len(s.instanceData) >= 8192 {
+			if len(s.instanceData) > 0 {
+				s.submitBatch(currentTex, s.instanceData)
+				s.instanceData = s.instanceData[:0]
 			}
 			currentTex = entry.TextureId
 		}
-		instanceData = append(instanceData, s.getInstanceData(entry.Entity))
+		s.instanceData = append(s.instanceData, s.getInstanceData(entry.Entity))
 	}
-	s.submitBatch(currentTex, instanceData) // Submit last batch
+	s.submitBatch(currentTex, s.instanceData) // Submit last batch
 	s.renderList = s.renderList[:0]
 
 	rl.BeginMode2D(s.camera)
