@@ -162,51 +162,60 @@ func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity
 
 }
 
-func (s *CollisionDetectionBVHSystem) traverseBVHForCollisions(entities []ecs.Entity, aabbs []stdcomponents.AABB, i int, nodeIndex int, collisionChan chan<- CollisionEvent) {
-	node := s.nodes[nodeIndex]
+func (s *CollisionDetectionBVHSystem) traverseBVHForCollisions(entities []ecs.Entity, aabbs []stdcomponents.AABB, i int, rootIndex int, collisionChan chan<- CollisionEvent) {
 	entityA := entities[i]
 	aabbA := aabbs[i]
 
-	if node.Left == -1 && node.Right == -1 {
-		j := nodeIndex // Leaf nodes are ordered as per entities slice
-		if j > i {
-			entityB := entities[j]
-			if aabbOverlap(aabbA, node.Bounds) {
-				colliderA := s.GenericCollider.Get(entityA)
-				colliderB := s.GenericCollider.Get(entityB)
+	stack := make([]int, 0, 64)
+	stack = append(stack, rootIndex)
 
-				if colliderA.Mask&(1<<colliderB.Layer) == 0 &&
-					colliderB.Mask&(1<<colliderA.Layer) == 0 {
-					return
-				}
+	for len(stack) > 0 {
+		// Pop the last node from the stack
+		nodeIndex := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
 
-				if s.checkCollision(*colliderA, *colliderB, entityA, entityB) {
-					posA := s.Positions.Get(entityA)
-					posB := s.Positions.Get(entityB)
-					posX := (posA.X + posB.X) / 2
-					posY := (posA.Y + posB.Y) / 2
-					collisionChan <- CollisionEvent{
-						entityA: entityA,
-						entityB: entityB,
-						posX:    posX,
-						posY:    posY,
+		node := s.nodes[nodeIndex]
+
+		if node.Left == -1 && node.Right == -1 {
+			// Leaf node: Check collision with the current entity (i) if j > i
+			j := nodeIndex
+			if j > i {
+				entityB := entities[j]
+				// Check AABB overlap between entityA and entityB
+				if s.aabbOverlap(aabbA, node.Bounds) {
+					colliderA := s.GenericCollider.Get(entityA)
+					colliderB := s.GenericCollider.Get(entityB)
+
+					// Check layer masks
+					if colliderA.Mask&(1<<colliderB.Layer) != 0 || colliderB.Mask&(1<<colliderA.Layer) != 0 {
+						// Detailed collision check
+						if s.checkCollision(*colliderA, *colliderB, entityA, entityB) {
+							posA := s.Positions.Get(entityA)
+							posB := s.Positions.Get(entityB)
+							posX := (posA.X + posB.X) / 2
+							posY := (posA.Y + posB.Y) / 2
+							collisionChan <- CollisionEvent{
+								entityA: entityA,
+								entityB: entityB,
+								posX:    posX,
+								posY:    posY,
+							}
+						}
 					}
 				}
 			}
-		}
-		return
-	}
+		} else {
+			// Internal node: Check children and push to stack if overlapping
+			leftNode := s.nodes[node.Left]
+			rightNode := s.nodes[node.Right]
 
-	if node.Left != -1 {
-		leftNode := s.nodes[node.Left]
-		if aabbOverlap(aabbA, leftNode.Bounds) {
-			s.traverseBVHForCollisions(entities, aabbs, i, node.Left, collisionChan)
-		}
-	}
-	if node.Right != -1 {
-		rightNode := s.nodes[node.Right]
-		if aabbOverlap(aabbA, rightNode.Bounds) {
-			s.traverseBVHForCollisions(entities, aabbs, i, node.Right, collisionChan)
+			// Push right first to process left first (stack is LIFO)
+			if s.aabbOverlap(aabbA, rightNode.Bounds) {
+				stack = append(stack, node.Right)
+			}
+			if s.aabbOverlap(aabbA, leftNode.Bounds) {
+				stack = append(stack, node.Left)
+			}
 		}
 	}
 }
@@ -381,9 +390,15 @@ func findSplit(sortedMortonCodes []uint32, start, end int) int {
 }
 
 // aabbOverlap checks if two AABBs intersect
-func aabbOverlap(a, b stdcomponents.AABB) bool {
-	return a.Max.X >= b.Min.X && a.Min.X <= b.Max.X &&
-		a.Max.Y >= b.Min.Y && a.Min.Y <= b.Max.Y
+func (s *CollisionDetectionBVHSystem) aabbOverlap(a, b stdcomponents.AABB) bool {
+	// Check for non-overlap conditions first (early exit)
+	if a.Max.X < b.Min.X || a.Min.X > b.Max.X {
+		return false
+	}
+	if a.Max.Y < b.Min.Y || a.Min.Y > b.Max.Y {
+		return false
+	}
+	return true
 }
 
 // mergeAABB combines two AABBs
