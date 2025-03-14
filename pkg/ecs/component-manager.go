@@ -358,8 +358,8 @@ func (c *ComponentManager[T]) IsTrackingChanges() bool {
 // Utils
 // ========================================================
 
-func (c *ComponentManager[T]) RawComponents(ptr []T) {
-	c.components.Raw(ptr)
+func (c *ComponentManager[T]) RawComponents(ptr []T) []T {
+	return c.components.Raw(ptr)
 }
 
 func (c *ComponentManager[T]) RawEntities(ptr []Entity) []Entity {

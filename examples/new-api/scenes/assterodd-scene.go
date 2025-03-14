@@ -81,7 +81,7 @@ func (s *AssteroddScene) Init() {
 	s.World.Systems.SpaceshipIntents.Init()
 	s.World.Systems.Velocity.Init()
 
-	s.World.Systems.CollisionDetection.Init()
+	s.World.Systems.CollisionDetectionBVH.Init()
 
 	// Animation
 	s.World.Systems.AnimationSpriteMatrix.Init()
@@ -108,7 +108,7 @@ func (s *AssteroddScene) FixedUpdate(dt time.Duration) {
 	s.World.Systems.SpaceshipIntents.Run(dt)
 	s.World.Systems.Velocity.Run(dt)
 	s.World.Systems.SpaceSpawner.Run(dt)
-	s.World.Systems.CollisionDetection.Run(dt)
+	s.World.Systems.CollisionDetectionBVH.Run(dt)
 	s.World.Systems.CollisionHandler.Run(dt)
 	s.World.Systems.Hp.Run(dt)
 }
@@ -140,7 +140,7 @@ func (s *AssteroddScene) Destroy() {
 
 	s.World.Systems.AssteroddSystem.Destroy()
 
-	s.World.Systems.CollisionDetection.Destroy()
+	s.World.Systems.CollisionDetectionBVH.Destroy()
 
 	// Animation
 	s.World.Systems.AnimationSpriteMatrix.Destroy()

@@ -18,8 +18,8 @@ type AnyAssetLibrary interface {
 	UnloadAll()
 }
 
-func CreateAssetLibrary[T any](loader func(path string) T, unloader func(path string, asset *T)) *AssetLibrary[T] {
-	return &AssetLibrary[T]{
+func CreateAssetLibrary[T any](loader func(path string) T, unloader func(path string, asset *T)) AssetLibrary[T] {
+	return AssetLibrary[T]{
 		data:        make(map[string]*T),
 		loader:      loader,
 		unloader:    unloader,

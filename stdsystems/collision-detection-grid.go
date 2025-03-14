@@ -23,15 +23,15 @@ import (
 	"time"
 )
 
-func NewCollisionDetectionSystem() CollisionDetectionSystem {
-	return CollisionDetectionSystem{
+func NewCollisionDetectionGridSystem() CollisionDetectionGridSystem {
+	return CollisionDetectionGridSystem{
 		cellSizeX:      192,
 		cellSizeY:      192,
 		spatialBuckets: make(map[stdcomponents.SpatialIndex][]ecs.Entity, 32),
 	}
 }
 
-type CollisionDetectionSystem struct {
+type CollisionDetectionGridSystem struct {
 	EntityManager   *ecs.EntityManager
 	Positions       *stdcomponents.PositionComponentManager
 	Scales          *stdcomponents.ScaleComponentManager
@@ -44,8 +44,8 @@ type CollisionDetectionSystem struct {
 	cellSizeY int
 
 	// Cache
-	activeCollisions  map[collisionPair]ecs.Entity // Maps collision pairs to proxy entities
-	currentCollisions map[collisionPair]struct{}
+	activeCollisions  map[CollisionPair]ecs.Entity // Maps collision pairs to proxy entities
+	currentCollisions map[CollisionPair]struct{}
 	spatialBuckets    map[stdcomponents.SpatialIndex][]ecs.Entity
 	entityToCell      map[ecs.Entity]stdcomponents.SpatialIndex
 	aabbs             map[ecs.Entity]aabb
@@ -55,19 +55,19 @@ type aabb struct {
 	Left, Right, Top, Bottom float32
 }
 
-type collisionPair struct {
+type CollisionPair struct {
 	E1, E2 ecs.Entity
 }
 
-func (c collisionPair) Normalize() collisionPair {
+func (c CollisionPair) Normalize() CollisionPair {
 	if c.E1 > c.E2 {
-		return collisionPair{c.E2, c.E1}
+		return CollisionPair{c.E2, c.E1}
 	}
 	return c
 }
 
-func (s *CollisionDetectionSystem) Init() {
-	s.activeCollisions = make(map[collisionPair]ecs.Entity)
+func (s *CollisionDetectionGridSystem) Init() {
+	s.activeCollisions = make(map[CollisionPair]ecs.Entity)
 }
 
 type CollisionEvent struct {
@@ -75,7 +75,7 @@ type CollisionEvent struct {
 	posX, posY       float32
 }
 
-func (s *CollisionDetectionSystem) Run(dt time.Duration) {
+func (s *CollisionDetectionGridSystem) Run(dt time.Duration) {
 	if len(s.entityToCell) < s.GenericCollider.Len() {
 		s.entityToCell = make(map[ecs.Entity]stdcomponents.SpatialIndex, s.GenericCollider.Len())
 	}
@@ -83,7 +83,7 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 	for k := range s.spatialBuckets {
 		delete(s.spatialBuckets, k)
 	}
-	s.currentCollisions = make(map[collisionPair]struct{})
+	s.currentCollisions = make(map[CollisionPair]struct{})
 
 	// Build spatial buckets and entity-to-cell map
 	s.GenericCollider.EachEntity(func(entity ecs.Entity) bool {
@@ -122,7 +122,7 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 	// Start result collector
 	go func() {
 		for event := range collisionChan {
-			pair := collisionPair{event.entityA, event.entityB}.Normalize()
+			pair := CollisionPair{event.entityA, event.entityB}.Normalize()
 			s.currentCollisions[pair] = struct{}{}
 
 			if _, exists := s.activeCollisions[pair]; !exists {
@@ -198,10 +198,10 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 
 	s.processExitStates()
 }
-func (s *CollisionDetectionSystem) Destroy() {}
+func (s *CollisionDetectionGridSystem) Destroy() {}
 
-func (s *CollisionDetectionSystem) registerCollision(entityA, entityB ecs.Entity, posX, posY float32) {
-	pair := collisionPair{entityA, entityB}.Normalize()
+func (s *CollisionDetectionGridSystem) registerCollision(entityA, entityB ecs.Entity, posX, posY float32) {
+	pair := CollisionPair{entityA, entityB}.Normalize()
 
 	s.currentCollisions[pair] = struct{}{}
 
@@ -218,7 +218,7 @@ func (s *CollisionDetectionSystem) registerCollision(entityA, entityB ecs.Entity
 	}
 }
 
-func (s *CollisionDetectionSystem) processExitStates() {
+func (s *CollisionDetectionGridSystem) processExitStates() {
 	for pair, proxy := range s.activeCollisions {
 		if _, exists := s.currentCollisions[pair]; !exists {
 			collision := s.Collisions.Get(proxy)
@@ -232,7 +232,7 @@ func (s *CollisionDetectionSystem) processExitStates() {
 	}
 }
 
-func (s *CollisionDetectionSystem) boxToXCollision(entityA ecs.Entity, collisionChan chan<- CollisionEvent) {
+func (s *CollisionDetectionGridSystem) boxToXCollision(entityA ecs.Entity, collisionChan chan<- CollisionEvent) {
 	position1 := s.Positions.Get(entityA)
 	spatialIndex1 := s.entityToCell[entityA]
 	genericCollider1 := s.GenericCollider.Get(entityA)
@@ -293,6 +293,6 @@ func (s *CollisionDetectionSystem) boxToXCollision(entityA ecs.Entity, collision
 	}
 }
 
-func (s *CollisionDetectionSystem) circleToXCollision(entityA ecs.Entity) {
+func (s *CollisionDetectionGridSystem) circleToXCollision(entityA ecs.Entity) {
 	panic("Circle-X collision not implemented")
 }

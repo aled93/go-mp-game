@@ -47,7 +47,7 @@ func (s *MainScene) Init() {
 	s.World.Systems.Player.Init()
 	s.World.Systems.Velocity.Init()
 
-	s.World.Systems.CollisionDetection.Init()
+	s.World.Systems.CollisionDetectionGrid.Init()
 
 	// Network patches
 	s.World.Systems.NetworkSend.Init()
@@ -78,7 +78,7 @@ func (s *MainScene) FixedUpdate(dt time.Duration) {
 	s.World.Systems.Network.Run(dt)
 
 	s.World.Systems.Velocity.Run(dt)
-	s.World.Systems.CollisionDetection.Run(dt)
+	s.World.Systems.CollisionDetectionGrid.Run(dt)
 	s.World.Systems.CollisionHandler.Run(dt)
 	s.World.Systems.NetworkSend.Run(dt)
 }
@@ -108,7 +108,7 @@ func (s *MainScene) Destroy() {
 
 	s.World.Systems.Player.Destroy()
 
-	s.World.Systems.CollisionDetection.Destroy()
+	s.World.Systems.CollisionDetectionGrid.Destroy()
 
 	// Network patches
 	s.World.Systems.NetworkSend.Destroy()

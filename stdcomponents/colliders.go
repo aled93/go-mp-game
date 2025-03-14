@@ -47,16 +47,18 @@ func NewBoxColliderComponentManager() BoxColliderComponentManager {
 	return ecs.NewComponentManager[BoxCollider](ColliderBoxComponentId)
 }
 
-type ColliderCircle struct {
-	Radius float32
-	Layer  CollisionLayer
-	Mask   CollisionMask
+type CircleCollider struct {
+	Radius  float32
+	Layer   CollisionLayer
+	Mask    CollisionMask
+	OffsetX float32
+	OffsetY float32
 }
 
-type CircleColliderComponentManager = ecs.ComponentManager[ColliderCircle]
+type CircleColliderComponentManager = ecs.ComponentManager[CircleCollider]
 
-func NewColliderCircleComponentManager() CircleColliderComponentManager {
-	return ecs.NewComponentManager[ColliderCircle](ColliderCircleComponentId)
+func NewCircleColliderComponentManager() CircleColliderComponentManager {
+	return ecs.NewComponentManager[CircleCollider](ColliderCircleComponentId)
 }
 
 type GenericCollider struct {
