@@ -26,6 +26,10 @@ const (
 
 type CollisionMask uint64
 
+func (m CollisionMask) HasLayer(layer CollisionLayer) bool {
+	return m&(1<<layer) != 0
+}
+
 type CollisionLayer = CollisionMask
 
 const (

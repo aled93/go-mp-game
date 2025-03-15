@@ -15,13 +15,13 @@ Thank you for your support!
 package stdsystems
 
 import (
+	"gomp/pkg/bvh"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"gomp/vectors"
 	"math"
 	"math/bits"
 	"runtime"
-	"slices"
 	"sync"
 	"time"
 )
@@ -50,6 +50,9 @@ type CollisionDetectionBVHSystem struct {
 	SpatialIndex    *stdcomponents.SpatialIndexComponentManager
 	AABB            *stdcomponents.AABBComponentManager
 
+	trees       []bvh.Tree2D
+	treesLookup map[stdcomponents.CollisionLayer]int
+
 	nodes []BVHNode
 
 	activeCollisions  map[CollisionPair]ecs.Entity // Maps collision pairs to proxy entities
@@ -64,40 +67,40 @@ type treeObject struct {
 
 func (s *CollisionDetectionBVHSystem) Init() {}
 func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
+	s.currentCollisions = make(map[CollisionPair]struct{})
+
 	if s.AABB.Len() == 0 {
 		return
 	}
 
-	s.currentCollisions = make(map[CollisionPair]struct{})
+	s.trees = make([]bvh.Tree2D, 0, 8)
+	s.treesLookup = make(map[stdcomponents.CollisionLayer]int, 8)
 
-	// Sorting by morton code
-	treeObjects := make([]treeObject, 0, s.AABB.Len())
 	s.AABB.EachEntity(func(entity ecs.Entity) bool {
-		aabbBound := s.AABB.Get(entity)
-		center := aabbBound.Min.Add(aabbBound.Max).Scale(0.5)
-		newTreeObject := treeObject{
-			Entity:     entity,
-			Bound:      *aabbBound,
-			MortonCode: morton2D(center.X, center.Y),
+		aabb := s.AABB.Get(entity)
+		layer := s.GenericCollider.Get(entity).Layer
+
+		treeId, exists := s.treesLookup[layer]
+		if !exists {
+			treeId = len(s.trees)
+			s.trees = append(s.trees, bvh.NewTree2D(layer, s.AABB.Len()))
+			s.treesLookup[layer] = treeId
 		}
-		treeObjects = append(treeObjects, newTreeObject)
+
+		s.trees[treeId].AddComponent(entity, *aabb)
+
 		return true
 	})
-	slices.SortFunc(treeObjects, func(a, b treeObject) int {
-		return int(a.MortonCode) - int(b.MortonCode)
-	})
 
-	// extract data to the arrays
-	entities := make([]ecs.Entity, len(treeObjects))
-	aabbs := make([]stdcomponents.AABB, len(treeObjects))
-	mortonCodes := make([]uint32, len(treeObjects))
-	for i, obj := range treeObjects {
-		entities[i] = obj.Entity
-		aabbs[i] = obj.Bound
-		mortonCodes[i] = obj.MortonCode
+	wg := new(sync.WaitGroup)
+	wg.Add(len(s.trees))
+	for i := range s.trees {
+		go func(i int, w *sync.WaitGroup) {
+			s.trees[i].Build()
+			w.Done()
+		}(i, wg)
 	}
-
-	s.buildBVH(entities, aabbs, mortonCodes)
+	wg.Wait()
 
 	// Create collision channel
 	collisionChan := make(chan CollisionEvent, 4096)
@@ -124,6 +127,9 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 		close(doneChan)
 	}()
 
+	entities := s.AABB.RawEntities(make([]ecs.Entity, 0, s.AABB.Len()))
+	aabbs := s.AABB.RawComponents(make([]stdcomponents.AABB, 0, s.AABB.Len()))
+
 	s.findEntityCollisions(entities, aabbs, collisionChan)
 
 	close(collisionChan)
@@ -134,7 +140,7 @@ func (s *CollisionDetectionBVHSystem) Destroy() {}
 
 func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity, aabbs []stdcomponents.AABB, collisionChan chan<- CollisionEvent) {
 	var wg sync.WaitGroup
-	maxNumWorkers := runtime.NumCPU() - 2
+	maxNumWorkers := runtime.NumCPU()
 	entitiesLength := len(entities)
 	// get minimum 1 worker for small amount of entities, and maximum maxNumWorkers for a lot of entities
 	numWorkers := max(min(entitiesLength/128, maxNumWorkers), 1)
@@ -147,19 +153,78 @@ func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity
 		if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
 			endIndex = entitiesLength
 		}
-		rootIndex := len(s.nodes) - 1
 
 		go func(start int, end int) {
 			defer wg.Done()
 
 			for i := range entities[start:end] {
-				s.traverseBVHForCollisions(entities, aabbs, i+startIndex, rootIndex, collisionChan)
+				entity := entities[i+startIndex]
+				s.checkEntityCollisions(entity, collisionChan)
 			}
 		}(startIndex, endIndex)
 	}
 	// Wait for workers and close collision channel
 	wg.Wait()
+}
 
+func (s *CollisionDetectionBVHSystem) checkEntityCollisions(entityA ecs.Entity, collisionChan chan<- CollisionEvent) {
+	colliderA := s.GenericCollider.Get(entityA)
+	aabb := s.AABB.Get(entityA)
+
+	// Iterate through all trees
+	for treeIndex := range s.trees {
+		tree := &s.trees[treeIndex]
+		layer := tree.Layer()
+
+		// Check if mask includes this layer
+		if !colliderA.Mask.HasLayer(layer) {
+			continue
+		}
+
+		// Traverse this BVH tree for potential collisions
+		tree.Query(*aabb, func(entityB ecs.Entity) {
+			if entityA >= entityB {
+				return
+			}
+
+			colliderB := s.GenericCollider.Get(entityB)
+
+			if s.checkCollision(*colliderA, *colliderB, entityA, entityB) {
+				posA := s.Positions.Get(entityA)
+				posB := s.Positions.Get(entityB)
+				posX := (posA.X + posB.X) / 2
+				posY := (posA.Y + posB.Y) / 2
+				collisionChan <- CollisionEvent{
+					entityA: entityA,
+					entityB: entityB,
+					posX:    posX,
+					posY:    posY,
+				}
+			}
+		})
+
+		//for _, entityB := range entities {
+		//	if entityA >= entityB {
+		//		continue
+		//	}
+		//
+		//	colliderB := s.GenericCollider.Get(entityB)
+		//
+		//	if s.checkCollision(*colliderA, *colliderB, entityA, entityB) {
+		//		posA := s.Positions.Get(entityA)
+		//		posB := s.Positions.Get(entityB)
+		//		posX := (posA.X + posB.X) / 2
+		//		posY := (posA.Y + posB.Y) / 2
+		//		collisionChan <- CollisionEvent{
+		//			entityA: entityA,
+		//			entityB: entityB,
+		//			posX:    posX,
+		//			posY:    posY,
+		//		}
+		//	}
+		//
+		//}
+	}
 }
 
 func (s *CollisionDetectionBVHSystem) traverseBVHForCollisions(entities []ecs.Entity, aabbs []stdcomponents.AABB, i int, rootIndex int, collisionChan chan<- CollisionEvent) {
@@ -393,7 +458,7 @@ func findSplit(sortedMortonCodes []uint32, start, end int) int {
 	return split
 }
 
-// go:inline aabbOverlap checks if two AABBs intersect
+// go:inline aabbOverlap checks if two AABB intersect
 func (s *CollisionDetectionBVHSystem) aabbOverlap(a, b *stdcomponents.AABB) bool {
 	// Check for non-overlap conditions first (early exit)
 	if a.Max.X < b.Min.X || a.Min.X > b.Max.X {
@@ -405,7 +470,7 @@ func (s *CollisionDetectionBVHSystem) aabbOverlap(a, b *stdcomponents.AABB) bool
 	return true
 }
 
-// mergeAABB combines two AABBs
+// mergeAABB combines two AABB
 func mergeAABB(a, b stdcomponents.AABB) stdcomponents.AABB {
 	return stdcomponents.AABB{
 		Min: vectors.Vec2{
