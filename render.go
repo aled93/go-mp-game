@@ -26,7 +26,10 @@ func NewRenderSystem() RenderSystem {
 type RenderSystem struct{}
 
 func (s *RenderSystem) Init() {
-	rl.InitWindow(0, 0, "raylib [core] ebiten-ecs - basic window")
+	monitor := rl.GetCurrentMonitor()
+	width, height := rl.GetMonitorWidth(monitor), rl.GetMonitorHeight(monitor)
+	rl.InitWindow(int32(width), int32(height), "raylib [core] ebiten-ecs - basic window")
+	rl.SetWindowState(rl.FlagFullscreenMode)
 }
 func (s *RenderSystem) Run(dt time.Duration) bool {
 	if rl.WindowShouldClose() {
