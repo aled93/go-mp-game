@@ -47,6 +47,7 @@ type Tree2D struct {
 	layer      stdcomponents.CollisionLayer
 	nodes      []Node
 	components []treeComponent
+	rootIndex  int
 }
 
 type treeComponent struct {
@@ -59,9 +60,14 @@ func (t *Tree2D) Layer() stdcomponents.CollisionLayer {
 }
 
 func (t *Tree2D) Query(aabb stdcomponents.AABB, handler func(entity ecs.Entity)) {
-	// Use stack-based traversal (as previously optimized)
+	if t.rootIndex == -1 || len(t.nodes) == 0 { // Handle empty tree
+		return
+	}
+
+	// Use stack-based traversal
 	stack := make([]int, 0, 64)
-	stack = append(stack, len(t.nodes)-1)
+	stack = append(stack, t.rootIndex)
+
 	for len(stack) > 0 {
 		nodeIndex := stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
@@ -75,7 +81,6 @@ func (t *Tree2D) Query(aabb stdcomponents.AABB, handler func(entity ecs.Entity))
 		if node.isLeaf() {
 			// Check detailed collision with node.Entity
 			// (Same as your existing collision logic)
-			//result = append(result, node.Entity)
 			handler(node.Entity)
 		} else {
 			// Push children to stack
@@ -91,8 +96,24 @@ func (t *Tree2D) AddComponent(entity ecs.Entity, aabbs stdcomponents.AABB) {
 	})
 }
 
+type TaskType int
+
+const (
+	BuildTaskType TaskType = iota
+	MergeTaskType
+)
+
+type Task struct {
+	Type  TaskType
+	Start int
+	End   int
+}
+
 func (t *Tree2D) Build() {
-	t.nodes = make([]Node, 0, len(t.components)*2)
+	if cap(t.nodes) < len(t.components)*2 {
+		t.nodes = make([]Node, 0, len(t.components)*2)
+	}
+	t.nodes = t.nodes[:0]
 
 	// Create leaf nodes
 	leaves := make([]Node, len(t.components))
@@ -117,30 +138,52 @@ func (t *Tree2D) Build() {
 
 	t.nodes = append(t.nodes, leaves...)
 
-	t.buildHierarchy(0, len(leaves)-1)
-}
+	// Stack-based hierarchy construction
+	var resultStack []int
+	taskStack := []Task{{Type: BuildTaskType, Start: 0, End: len(leaves) - 1}}
 
-func (t *Tree2D) buildHierarchy(start, end int) int {
-	if start == end {
-		return start // Leaf node
+	for len(taskStack) > 0 {
+		task := taskStack[len(taskStack)-1]
+		taskStack = taskStack[:len(taskStack)-1]
+
+		switch task.Type {
+		case BuildTaskType:
+			start, end := task.Start, task.End
+			if start == end {
+				// Leaf node: push its index to result stack
+				resultStack = append(resultStack, start)
+			} else {
+				split := t.findSplit(start, end)
+				// Schedule MergeTask after processing children
+				taskStack = append(taskStack, Task{Type: MergeTaskType})
+				// Process right child first (LIFO order)
+				taskStack = append(taskStack, Task{Type: BuildTaskType, Start: split + 1, End: end})
+				// Process left child next
+				taskStack = append(taskStack, Task{Type: BuildTaskType, Start: start, End: split})
+			}
+		case MergeTaskType:
+			// Pop right then left from result stack
+			right := resultStack[len(resultStack)-1]
+			resultStack = resultStack[:len(resultStack)-1]
+			left := resultStack[len(resultStack)-1]
+			resultStack = resultStack[:len(resultStack)-1]
+
+			// Create parent node and append to t.nodes
+			parent := Node{
+				Left:   left,
+				Right:  right,
+				Bounds: t.mergeAABB(&t.nodes[left].Bounds, &t.nodes[right].Bounds),
+			}
+			t.nodes = append(t.nodes, parent)
+			// Push parent index to result stack
+			resultStack = append(resultStack, len(t.nodes)-1)
+		}
 	}
 
-	// Find split point using the highest differing bit
-	split := t.findSplit(start, end)
-
-	// Recursively build left and right subtrees
-	left := t.buildHierarchy(start, split)
-	right := t.buildHierarchy(split+1, end)
-
-	// Create internal node
-	node := Node{
-		Left:   left,
-		Right:  right,
-		Bounds: t.mergeAABB(&t.nodes[left].Bounds, &t.nodes[right].Bounds),
+	// After processing all tasks, resultStack holds root index
+	if len(resultStack) > 0 {
+		t.rootIndex = resultStack[0]
 	}
-
-	t.nodes = append(t.nodes, node)
-	return len(t.nodes) - 1
 }
 
 // findSplit finds the position where the highest bit changes

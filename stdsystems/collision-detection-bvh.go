@@ -20,7 +20,6 @@ import (
 	"gomp/stdcomponents"
 	"gomp/vectors"
 	"math"
-	"math/bits"
 	"runtime"
 	"sync"
 	"time"
@@ -53,21 +52,14 @@ type CollisionDetectionBVHSystem struct {
 	trees       []bvh.Tree2D
 	treesLookup map[stdcomponents.CollisionLayer]int
 
-	nodes []BVHNode
-
 	activeCollisions  map[CollisionPair]ecs.Entity // Maps collision pairs to proxy entities
 	currentCollisions map[CollisionPair]struct{}
-}
-
-type treeObject struct {
-	Entity     ecs.Entity
-	Bound      stdcomponents.AABB
-	MortonCode uint32
 }
 
 func (s *CollisionDetectionBVHSystem) Init() {}
 func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 	s.currentCollisions = make(map[CollisionPair]struct{})
+	defer s.processExitStates()
 
 	if s.AABB.Len() == 0 {
 		return
@@ -103,7 +95,7 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 	wg.Wait()
 
 	// Create collision channel
-	collisionChan := make(chan CollisionEvent, 4096)
+	collisionChan := make(chan CollisionEvent, 4096*4)
 	doneChan := make(chan struct{})
 
 	// Start result collector
@@ -134,7 +126,7 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 
 	close(collisionChan)
 	<-doneChan // Wait for result collector
-	s.processExitStates()
+
 }
 func (s *CollisionDetectionBVHSystem) Destroy() {}
 
@@ -202,90 +194,6 @@ func (s *CollisionDetectionBVHSystem) checkEntityCollisions(entityA ecs.Entity, 
 				}
 			}
 		})
-
-		//for _, entityB := range entities {
-		//	if entityA >= entityB {
-		//		continue
-		//	}
-		//
-		//	colliderB := s.GenericCollider.Get(entityB)
-		//
-		//	if s.checkCollision(*colliderA, *colliderB, entityA, entityB) {
-		//		posA := s.Positions.Get(entityA)
-		//		posB := s.Positions.Get(entityB)
-		//		posX := (posA.X + posB.X) / 2
-		//		posY := (posA.Y + posB.Y) / 2
-		//		collisionChan <- CollisionEvent{
-		//			entityA: entityA,
-		//			entityB: entityB,
-		//			posX:    posX,
-		//			posY:    posY,
-		//		}
-		//	}
-		//
-		//}
-	}
-}
-
-func (s *CollisionDetectionBVHSystem) traverseBVHForCollisions(entities []ecs.Entity, aabbs []stdcomponents.AABB, i int, rootIndex int, collisionChan chan<- CollisionEvent) {
-	entityA := entities[i]
-	aabbA := &aabbs[i]
-
-	stack := make([]int, 0, 64)
-	stack = append(stack, rootIndex)
-	lenstack := len(stack)
-
-	for lenstack > 0 {
-		// Pop the last node from the stack
-		nodeIndex := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
-		lenstack--
-
-		node := &s.nodes[nodeIndex]
-
-		if node.Left == -1 && node.Right == -1 {
-			// Leaf node: Check collision with the current entity (i) if j > i
-			j := nodeIndex
-			if j > i {
-				entityB := entities[j]
-				// Check AABB overlap between entityA and entityB
-				if s.aabbOverlap(aabbA, &node.Bounds) {
-					colliderA := s.GenericCollider.Get(entityA)
-					colliderB := s.GenericCollider.Get(entityB)
-
-					// Check layer masks
-					if colliderA.Mask&(1<<colliderB.Layer) != 0 || colliderB.Mask&(1<<colliderA.Layer) != 0 {
-						// Detailed collision check
-						if s.checkCollision(*colliderA, *colliderB, entityA, entityB) {
-							posA := s.Positions.Get(entityA)
-							posB := s.Positions.Get(entityB)
-							posX := (posA.X + posB.X) / 2
-							posY := (posA.Y + posB.Y) / 2
-							collisionChan <- CollisionEvent{
-								entityA: entityA,
-								entityB: entityB,
-								posX:    posX,
-								posY:    posY,
-							}
-						}
-					}
-				}
-			}
-		} else {
-			// Internal node: Check children and push to stack if overlapping
-			leftNode := &s.nodes[node.Left]
-			rightNode := &s.nodes[node.Right]
-
-			// Push right first to process left first (stack is LIFO)
-			if s.aabbOverlap(aabbA, &rightNode.Bounds) {
-				stack = append(stack, node.Right)
-				lenstack++
-			}
-			if s.aabbOverlap(aabbA, &leftNode.Bounds) {
-				stack = append(stack, node.Left)
-				lenstack++
-			}
-		}
 	}
 }
 
@@ -376,128 +284,7 @@ func (s *CollisionDetectionBVHSystem) processExitStates() {
 
 // buildBVH constructs hierarchy using sorted morton codes
 func (s *CollisionDetectionBVHSystem) buildBVH(entities []ecs.Entity, aabbs []stdcomponents.AABB, mortonCodes []uint32) {
-	s.nodes = make([]BVHNode, 0, len(entities)*2)
 
-	// Create leaf nodes in morton order
-	leaves := make([]BVHNode, len(entities))
-	for i := range entities {
-		leaves[i] = BVHNode{
-			Entity: entities[i],
-			Bounds: aabbs[i],
-			Left:   -1,
-			Right:  -1,
-		}
-	}
-
-	// Build hierarchy using morton codes
-	s.nodes = append(s.nodes, leaves...)
-	s.buildHierarchy(mortonCodes, 0, len(leaves)-1)
-}
-
-// buildHierarchy recursively constructs BVH using morton codes
-func (s *CollisionDetectionBVHSystem) buildHierarchy(mortonCodes []uint32, start, end int) int {
-	if start == end {
-		return start // Leaf node
-	}
-
-	// Find split point using the highest differing bit
-	split := findSplit(mortonCodes, start, end)
-
-	// Recursively build left and right subtrees
-	left := s.buildHierarchy(mortonCodes, start, split)
-	right := s.buildHierarchy(mortonCodes, split+1, end)
-
-	// Create internal node
-	node := BVHNode{
-		Left:   left,
-		Right:  right,
-		Bounds: mergeAABB(s.nodes[left].Bounds, s.nodes[right].Bounds),
-	}
-
-	s.nodes = append(s.nodes, node)
-	return len(s.nodes) - 1
-}
-
-// findSplit finds the position where the highest bit changes
-func findSplit(sortedMortonCodes []uint32, start, end int) int {
-	// Identical Morton sortedMortonCodes => split the range in the middle.
-	first := sortedMortonCodes[start]
-	last := sortedMortonCodes[end]
-
-	if first == last {
-		return (start + end) >> 1
-	}
-
-	// Calculate the number of highest bits that are the same
-	// for all objects, using the count-leading-zeros intrinsic.
-	commonPrefix := bits.LeadingZeros32(first ^ last)
-
-	// Use binary search to find where the next bit differs.
-	// Specifically, we are looking for the highest object that
-	// shares more than commonPrefix bits with the first one.
-	split := start
-	step := end - start
-
-	for {
-		step = (step + 1) >> 1   // exponential decrease
-		newSplit := split + step // proposed new position
-
-		if newSplit < end {
-			splitCode := sortedMortonCodes[newSplit]
-			splitPrefix := bits.LeadingZeros32(first ^ splitCode)
-			if splitPrefix > commonPrefix {
-				split = newSplit
-			}
-		}
-
-		if step <= 1 {
-			break
-		}
-	}
-
-	return split
-}
-
-// go:inline aabbOverlap checks if two AABB intersect
-func (s *CollisionDetectionBVHSystem) aabbOverlap(a, b *stdcomponents.AABB) bool {
-	// Check for non-overlap conditions first (early exit)
-	if a.Max.X < b.Min.X || a.Min.X > b.Max.X {
-		return false
-	}
-	if a.Max.Y < b.Min.Y || a.Min.Y > b.Max.Y {
-		return false
-	}
-	return true
-}
-
-// mergeAABB combines two AABB
-func mergeAABB(a, b stdcomponents.AABB) stdcomponents.AABB {
-	return stdcomponents.AABB{
-		Min: vectors.Vec2{
-			X: min(a.Min.X, b.Min.X),
-			Y: min(a.Min.Y, b.Min.Y),
-		},
-		Max: vectors.Vec2{
-			X: max(a.Max.X, b.Max.X),
-			Y: max(a.Max.Y, b.Max.Y),
-		},
-	}
-}
-
-// Expands a 10-bit integer into 20 bits by inserting 1 zero after each bit
-func expandBits2D(v uint32) uint32 {
-	v = (v * 0x00010001) & 0xFF0000FF
-	v = (v * 0x00000101) & 0x0F00F00F
-	v = (v * 0x00000011) & 0xC30C30C3
-	v = (v * 0x00000005) & 0x24924924
-	return v
-}
-
-// 2D Morton code for coordinates in [0,1] range
-func morton2D(x, y float32) uint32 {
-	xx := uint32(math.Min(math.Max(float64(x)*1024.0, 0.0), 1023.0))
-	yy := uint32(math.Min(math.Max(float64(y)*1024.0, 0.0), 1023.0))
-	return (expandBits2D(xx) << 1) | expandBits2D(yy)
 }
 
 // Expands a 10-bit integer into 30 bits by inserting 2 zeros after each bit
