@@ -58,7 +58,7 @@ func CreateWall(
 		OffsetX: 0,
 		OffsetY: 0,
 		Layer:   config.WallCollisionLayer,
-		Mask:    1 << config.PlayerCollisionLayer,
+		Mask:    0,
 	})
 	props.Sprites.Create(entity, stdcomponents.Sprite{
 		Texture: assets.Textures.Get("wall.png"),

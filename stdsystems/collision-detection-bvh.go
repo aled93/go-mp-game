@@ -175,7 +175,7 @@ func (s *CollisionDetectionBVHSystem) checkEntityCollisions(entityA ecs.Entity, 
 
 		// Traverse this BVH tree for potential collisions
 		tree.Query(*aabb, func(entityB ecs.Entity) {
-			if entityA >= entityB {
+			if entityA == entityB {
 				return
 			}
 

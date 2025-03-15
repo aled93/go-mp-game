@@ -66,7 +66,7 @@ func CreateAsteroid(
 		OffsetX: 16,
 		OffsetY: 16,
 		Layer:   config.EnemyCollisionLayer,
-		Mask:    1 << config.PlayerCollisionLayer,
+		Mask:    0,
 	})
 	props.Sprites.Create(bullet, stdcomponents.Sprite{
 		Texture: assets.Textures.Get("meteor_large.png"),

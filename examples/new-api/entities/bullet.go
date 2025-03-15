@@ -63,8 +63,8 @@ func CreateBullet(
 		Height:  16,
 		OffsetX: 8,
 		OffsetY: 8,
-		Layer:   config.PlayerCollisionLayer,
-		Mask:    1 << config.EnemyCollisionLayer,
+		Layer:   config.BulletCollisionLayer,
+		Mask:    1<<config.EnemyCollisionLayer | 1<<config.WallCollisionLayer,
 	})
 	props.Sprites.Create(bullet, stdcomponents.Sprite{
 		Texture: assets.Textures.Get("bullet.png"),

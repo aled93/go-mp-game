@@ -19,6 +19,7 @@ import "gomp/stdcomponents"
 const (
 	DefaultCollisionLayer stdcomponents.CollisionLayer = iota
 	PlayerCollisionLayer
+	BulletCollisionLayer
 	EnemyCollisionLayer
 	WallCollisionLayer
 )
