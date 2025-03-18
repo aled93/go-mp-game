@@ -18,6 +18,7 @@ package stdsystems
 import (
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
+	"gomp/vectors"
 	"runtime"
 	"sync"
 	"time"
@@ -73,6 +74,8 @@ func (s *CollisionDetectionGridSystem) Init() {
 type CollisionEvent struct {
 	entityA, entityB ecs.Entity
 	posX, posY       float32
+	normal           vectors.Vec2
+	depth            float32
 }
 
 func (s *CollisionDetectionGridSystem) Run(dt time.Duration) {
@@ -283,7 +286,7 @@ func (s *CollisionDetectionGridSystem) boxToXCollision(entityA ecs.Entity, colli
 
 				posX := (position1.X + position2.X) / 2
 				posY := (position1.Y + position2.Y) / 2
-				collisionChan <- CollisionEvent{entityA, entityB, posX, posY}
+				collisionChan <- CollisionEvent{entityA, entityB, posX, posY, vectors.Vec2{posX, posY}, 0}
 			case stdcomponents.CircleColliderShape:
 				panic("Circle-Box collision not implemented")
 			default:

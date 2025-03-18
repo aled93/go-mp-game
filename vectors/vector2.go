@@ -75,3 +75,16 @@ func (v Vec2) Neg() Vec2 {
 func (v Vec2) Dot(other Vec2) float32 {
 	return v.X*other.X + v.Y*other.Y
 }
+
+const (
+	MIN_NORMAL_LENGTH = 0.00001
+)
+
+// NormalizedSafe is safe normalization method
+func (v Vec2) NormalizedSafe() Vec2 {
+	lengthSq := v.X*v.X + v.Y*v.Y
+	if lengthSq < MIN_NORMAL_LENGTH {
+		return Vec2{1, 0} // Default to right direction
+	}
+	return v.Scale(float32(1 / math.Sqrt(float64(lengthSq))))
+}

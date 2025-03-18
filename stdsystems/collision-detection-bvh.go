@@ -25,6 +25,12 @@ import (
 	"time"
 )
 
+const (
+	EPA_TOLERANCE      = 0.0001
+	EPA_MAX_ITERATIONS = 50
+	MIN_NORMAL_LENGTH  = 0.00001
+)
+
 func NewCollisionDetectionBVHSystem() CollisionDetectionBVHSystem {
 	return CollisionDetectionBVHSystem{
 		activeCollisions: make(map[CollisionPair]ecs.Entity),
@@ -98,17 +104,30 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 		for event := range collisionChan {
 			pair := CollisionPair{event.entityA, event.entityB}
 			s.currentCollisions[pair] = struct{}{}
+			displacement := event.normal.Scale(event.depth * (0.5))
+			pos := vectors.Vec2{X: event.posX, Y: event.posY}.Sub(displacement)
 
 			if _, exists := s.activeCollisions[pair]; !exists {
 				proxy := s.EntityManager.Create()
-				s.Collisions.Create(proxy, stdcomponents.Collision{E1: pair.E1, E2: pair.E2, State: stdcomponents.CollisionStateEnter})
-				s.Positions.Create(proxy, stdcomponents.Position{X: event.posX, Y: event.posY})
+				s.Collisions.Create(proxy, stdcomponents.Collision{
+					E1:     pair.E1,
+					E2:     pair.E2,
+					State:  stdcomponents.CollisionStateEnter,
+					Normal: event.normal,
+					Depth:  event.depth,
+				})
+
+				s.Positions.Create(proxy, stdcomponents.Position{X: pos.X, Y: pos.Y})
 				s.activeCollisions[pair] = proxy
 			} else {
 				proxy := s.activeCollisions[pair]
-				s.Collisions.Get(proxy).State = stdcomponents.CollisionStateStay
-				s.Positions.Get(proxy).X = event.posX
-				s.Positions.Get(proxy).Y = event.posY
+				collision := s.Collisions.Get(proxy)
+				position := s.Positions.Get(proxy)
+				collision.State = stdcomponents.CollisionStateStay
+				collision.Depth = event.depth
+				collision.Normal = event.normal
+				position.X = pos.X
+				position.Y = pos.Y
 			}
 		}
 		close(doneChan)
@@ -175,24 +194,15 @@ func (s *CollisionDetectionBVHSystem) checkEntityCollisions(entityA ecs.Entity, 
 			}
 
 			colliderB := s.GenericCollider.Get(entityB)
-
-			if s.checkCollisionGjk(*colliderA, *colliderB, entityA, entityB) {
-				posA := s.Positions.Get(entityA)
-				posB := s.Positions.Get(entityB)
-				posX := (posA.X + posB.X) / 2
-				posY := (posA.Y + posB.Y) / 2
-				collisionChan <- CollisionEvent{
-					entityA: entityA,
-					entityB: entityB,
-					posX:    posX,
-					posY:    posY,
-				}
+			collision, ok := s.checkCollisionGjk(*colliderA, *colliderB, entityA, entityB)
+			if ok {
+				collisionChan <- collision
 			}
 		})
 	}
 }
 
-func (s *CollisionDetectionBVHSystem) checkCollisionGjk(colliderA, colliderB stdcomponents.GenericCollider, entityA, entityB ecs.Entity) bool {
+func (s *CollisionDetectionBVHSystem) checkCollisionGjk(colliderA, colliderB stdcomponents.GenericCollider, entityA, entityB ecs.Entity) (e CollisionEvent, ok bool) {
 	posA := s.Positions.Get(entityA)
 	posB := s.Positions.Get(entityB)
 	scaleA := s.getScaleOrDefault(entityA)
@@ -204,7 +214,22 @@ func (s *CollisionDetectionBVHSystem) checkCollisionGjk(colliderA, colliderB std
 	supportA := s.getSupportFunction(entityA, colliderA, posA, &rotA, scaleA)
 	supportB := s.getSupportFunction(entityB, colliderB, posB, &rotB, scaleB)
 
-	return s.gjkCollides(supportA, supportB)
+	// First detect collision using GJK
+	collision, simplex := s.gjkCollides(supportA, supportB)
+	if !collision {
+		return e, false
+	}
+
+	// If collision detected, get penetration details using EPA
+	normal, depth := s.epa(simplex, supportA, supportB)
+	return CollisionEvent{
+		entityA: entityA,
+		entityB: entityB,
+		posX:    posA.X,
+		posY:    posA.Y,
+		normal:  normal,
+		depth:   depth,
+	}, true
 }
 
 func (s *CollisionDetectionBVHSystem) checkCollision(colliderA, colliderB stdcomponents.GenericCollider, entityA, entityB ecs.Entity) bool {
@@ -382,20 +407,21 @@ func (s *CollisionDetectionBVHSystem) polygonSupport(poly *stdcomponents.Polygon
 	return maxVertex
 }
 
-func (s *CollisionDetectionBVHSystem) gjkCollides(supportA, supportB func(vectors.Vec2) vectors.Vec2) bool {
+func (s *CollisionDetectionBVHSystem) gjkCollides(supportA, supportB func(vectors.Vec2) vectors.Vec2) (bool, []vectors.Vec2) {
 	direction := vectors.Vec2{X: 1, Y: 0} // Initial direction
 	simplex := []vectors.Vec2{}
+
 	for i := 0; i < 50; i++ { // Max iterations to prevent infinite loop
 		p := s.minkowskiSupport(supportA, supportB, direction)
 		if p.Dot(direction) < 0 {
-			return false // No collision
+			return false, nil // No collision
 		}
 		simplex = append(simplex, p)
 		if s.containsOrigin(simplex, direction) {
-			return true
+			return true, simplex
 		}
 	}
-	return false
+	return false, nil
 }
 
 func (s *CollisionDetectionBVHSystem) minkowskiSupport(supportA, supportB func(vectors.Vec2) vectors.Vec2, d vectors.Vec2) vectors.Vec2 {
@@ -464,4 +490,77 @@ func (s *CollisionDetectionBVHSystem) tripleProduct(a, b, c vectors.Vec2) vector
 		X: b.X*ac - a.X*bc,
 		Y: b.Y*ac - a.Y*bc,
 	}
+}
+
+func (s *CollisionDetectionBVHSystem) epa(simplex []vectors.Vec2, supportA, supportB func(vectors.Vec2) vectors.Vec2) (vectors.Vec2, float32) {
+	if len(simplex) < 3 {
+		return vectors.Vec2{}, 0 // Not a valid simplex
+	}
+
+	polytope := make([]vectors.Vec2, len(simplex))
+	copy(polytope, simplex)
+
+	for iteration := 0; iteration < EPA_MAX_ITERATIONS; iteration++ {
+		edge, normal := s.findClosestEdge(polytope)
+		if normal.LengthSquared() < MIN_NORMAL_LENGTH { // Add safety check
+			return vectors.Vec2{}, 0
+		}
+
+		point := s.minkowskiSupport(supportA, supportB, normal)
+		if point.Dot(normal) < 0 { // Origin not in expansion direction
+			return vectors.Vec2{}, 0
+		}
+
+		distance := point.Dot(normal)
+		if math.Abs(float64(distance-edge.distance)) < EPA_TOLERANCE {
+			if normal.LengthSquared() < MIN_NORMAL_LENGTH {
+				return vectors.Vec2{}, 0
+			}
+			return normal.NormalizedSafe(), distance
+		}
+
+		polytope = s.insertPoint(polytope, edge.index, point)
+	}
+	return vectors.Vec2{}, 0
+}
+
+func (s *CollisionDetectionBVHSystem) findClosestEdge(polytope []vectors.Vec2) (СlosestEdge, vectors.Vec2) {
+	minDistance := float32(math.MaxFloat32)
+	bestEdge := СlosestEdge{index: -1}
+	var bestNormal vectors.Vec2
+
+	for i := 0; i < len(polytope); i++ {
+		j := (i + 1) % len(polytope)
+		a := polytope[i]
+		b := polytope[j]
+
+		edge := b.Sub(a)
+		if edge.LengthSquared() < MIN_NORMAL_LENGTH { // Skip degenerate edges
+			continue
+		}
+
+		normal := vectors.Vec2{-edge.Y, edge.X}.NormalizedSafe()
+		distance := normal.Dot(a)
+
+		if distance < minDistance {
+			minDistance = distance
+			bestEdge = СlosestEdge{index: i, distance: distance}
+			bestNormal = normal
+		}
+	}
+
+	return bestEdge, bestNormal
+}
+
+type СlosestEdge struct {
+	index    int
+	distance float32
+}
+
+func (s *CollisionDetectionBVHSystem) insertPoint(polytope []vectors.Vec2, index int, point vectors.Vec2) []vectors.Vec2 {
+	newPolytope := make([]vectors.Vec2, 0, len(polytope)+1)
+	newPolytope = append(newPolytope, polytope[:index+1]...)
+	newPolytope = append(newPolytope, point)
+	newPolytope = append(newPolytope, polytope[index+1:]...)
+	return newPolytope
 }
