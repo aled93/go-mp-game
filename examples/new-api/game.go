@@ -15,11 +15,40 @@ Thank you for your support!
 package main
 
 import (
+	"github.com/hajimehoshi/go-steamworks"
+	"golang.org/x/text/language"
 	"gomp"
 	"gomp/examples/new-api/scenes"
+	"log"
+	"os"
 )
 
+const appID = 12 // Rewrite this
+
+func init() {
+	if steamworks.RestartAppIfNecessary(appID) {
+		os.Exit(1)
+	}
+	err := steamworks.Init()
+	if err != nil {
+		panic("steamworks.Init failed")
+	}
+}
+
+func SystemLang() language.Tag {
+	switch steamworks.SteamApps().GetCurrentGameLanguage() {
+	case "russian":
+		return language.Russian
+	case "english":
+		return language.English
+	case "japanese":
+		return language.Japanese
+	}
+	return language.Und
+}
+
 func main() {
+	log.Println(SystemLang())
 	sceneList := scenes.NewSceneList()
 
 	game := gomp.NewGame(
