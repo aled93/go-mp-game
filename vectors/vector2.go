@@ -55,3 +55,23 @@ func (v Vec2) Length() float32 {
 func (v Vec2) Normalize() Vec2 {
 	return v.Scale(1 / v.Length())
 }
+
+func (v Vec2) Rotate(angle float32) Vec2 {
+	return Vec2{
+		v.X*float32(math.Cos(float64(angle))) - v.Y*float32(math.Sin(float64(angle))),
+		v.X*float32(math.Sin(float64(angle))) + v.Y*float32(math.Cos(float64(angle))),
+	}
+}
+
+func (v Vec2) LengthSquared() float32 {
+	l := v.Length()
+	return l * l
+}
+
+func (v Vec2) Neg() Vec2 {
+	return Vec2{-v.X, -v.Y}
+}
+
+func (v Vec2) Dot(other Vec2) float32 {
+	return v.X*other.X + v.Y*other.Y
+}

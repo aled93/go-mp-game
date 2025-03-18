@@ -25,13 +25,6 @@ import (
 	"time"
 )
 
-// BVHNode represents a node in the BVH tree
-type BVHNode struct {
-	Left, Right int // Child indices, -1 for leaf
-	Entity      ecs.Entity
-	Bounds      stdcomponents.AABB
-}
-
 func NewCollisionDetectionBVHSystem() CollisionDetectionBVHSystem {
 	return CollisionDetectionBVHSystem{
 		activeCollisions: make(map[CollisionPair]ecs.Entity),
@@ -39,15 +32,17 @@ func NewCollisionDetectionBVHSystem() CollisionDetectionBVHSystem {
 }
 
 type CollisionDetectionBVHSystem struct {
-	EntityManager   *ecs.EntityManager
-	Positions       *stdcomponents.PositionComponentManager
-	Scales          *stdcomponents.ScaleComponentManager
-	GenericCollider *stdcomponents.GenericColliderComponentManager
-	BoxColliders    *stdcomponents.BoxColliderComponentManager
-	CircleColliders *stdcomponents.CircleColliderComponentManager
-	Collisions      *stdcomponents.CollisionComponentManager
-	SpatialIndex    *stdcomponents.SpatialIndexComponentManager
-	AABB            *stdcomponents.AABBComponentManager
+	EntityManager    *ecs.EntityManager
+	Positions        *stdcomponents.PositionComponentManager
+	Rotations        *stdcomponents.RotationComponentManager
+	Scales           *stdcomponents.ScaleComponentManager
+	GenericCollider  *stdcomponents.GenericColliderComponentManager
+	BoxColliders     *stdcomponents.BoxColliderComponentManager
+	CircleColliders  *stdcomponents.CircleColliderComponentManager
+	PolygonColliders *stdcomponents.PolygonColliderComponentManager
+	Collisions       *stdcomponents.CollisionComponentManager
+	SpatialIndex     *stdcomponents.SpatialIndexComponentManager
+	AABB             *stdcomponents.AABBComponentManager
 
 	trees       []bvh.Tree2D
 	treesLookup map[stdcomponents.CollisionLayer]int
@@ -101,7 +96,7 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 	// Start result collector
 	go func() {
 		for event := range collisionChan {
-			pair := CollisionPair{event.entityA, event.entityB}.Normalize()
+			pair := CollisionPair{event.entityA, event.entityB}
 			s.currentCollisions[pair] = struct{}{}
 
 			if _, exists := s.activeCollisions[pair]; !exists {
@@ -181,7 +176,7 @@ func (s *CollisionDetectionBVHSystem) checkEntityCollisions(entityA ecs.Entity, 
 
 			colliderB := s.GenericCollider.Get(entityB)
 
-			if s.checkCollision(*colliderA, *colliderB, entityA, entityB) {
+			if s.checkCollisionGjk(*colliderA, *colliderB, entityA, entityB) {
 				posA := s.Positions.Get(entityA)
 				posB := s.Positions.Get(entityB)
 				posX := (posA.X + posB.X) / 2
@@ -195,6 +190,21 @@ func (s *CollisionDetectionBVHSystem) checkEntityCollisions(entityA ecs.Entity, 
 			}
 		})
 	}
+}
+
+func (s *CollisionDetectionBVHSystem) checkCollisionGjk(colliderA, colliderB stdcomponents.GenericCollider, entityA, entityB ecs.Entity) bool {
+	posA := s.Positions.Get(entityA)
+	posB := s.Positions.Get(entityB)
+	scaleA := s.getScaleOrDefault(entityA)
+	scaleB := s.getScaleOrDefault(entityB)
+	rotA := s.getRotationOrDefault(entityA) // Implement similar to getScaleOrDefault
+	rotB := s.getRotationOrDefault(entityB)
+
+	// Define support functions based on collider types
+	supportA := s.getSupportFunction(entityA, colliderA, posA, &rotA, scaleA)
+	supportB := s.getSupportFunction(entityB, colliderB, posB, &rotB, scaleB)
+
+	return s.gjkCollides(supportA, supportB)
 }
 
 func (s *CollisionDetectionBVHSystem) checkCollision(colliderA, colliderB stdcomponents.GenericCollider, entityA, entityB ecs.Entity) bool {
@@ -238,11 +248,21 @@ func (s *CollisionDetectionBVHSystem) checkCollision(colliderA, colliderB stdcom
 }
 
 func (s *CollisionDetectionBVHSystem) getScaleOrDefault(entity ecs.Entity) vectors.Vec2 {
-	if s.Scales.Has(entity) {
-		scale := s.Scales.Get(entity)
-		return vectors.Vec2{X: scale.X, Y: scale.Y}
+	scale := s.Scales.Get(entity)
+	if scale != nil {
+		return vectors.Vec2{X: scale.X, Y: scale.Y} // Dereference the component pointer
 	}
+	// Return default scale of 1 if component doesn't exist
 	return vectors.Vec2{X: 1, Y: 1}
+}
+
+func (s *CollisionDetectionBVHSystem) getRotationOrDefault(entity ecs.Entity) stdcomponents.Rotation {
+	rotation := s.Rotations.Get(entity)
+	if rotation != nil {
+		return *rotation // Dereference the component pointer
+	}
+	// Return default zero rotation if component doesn't exist
+	return stdcomponents.Rotation{Angle: 0}
 }
 
 func (s *CollisionDetectionBVHSystem) circleVsBox(circleCollider *stdcomponents.CircleCollider, circlePos stdcomponents.Position, circleScale vectors.Vec2, boxCollider *stdcomponents.BoxCollider, boxPos stdcomponents.Position, boxScale vectors.Vec2) bool {
@@ -287,19 +307,161 @@ func (s *CollisionDetectionBVHSystem) buildBVH(entities []ecs.Entity, aabbs []st
 
 }
 
-// Expands a 10-bit integer into 30 bits by inserting 2 zeros after each bit
-func expandBits3D(v uint32) uint32 {
-	v = (v * 0x00010001) & 0xFF0000FF
-	v = (v * 0x00000101) & 0x0F00F00F
-	v = (v * 0x00000011) & 0xC30C30C3
-	v = (v * 0x00000005) & 0x49249249
-	return v
+func (s *CollisionDetectionBVHSystem) getSupportFunction(entity ecs.Entity, collider stdcomponents.GenericCollider, pos *stdcomponents.Position, rot *stdcomponents.Rotation, scale vectors.Vec2) func(vectors.Vec2) vectors.Vec2 {
+	switch collider.Shape {
+	case stdcomponents.BoxColliderShape:
+		box := s.BoxColliders.Get(entity)
+		return func(d vectors.Vec2) vectors.Vec2 {
+			return s.boxSupport(box, pos, rot, scale, d)
+		}
+	case stdcomponents.CircleColliderShape:
+		circle := s.CircleColliders.Get(entity)
+		return func(d vectors.Vec2) vectors.Vec2 {
+			return s.circleSupport(circle, pos, scale, d)
+		}
+	case stdcomponents.PolygonColliderShape:
+		poly := s.PolygonColliders.Get(entity)
+		return func(d vectors.Vec2) vectors.Vec2 {
+			return s.polygonSupport(poly, pos, rot, scale, d)
+		}
+	default:
+		panic("unsupported collider shape")
+	}
 }
 
-// 3D Morton code for coordinates in [0,1] range
-func morton3D(x, y, z float32) uint32 {
-	xx := uint32(math.Min(math.Max(float64(x)*1024.0, 0.0), 1023.0))
-	yy := uint32(math.Min(math.Max(float64(y)*1024.0, 0.0), 1023.0))
-	zz := uint32(math.Min(math.Max(float64(z)*1024.0, 0.0), 1023.0))
-	return expandBits3D(xx)*4 + expandBits3D(yy)*2 + expandBits3D(zz)
+func (s *CollisionDetectionBVHSystem) circleSupport(circle *stdcomponents.CircleCollider, pos *stdcomponents.Position, scale vectors.Vec2, direction vectors.Vec2) vectors.Vec2 {
+	if direction.LengthSquared() == 0 {
+		return vectors.Vec2{X: pos.X, Y: pos.Y}
+	}
+	radius := circle.Radius * scale.X
+	dirNorm := direction.Normalize()
+	return vectors.Vec2{
+		X: pos.X + dirNorm.X*radius,
+		Y: pos.Y + dirNorm.Y*radius,
+	}
+}
+
+func (s *CollisionDetectionBVHSystem) boxSupport(box *stdcomponents.BoxCollider, pos *stdcomponents.Position, rot *stdcomponents.Rotation, scale vectors.Vec2, direction vectors.Vec2) vectors.Vec2 {
+	hw := (box.Width * scale.X) / 2
+	hh := (box.Height * scale.Y) / 2
+
+	// Rotate direction to local space
+	localDir := direction.Rotate(-rot.Angle)
+
+	localX := hw
+	if localDir.X < 0 {
+		localX = -hw
+	}
+	localY := hh
+	if localDir.Y < 0 {
+		localY = -hh
+	}
+
+	// Rotate back to world space and translate
+	worldPoint := vectors.Vec2{X: localX, Y: localY}.Rotate(rot.Angle)
+	return vectors.Vec2{
+		X: pos.X + worldPoint.X,
+		Y: pos.Y + worldPoint.Y,
+	}
+}
+
+func (s *CollisionDetectionBVHSystem) polygonSupport(poly *stdcomponents.PolygonCollider, pos *stdcomponents.Position, rot *stdcomponents.Rotation, scale vectors.Vec2, direction vectors.Vec2) vectors.Vec2 {
+	maxDot := math.Inf(-1)
+	var maxVertex vectors.Vec2
+
+	for _, v := range poly.Vertices {
+		scaled := vectors.Vec2{X: v.X * scale.X, Y: v.Y * scale.Y}
+		rotated := scaled.Rotate(rot.Angle)
+		worldVertex := vectors.Vec2{X: pos.X + rotated.X, Y: pos.Y + rotated.Y}
+		dot := float64(worldVertex.Dot(direction))
+		if dot > maxDot {
+			maxDot = dot
+			maxVertex = worldVertex
+		}
+	}
+	return maxVertex
+}
+
+func (s *CollisionDetectionBVHSystem) gjkCollides(supportA, supportB func(vectors.Vec2) vectors.Vec2) bool {
+	direction := vectors.Vec2{X: 1, Y: 0} // Initial direction
+	simplex := []vectors.Vec2{}
+	for i := 0; i < 50; i++ { // Max iterations to prevent infinite loop
+		p := s.minkowskiSupport(supportA, supportB, direction)
+		if p.Dot(direction) < 0 {
+			return false // No collision
+		}
+		simplex = append(simplex, p)
+		if s.containsOrigin(simplex, direction) {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *CollisionDetectionBVHSystem) minkowskiSupport(supportA, supportB func(vectors.Vec2) vectors.Vec2, d vectors.Vec2) vectors.Vec2 {
+	a := supportA(d)
+	b := supportB(d.Neg())
+	return a.Sub(b)
+}
+
+func (s *CollisionDetectionBVHSystem) containsOrigin(simplex []vectors.Vec2, direction vectors.Vec2) bool {
+	a := (simplex)[len(simplex)-1] // Last point added
+	ao := a.Neg()                  // Vector from A to origin
+
+	switch len(simplex) {
+	case 3: // Triangle case
+		b := (simplex)[1]
+		c := (simplex)[0]
+
+		ab := b.Sub(a)
+		ac := c.Sub(a)
+
+		// Perpendicular vectors
+		abPerp := s.tripleProduct(ac, ab, ab)
+		acPerp := s.tripleProduct(ab, ac, ac)
+
+		// Region AB
+		if abPerp.Dot(ao) > 0 {
+			simplex = []vectors.Vec2{a, b}
+			direction = abPerp
+			return false
+		}
+
+		// Region AC
+		if acPerp.Dot(ao) > 0 {
+			simplex = []vectors.Vec2{a, c}
+			direction = acPerp
+			return false
+		}
+
+		// Inside triangle
+		return true
+
+	case 2: // Line segment case
+		b := (simplex)[0]
+		ab := b.Sub(a)
+
+		// Perpendicular to AB facing origin
+		abPerp := s.tripleProduct(ab, ao, ab)
+		if abPerp.Dot(ao) > 0 {
+			direction = abPerp
+		} else {
+			simplex = []vectors.Vec2{a}
+			direction = ao
+		}
+		return false
+
+	default:
+		return false
+	}
+}
+
+// Helper function for vector triple product
+func (s *CollisionDetectionBVHSystem) tripleProduct(a, b, c vectors.Vec2) vectors.Vec2 {
+	ac := a.Dot(c)
+	bc := b.Dot(c)
+	return vectors.Vec2{
+		X: b.X*ac - a.X*bc,
+		Y: b.Y*ac - a.Y*bc,
+	}
 }

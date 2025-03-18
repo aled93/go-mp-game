@@ -14,7 +14,10 @@ Thank you for your support!
 
 package stdcomponents
 
-import "gomp/pkg/ecs"
+import (
+	"gomp/pkg/ecs"
+	"gomp/vectors"
+)
 
 type ColliderShape uint8
 
@@ -22,6 +25,7 @@ const (
 	InvalidColliderShape ColliderShape = iota
 	BoxColliderShape
 	CircleColliderShape
+	PolygonColliderShape
 )
 
 type CollisionMask uint64
@@ -33,7 +37,7 @@ func (m CollisionMask) HasLayer(layer CollisionLayer) bool {
 type CollisionLayer = CollisionMask
 
 const (
-	ColliderLayerNone CollisionLayer = 0
+	CollisionLayerNone CollisionLayer = 0
 )
 
 type BoxCollider struct {
@@ -63,6 +67,20 @@ type CircleColliderComponentManager = ecs.ComponentManager[CircleCollider]
 
 func NewCircleColliderComponentManager() CircleColliderComponentManager {
 	return ecs.NewComponentManager[CircleCollider](ColliderCircleComponentId)
+}
+
+type PolygonCollider struct {
+	Vertices []vectors.Vec2
+	Layer    CollisionLayer
+	Mask     CollisionMask
+	OffsetX  float32
+	OffsetY  float32
+}
+
+type PolygonColliderComponentManager = ecs.ComponentManager[PolygonCollider]
+
+func NewPolygonColliderComponentManager() PolygonColliderComponentManager {
+	return ecs.NewComponentManager[PolygonCollider](PolygonColliderComponentId)
 }
 
 type GenericCollider struct {

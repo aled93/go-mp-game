@@ -267,3 +267,20 @@ func (t *Tree2D) morton2D(x, y float32) uint32 {
 	yy := uint32(math.Min(math.Max(float64(y)*1024.0, 0.0), 1023.0))
 	return (t.expandBits2D(xx) << 1) | t.expandBits2D(yy)
 }
+
+// Expands a 10-bit integer into 30 bits by inserting 2 zeros after each bit
+func expandBits3D(v uint32) uint32 {
+	v = (v * 0x00010001) & 0xFF0000FF
+	v = (v * 0x00000101) & 0x0F00F00F
+	v = (v * 0x00000011) & 0xC30C30C3
+	v = (v * 0x00000005) & 0x49249249
+	return v
+}
+
+// 3D Morton code for coordinates in [0,1] range
+func morton3D(x, y, z float32) uint32 {
+	xx := uint32(math.Min(math.Max(float64(x)*1024.0, 0.0), 1023.0))
+	yy := uint32(math.Min(math.Max(float64(y)*1024.0, 0.0), 1023.0))
+	zz := uint32(math.Min(math.Max(float64(z)*1024.0, 0.0), 1023.0))
+	return expandBits3D(xx)*4 + expandBits3D(yy)*2 + expandBits3D(zz)
+}
