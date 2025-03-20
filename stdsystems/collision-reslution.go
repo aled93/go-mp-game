@@ -17,7 +17,6 @@ package stdsystems
 import (
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
-	"log"
 	"time"
 )
 
@@ -36,7 +35,6 @@ func (s *CollisionResolutionSystem) Init() {}
 func (s *CollisionResolutionSystem) Run(dt time.Duration) {
 	s.Collisions.EachComponent(func(collision *stdcomponents.Collision) bool {
 		if collision.State == stdcomponents.CollisionStateEnter || collision.State == stdcomponents.CollisionStateStay {
-			log.Printf("Collision resolution: %v", collision)
 			// Resolve penetration
 			displacement := collision.Normal.Scale(collision.Depth * 0.5)
 

@@ -161,7 +161,7 @@ func (s *RenderAssteroddSystem) render() {
 	rl.BeginMode2D(s.camera)
 	s.Collisions.EachEntity(func(entity ecs.Entity) bool {
 		pos := s.Positions.Get(entity)
-		rl.DrawRectangle(int32(pos.X), int32(pos.Y), 16, 16, rl.Red)
+		rl.DrawRectangle(int32(pos.X-8), int32(pos.Y-8), 16, 16, rl.Red)
 		return true
 	})
 	s.ColliderBoxes.EachEntity(func(e ecs.Entity) bool {

@@ -222,7 +222,7 @@ func (s *CollisionDetectionBVHSystem) checkCollisionGjk(colliderA, colliderB std
 
 	// If collision detected, get penetration details using EPA
 	normal, depth := s.epa(simplex, supportA, supportB)
-	position := posA.Add(posB.Sub(*posA).Scale(0.5))
+	position := posA.Add(posB.Sub(*posA))
 	return CollisionEvent{
 		entityA:  entityA,
 		entityB:  entityB,
@@ -367,21 +367,28 @@ func (s *CollisionDetectionBVHSystem) circleSupport(circle *stdcomponents.Circle
 }
 
 func (s *CollisionDetectionBVHSystem) boxSupport(box *stdcomponents.BoxCollider, pos *stdcomponents.Position, rot *stdcomponents.Rotation, scale vectors.Vec2, direction vectors.Vec2) vectors.Vec2 {
+	halfWidth := box.Width * scale.X / 2
+	halfHeight := box.Height * scale.Y / 2
 	vertices := [4]vectors.Vec2{
-		pos.Add(vectors.Vec2{X: box.Width * scale.X / 2, Y: box.Height * scale.Y / 2}),
-		pos.Add(vectors.Vec2{X: -box.Width * scale.X / 2, Y: box.Height * scale.Y / 2}),
-		pos.Add(vectors.Vec2{X: -box.Width * scale.X / 2, Y: -box.Height * scale.Y / 2}),
-		pos.Add(vectors.Vec2{X: box.Width * scale.X / 2, Y: -box.Height * scale.Y / 2}),
+		{X: halfWidth, Y: halfHeight},
+		{X: -halfWidth, Y: halfHeight},
+		{X: -halfWidth, Y: -halfHeight},
+		{X: halfWidth, Y: -halfHeight},
 	}
 
 	var maxPoint vectors.Vec2
 	var maxDistance float32 = -math.MaxFloat32
 
 	for i := range vertices {
-		distance := vertices[i].Dot(direction)
+		// Apply rotation
+		rotated := vertices[i].Rotate(rot.Angle)
+		// Move to world space
+		worldVertex := vectors.Vec2{X: pos.X + rotated.X, Y: pos.Y + rotated.Y}
+
+		distance := worldVertex.Dot(direction)
 		if distance > maxDistance {
 			maxDistance = distance
-			maxPoint = vertices[i]
+			maxPoint = worldVertex
 		}
 	}
 

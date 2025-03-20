@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	MaxFrameSkips = 50
+	MaxFrameSkips = 5
 )
 
 func NewEngine(game AnyGame) Engine {
