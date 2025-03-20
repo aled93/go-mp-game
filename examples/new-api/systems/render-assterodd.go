@@ -164,20 +164,20 @@ func (s *RenderAssteroddSystem) render() {
 		rl.DrawRectangle(int32(pos.X), int32(pos.Y), 16, 16, rl.Red)
 		return true
 	})
-	//s.ColliderBoxes.EachEntity(func(e ecs.Entity) bool {
-	//	box := s.ColliderBoxes.Get(e)
-	//	pos := s.Positions.Get(e)
-	//	scale := s.Scales.Get(e)
-	//	col := s.ColliderBoxes.Get(e)
-	//
-	//	rl.DrawRectangleLines(int32(pos.X-(col.OffsetX*scale.X)), int32(pos.Y-(col.OffsetY*scale.Y)), int32(box.Width*scale.X), int32(box.Height*scale.Y), rl.DarkGreen)
-	//	return true
-	//})
-	//s.Renderables.EachEntity(func(e ecs.Entity) bool {
-	//	position := s.Positions.Get(e)
-	//	rl.DrawRectangle(int32(position.X-2), int32(position.Y-2), 4, 4, rl.Red)
-	//	return true
-	//})
+	s.ColliderBoxes.EachEntity(func(e ecs.Entity) bool {
+		box := s.ColliderBoxes.Get(e)
+		pos := s.Positions.Get(e)
+		scale := s.Scales.Get(e)
+		col := s.ColliderBoxes.Get(e)
+
+		rl.DrawRectangleLines(int32(pos.X-(col.Offset.X*scale.X)), int32(pos.Y-(col.Offset.Y*scale.Y)), int32(box.Width*scale.X), int32(box.Height*scale.Y), rl.DarkGreen)
+		return true
+	})
+	s.Renderables.EachEntity(func(e ecs.Entity) bool {
+		position := s.Positions.Get(e)
+		rl.DrawRectangle(int32(position.X-2), int32(position.Y-2), 4, 4, rl.Red)
+		return true
+	})
 	rl.EndMode2D()
 }
 

@@ -21,6 +21,7 @@ import (
 	"gomp/examples/new-api/config"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
+	"gomp/vectors"
 	"image/color"
 )
 
@@ -43,7 +44,6 @@ func CreateWall(
 	props.Positions.Create(entity, stdcomponents.Position{
 		X: posX,
 		Y: posY,
-		Z: 0,
 	})
 	props.Rotations.Create(entity, stdcomponents.Rotation{
 		Angle: angle,
@@ -53,12 +53,14 @@ func CreateWall(
 		Y: 1,
 	})
 	props.BoxColliders.Create(entity, stdcomponents.BoxCollider{
-		Width:   width,
-		Height:  height,
-		OffsetX: 0,
-		OffsetY: 0,
-		Layer:   config.WallCollisionLayer,
-		Mask:    0,
+		Width:  width,
+		Height: height,
+		Offset: vectors.Vec2{
+			X: 0,
+			Y: 0,
+		},
+		Layer: config.WallCollisionLayer,
+		Mask:  0,
 	})
 	props.Sprites.Create(entity, stdcomponents.Sprite{
 		Texture: assets.Textures.Get("wall.png"),

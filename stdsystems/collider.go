@@ -46,8 +46,8 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		}
 		genCollider.Layer = boxCollider.Layer
 		genCollider.Mask = boxCollider.Mask
-		genCollider.OffsetX = boxCollider.OffsetX
-		genCollider.OffsetY = boxCollider.OffsetY
+		genCollider.Offset.X = boxCollider.Offset.X
+		genCollider.Offset.Y = boxCollider.Offset.Y
 		genCollider.Shape = stdcomponents.BoxColliderShape
 
 		position := s.Positions.Get(entity)
@@ -57,12 +57,12 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 			aabb = s.AABB.Create(entity, stdcomponents.AABB{})
 		}
 		aabb.Min = vectors.Vec2{
-			X: position.X - (boxCollider.OffsetX * scale.X),
-			Y: position.Y - (boxCollider.OffsetY * scale.Y),
+			X: position.X - (boxCollider.Offset.X * scale.X),
+			Y: position.Y - (boxCollider.Offset.Y * scale.Y),
 		}
 		aabb.Max = vectors.Vec2{
-			X: position.X + (boxCollider.Width-boxCollider.OffsetX)*scale.X,
-			Y: position.Y + (boxCollider.Height-boxCollider.OffsetY)*scale.Y,
+			X: position.X + (boxCollider.Width-boxCollider.Offset.X)*scale.X,
+			Y: position.Y + (boxCollider.Height-boxCollider.Offset.Y)*scale.Y,
 		}
 
 		return true
@@ -74,11 +74,13 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		genCollider := s.GenericColliders.Get(entity)
 		if genCollider == nil {
 			s.GenericColliders.Create(entity, stdcomponents.GenericCollider{
-				Shape:   stdcomponents.CircleColliderShape,
-				Layer:   circleCollider.Layer,
-				Mask:    circleCollider.Mask,
-				OffsetX: circleCollider.OffsetX,
-				OffsetY: circleCollider.OffsetY,
+				Shape: stdcomponents.CircleColliderShape,
+				Layer: circleCollider.Layer,
+				Mask:  circleCollider.Mask,
+				Offset: vectors.Vec2{
+					X: circleCollider.Offset.X,
+					Y: circleCollider.Offset.Y,
+				},
 			})
 		}
 
@@ -90,12 +92,12 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		}
 
 		aabb.Min = vectors.Vec2{
-			X: position.X - (circleCollider.OffsetX * scale.X),
-			Y: position.Y + (circleCollider.Radius-circleCollider.OffsetY)*scale.Y,
+			X: position.X - (circleCollider.Offset.X * scale.X),
+			Y: position.Y + (circleCollider.Radius-circleCollider.Offset.Y)*scale.Y,
 		}
 		aabb.Max = vectors.Vec2{
-			X: position.X + (circleCollider.Radius-circleCollider.OffsetX)*scale.X,
-			Y: position.Y - (circleCollider.OffsetY * scale.Y),
+			X: position.X + (circleCollider.Radius-circleCollider.Offset.X)*scale.X,
+			Y: position.Y - (circleCollider.Offset.Y * scale.Y),
 		}
 
 		return true

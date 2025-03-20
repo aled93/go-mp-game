@@ -39,8 +39,10 @@ func NewSystemList() SystemList {
 		CollisionDetectionGrid:   stdsystems.NewCollisionDetectionGridSystem(),
 		CollisionDetectionBVH:    stdsystems.NewCollisionDetectionBVHSystem(),
 		ColliderSystem:           stdsystems.NewColliderSystem(),
-		RenderAssterodd:          systems.NewRenderAssteroddSystem(),
-		RenderBogdan:             systems.NewRenderBogdanSystem(),
+		CollisionResolution:      stdsystems.NewCollisionResolutionSystem(),
+
+		RenderAssterodd: systems.NewRenderAssteroddSystem(),
+		RenderBogdan:    systems.NewRenderBogdanSystem(),
 
 		AssteroddSystem:  systems.NewAssteroddSystem(),
 		CollisionHandler: systems.NewCollisionHandlerSystem(),
@@ -69,8 +71,10 @@ type SystemList struct {
 	CollisionDetectionGrid   stdsystems.CollisionDetectionGridSystem
 	CollisionDetectionBVH    stdsystems.CollisionDetectionBVHSystem
 	ColliderSystem           stdsystems.ColliderSystem
-	RenderAssterodd          systems.RenderAssteroddSystem
-	RenderBogdan             systems.RenderBogdanSystem
+	CollisionResolution      stdsystems.CollisionResolutionSystem
+
+	RenderAssterodd systems.RenderAssteroddSystem
+	RenderBogdan    systems.RenderBogdanSystem
 
 	AssteroddSystem  systems.AssteroddSystem
 	CollisionHandler systems.CollisionHandlerSystem

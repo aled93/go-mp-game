@@ -21,6 +21,7 @@ import (
 	"gomp/examples/new-api/config"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
+	"gomp/vectors"
 	"image/color"
 )
 
@@ -45,7 +46,6 @@ func CreateBullet(
 	props.Positions.Create(bullet, stdcomponents.Position{
 		X: posX,
 		Y: posY,
-		Z: 0,
 	})
 	props.Rotations.Create(bullet, stdcomponents.Rotation{
 		Angle: angle,
@@ -59,12 +59,14 @@ func CreateBullet(
 		Y: velocityY,
 	})
 	props.BoxColliders.Create(bullet, stdcomponents.BoxCollider{
-		Width:   16,
-		Height:  16,
-		OffsetX: 8,
-		OffsetY: 8,
-		Layer:   config.BulletCollisionLayer,
-		Mask:    1<<config.EnemyCollisionLayer | 1<<config.WallCollisionLayer,
+		Width:  16,
+		Height: 16,
+		Offset: vectors.Vec2{
+			X: 8,
+			Y: 8,
+		},
+		Layer: config.BulletCollisionLayer,
+		Mask:  1<<config.EnemyCollisionLayer | 1<<config.WallCollisionLayer,
 	})
 	props.Sprites.Create(bullet, stdcomponents.Sprite{
 		Texture: assets.Textures.Get("bullet.png"),

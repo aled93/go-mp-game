@@ -35,6 +35,7 @@ type AssteroddSystem struct {
 	Velocities    *stdcomponents.VelocityComponentManager
 	Sprites       *stdcomponents.SpriteComponentManager
 	BoxColliders  *stdcomponents.BoxColliderComponentManager
+	RigidBodies   *stdcomponents.RigidBodyComponentManager
 
 	PlayerTags       *components.PlayerTagComponentManager
 	AsteroidTags     *components.AsteroidComponentManager
@@ -57,17 +58,27 @@ func (s *AssteroddSystem) Init() {
 		Velocities:       s.Velocities,
 		Sprites:          s.Sprites,
 		BoxColliders:     s.BoxColliders,
+		RigidBodies:      s.RigidBodies,
 		PlayerTags:       s.PlayerTags,
 		Hps:              s.Hps,
 		Weapons:          s.Weapons,
 		SpaceshipIntents: s.SpaceshipIntents,
 	}, 300, 300, 0)
-	entities.CreateSpaceSpawner(entities.CreateSpaceSpawnerManagers{
+	entities.CreateSatellite(entities.CreateSatelliteManagers{
 		EntityManager: s.EntityManager,
 		Positions:     s.Positions,
-		Velocities:    s.Velocities,
-		SpaceSpawners: s.SpaceSpawnerTags,
-	}, 16, -100, 1000, time.Millisecond*200)
+		Rotations:     s.Rotations,
+		Scales:        s.Scales,
+		Sprites:       s.Sprites,
+		BoxColliders:  s.BoxColliders,
+		RigidBodies:   s.RigidBodies,
+	}, 500, 500, 0)
+	//entities.CreateSpaceSpawner(entities.CreateSpaceSpawnerManagers{
+	//	EntityManager: s.EntityManager,
+	//	Positions:     s.Positions,
+	//	Velocities:    s.Velocities,
+	//	SpaceSpawners: s.SpaceSpawnerTags,
+	//}, 16, -100, 1000, time.Millisecond*200)
 
 	entities.CreateWall(entities.CreateWallManagers{
 		EntityManager: s.EntityManager,

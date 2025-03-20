@@ -14,15 +14,15 @@ Thank you for your support!
 
 package stdcomponents
 
-import (
-	"gomp/pkg/ecs"
-	"gomp/vectors"
-)
+import "gomp/pkg/ecs"
 
-type Position = vectors.Vec2
+type RigidBody struct {
+	IsStatic bool
+	Mass     float32
+}
 
-type PositionComponentManager = ecs.ComponentManager[Position]
+type RigidBodyComponentManager = ecs.ComponentManager[RigidBody]
 
-func NewPositionComponentManager() PositionComponentManager {
-	return ecs.NewComponentManager[Position](PositionComponentId)
+func NewRigidBodyComponentManager() RigidBodyComponentManager {
+	return ecs.NewComponentManager[RigidBody](RigidBodyComponentId)
 }

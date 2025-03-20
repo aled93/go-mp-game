@@ -21,6 +21,7 @@ import (
 	"gomp/examples/new-api/config"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
+	"gomp/vectors"
 	"image/color"
 	"time"
 )
@@ -33,6 +34,7 @@ type CreateSpaceShipManagers struct {
 	Velocities    *stdcomponents.VelocityComponentManager
 	Sprites       *stdcomponents.SpriteComponentManager
 	BoxColliders  *stdcomponents.BoxColliderComponentManager
+	RigidBodies   *stdcomponents.RigidBodyComponentManager
 
 	PlayerTags       *components.PlayerTagComponentManager
 	Hps              *components.HpComponentManager
@@ -49,7 +51,6 @@ func CreateSpaceShip(
 	props.Positions.Create(spaceShip, stdcomponents.Position{
 		X: posX,
 		Y: posY,
-		Z: 0,
 	})
 
 	props.Rotations.Create(spaceShip, stdcomponents.Rotation{
@@ -74,12 +75,19 @@ func CreateSpaceShip(
 	})
 
 	props.BoxColliders.Create(spaceShip, stdcomponents.BoxCollider{
-		Width:   32,
-		Height:  32,
-		OffsetX: 16,
-		OffsetY: 16,
-		Layer:   config.PlayerCollisionLayer,
-		Mask:    1<<config.EnemyCollisionLayer | 1<<config.WallCollisionLayer,
+		Width:  32,
+		Height: 32,
+		Offset: vectors.Vec2{
+			X: 16,
+			Y: 16,
+		},
+		Layer: config.PlayerCollisionLayer,
+		Mask:  1<<config.EnemyCollisionLayer | 1<<config.WallCollisionLayer,
+	})
+
+	props.RigidBodies.Create(spaceShip, stdcomponents.RigidBody{
+		IsStatic: false,
+		Mass:     1,
 	})
 
 	props.PlayerTags.Create(spaceShip, components.PlayerTag{})

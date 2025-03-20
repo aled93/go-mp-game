@@ -35,5 +35,6 @@ const (
 	CollisionComponentId
 	SpatialIndexComponentId
 	AABBComponentId
+	RigidBodyComponentId
 	StdComponentIds
 )

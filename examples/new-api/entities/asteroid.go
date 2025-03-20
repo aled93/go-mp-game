@@ -21,6 +21,7 @@ import (
 	"gomp/examples/new-api/config"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
+	"gomp/vectors"
 	"image/color"
 	"math/rand"
 )
@@ -47,7 +48,6 @@ func CreateAsteroid(
 	props.Positions.Create(bullet, stdcomponents.Position{
 		X: posX,
 		Y: posY,
-		Z: 0,
 	})
 	props.Rotations.Create(bullet, stdcomponents.Rotation{
 		Angle: angle,
@@ -61,12 +61,14 @@ func CreateAsteroid(
 		Y: velocityY,
 	})
 	props.BoxColliders.Create(bullet, stdcomponents.BoxCollider{
-		Width:   32,
-		Height:  32,
-		OffsetX: 16,
-		OffsetY: 16,
-		Layer:   config.EnemyCollisionLayer,
-		Mask:    0,
+		Width:  32,
+		Height: 32,
+		Offset: vectors.Vec2{
+			X: 16,
+			Y: 16,
+		},
+		Layer: config.EnemyCollisionLayer,
+		Mask:  0,
 	})
 	props.Sprites.Create(bullet, stdcomponents.Sprite{
 		Texture: assets.Textures.Get("meteor_large.png"),

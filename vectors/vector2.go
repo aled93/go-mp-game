@@ -72,6 +72,13 @@ func (v Vec2) Neg() Vec2 {
 	return Vec2{-v.X, -v.Y}
 }
 
+func (v Vec2) Perpendicular() Vec2 {
+	return Vec2{
+		X: -v.Y,
+		Y: v.X,
+	}
+}
+
 func (v Vec2) Dot(other Vec2) float32 {
 	return v.X*other.X + v.Y*other.Y
 }

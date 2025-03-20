@@ -26,8 +26,8 @@ import (
 )
 
 const (
-	EPA_TOLERANCE      = 0.0001
-	EPA_MAX_ITERATIONS = 50
+	EPA_TOLERANCE      = 0.00001
+	EPA_MAX_ITERATIONS = 64
 	MIN_NORMAL_LENGTH  = 0.00001
 )
 
@@ -104,8 +104,8 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 		for event := range collisionChan {
 			pair := CollisionPair{event.entityA, event.entityB}
 			s.currentCollisions[pair] = struct{}{}
-			displacement := event.normal.Scale(event.depth * (0.5))
-			pos := vectors.Vec2{X: event.posX, Y: event.posY}.Sub(displacement)
+			displacement := event.normal.Scale(event.depth)
+			pos := event.position.Add(displacement)
 
 			if _, exists := s.activeCollisions[pair]; !exists {
 				proxy := s.EntityManager.Create()
@@ -222,13 +222,13 @@ func (s *CollisionDetectionBVHSystem) checkCollisionGjk(colliderA, colliderB std
 
 	// If collision detected, get penetration details using EPA
 	normal, depth := s.epa(simplex, supportA, supportB)
+	position := posA.Add(posB.Sub(*posA).Scale(0.5))
 	return CollisionEvent{
-		entityA: entityA,
-		entityB: entityB,
-		posX:    posA.X,
-		posY:    posA.Y,
-		normal:  normal,
-		depth:   depth,
+		entityA:  entityA,
+		entityB:  entityB,
+		position: position,
+		normal:   normal,
+		depth:    depth,
 	}, true
 }
 
@@ -367,27 +367,25 @@ func (s *CollisionDetectionBVHSystem) circleSupport(circle *stdcomponents.Circle
 }
 
 func (s *CollisionDetectionBVHSystem) boxSupport(box *stdcomponents.BoxCollider, pos *stdcomponents.Position, rot *stdcomponents.Rotation, scale vectors.Vec2, direction vectors.Vec2) vectors.Vec2 {
-	hw := (box.Width * scale.X) / 2
-	hh := (box.Height * scale.Y) / 2
-
-	// Rotate direction to local space
-	localDir := direction.Rotate(-rot.Angle)
-
-	localX := hw
-	if localDir.X < 0 {
-		localX = -hw
-	}
-	localY := hh
-	if localDir.Y < 0 {
-		localY = -hh
+	vertices := [4]vectors.Vec2{
+		pos.Add(vectors.Vec2{X: box.Width * scale.X / 2, Y: box.Height * scale.Y / 2}),
+		pos.Add(vectors.Vec2{X: -box.Width * scale.X / 2, Y: box.Height * scale.Y / 2}),
+		pos.Add(vectors.Vec2{X: -box.Width * scale.X / 2, Y: -box.Height * scale.Y / 2}),
+		pos.Add(vectors.Vec2{X: box.Width * scale.X / 2, Y: -box.Height * scale.Y / 2}),
 	}
 
-	// Rotate back to world space and translate
-	worldPoint := vectors.Vec2{X: localX, Y: localY}.Rotate(rot.Angle)
-	return vectors.Vec2{
-		X: pos.X + worldPoint.X,
-		Y: pos.Y + worldPoint.Y,
+	var maxPoint vectors.Vec2
+	var maxDistance float32 = -math.MaxFloat32
+
+	for i := range vertices {
+		distance := vertices[i].Dot(direction)
+		if distance > maxDistance {
+			maxDistance = distance
+			maxPoint = vertices[i]
+		}
 	}
+
+	return maxPoint
 }
 
 func (s *CollisionDetectionBVHSystem) polygonSupport(poly *stdcomponents.PolygonCollider, pos *stdcomponents.Position, rot *stdcomponents.Rotation, scale vectors.Vec2, direction vectors.Vec2) vectors.Vec2 {
@@ -409,19 +407,24 @@ func (s *CollisionDetectionBVHSystem) polygonSupport(poly *stdcomponents.Polygon
 
 func (s *CollisionDetectionBVHSystem) gjkCollides(supportA, supportB func(vectors.Vec2) vectors.Vec2) (bool, []vectors.Vec2) {
 	direction := vectors.Vec2{X: 1, Y: 0} // Initial direction
-	simplex := []vectors.Vec2{}
+	simplex := []vectors.Vec2{s.minkowskiSupport(supportA, supportB, direction)}
 
-	for i := 0; i < 50; i++ { // Max iterations to prevent infinite loop
+	for { // Max iterations to prevent infinite loop
 		p := s.minkowskiSupport(supportA, supportB, direction)
+		if p.X == 0 && p.Y == 0 {
+			return false, simplex // No collision
+		}
+
 		if p.Dot(direction) < 0 {
 			return false, nil // No collision
 		}
 		simplex = append(simplex, p)
-		if s.containsOrigin(simplex, direction) {
+		ok, newSimplex := s.containsOrigin(simplex, &direction)
+		simplex = newSimplex
+		if ok {
 			return true, simplex
 		}
 	}
-	return false, nil
 }
 
 func (s *CollisionDetectionBVHSystem) minkowskiSupport(supportA, supportB func(vectors.Vec2) vectors.Vec2, d vectors.Vec2) vectors.Vec2 {
@@ -430,7 +433,7 @@ func (s *CollisionDetectionBVHSystem) minkowskiSupport(supportA, supportB func(v
 	return a.Sub(b)
 }
 
-func (s *CollisionDetectionBVHSystem) containsOrigin(simplex []vectors.Vec2, direction vectors.Vec2) bool {
+func (s *CollisionDetectionBVHSystem) containsOrigin(simplex []vectors.Vec2, direction *vectors.Vec2) (bool, []vectors.Vec2) {
 	a := (simplex)[len(simplex)-1] // Last point added
 	ao := a.Neg()                  // Vector from A to origin
 
@@ -449,36 +452,36 @@ func (s *CollisionDetectionBVHSystem) containsOrigin(simplex []vectors.Vec2, dir
 		// Region AB
 		if abPerp.Dot(ao) > 0 {
 			simplex = []vectors.Vec2{a, b}
-			direction = abPerp
-			return false
+			*direction = abPerp
+			return false, simplex
 		}
 
 		// Region AC
 		if acPerp.Dot(ao) > 0 {
 			simplex = []vectors.Vec2{a, c}
-			direction = acPerp
-			return false
+			*direction = acPerp
+			return false, simplex
 		}
 
 		// Inside triangle
-		return true
+		return true, simplex
 
 	case 2: // Line segment case
 		b := (simplex)[0]
 		ab := b.Sub(a)
 
 		// Perpendicular to AB facing origin
-		abPerp := s.tripleProduct(ab, ao, ab)
+		abPerp := ab.Perpendicular()
 		if abPerp.Dot(ao) > 0 {
-			direction = abPerp
+			*direction = abPerp
 		} else {
 			simplex = []vectors.Vec2{a}
-			direction = ao
+			*direction = ao
 		}
-		return false
+		return false, simplex
 
 	default:
-		return false
+		return false, simplex
 	}
 }
 
@@ -492,60 +495,112 @@ func (s *CollisionDetectionBVHSystem) tripleProduct(a, b, c vectors.Vec2) vector
 	}
 }
 
-func (s *CollisionDetectionBVHSystem) epa(simplex []vectors.Vec2, supportA, supportB func(vectors.Vec2) vectors.Vec2) (vectors.Vec2, float32) {
-	if len(simplex) < 3 {
-		return vectors.Vec2{}, 0 // Not a valid simplex
-	}
+/*
+		function EPA(polytope, shapeA, shapeB) {
+			let minIndex = 0;
+			let minDistance = Infinity;
+			let minNormal;
 
-	polytope := make([]vectors.Vec2, len(simplex))
-	copy(polytope, simplex)
+			while (minDistance == Infinity) {
+				for (let i = 0; i < polytope.length; i++) {
+					let j = (i + 1) % polytope.length;
 
-	for iteration := 0; iteration < EPA_MAX_ITERATIONS; iteration++ {
-		edge, normal := s.findClosestEdge(polytope)
-		if normal.LengthSquared() < MIN_NORMAL_LENGTH { // Add safety check
-			return vectors.Vec2{}, 0
-		}
+					let vertexI = polytope[i].copy();
+					let vertexJ = polytope[j].copy();
 
-		point := s.minkowskiSupport(supportA, supportB, normal)
-		if point.Dot(normal) < 0 { // Origin not in expansion direction
-			return vectors.Vec2{}, 0
-		}
+					let ij = vertexJ.sub(vertexI);
 
-		distance := point.Dot(normal)
-		if math.Abs(float64(distance-edge.distance)) < EPA_TOLERANCE {
-			if normal.LengthSquared() < MIN_NORMAL_LENGTH {
-				return vectors.Vec2{}, 0
+					let normal = createVector(ij.y, -ij.x).normalize();
+					let distance = normal.dot(vertexI);
+
+					if (distance < 0) {
+						distance *= -1;
+						normal.mult(-1);
+					}
+
+					if (distance < minDistance) {
+						minDistance = distance;
+						minNormal = normal;
+						minIndex = j;
+					}
+				}
+			let support = support(shapeA, shapeB, minNormal);
+			let sDistance = minNormal.dot(support);
+
+			if (abs(sDistance - minDistance) > 0.001) {
+			 	minDistance = Infinity;
+				polytope.splice(minIndex, 0, support);
 			}
-			return normal.NormalizedSafe(), distance
 		}
 
-		polytope = s.insertPoint(polytope, edge.index, point)
+		return minNormal.mult(minDistance + 0.001);
 	}
-	return vectors.Vec2{}, 0
+*/
+func (s *CollisionDetectionBVHSystem) epa(simplex []vectors.Vec2, supportA, supportB func(vectors.Vec2) vectors.Vec2) (vectors.Vec2, float32) {
+	var minIndex int = 0
+	var minDistance float32 = float32(math.MaxFloat32)
+	var minNormal vectors.Vec2
+
+	for minDistance == float32(math.MaxFloat32) {
+		for i := 0; i < len(simplex); i++ {
+			j := (i + 1) % len(simplex)
+			a := simplex[i]
+			b := simplex[j]
+
+			edge := b.Sub(a)
+
+			normal := vectors.Vec2{edge.Y, -edge.X}.Normalize()
+			distance := normal.Dot(a)
+
+			if distance < 0 {
+				distance *= -1
+				normal = normal.Scale(-1)
+			}
+
+			if distance < minDistance {
+				minDistance = distance
+				minNormal = normal
+				minIndex = j
+			}
+		}
+
+		support := s.minkowskiSupport(supportA, supportB, minNormal)
+		sDistance := minNormal.Dot(support)
+
+		if math.Abs(float64(sDistance-minDistance)) > EPA_TOLERANCE {
+			minDistance = float32(math.MaxFloat32)
+			simplex = append(simplex[:minIndex], append([]vectors.Vec2{support}, simplex[minIndex:]...)...)
+		}
+	}
+
+	return minNormal, minDistance + EPA_TOLERANCE
 }
 
 func (s *CollisionDetectionBVHSystem) findClosestEdge(polytope []vectors.Vec2) (СlosestEdge, vectors.Vec2) {
-	minDistance := float32(math.MaxFloat32)
-	bestEdge := СlosestEdge{index: -1}
+	bestEdge := СlosestEdge{index: -1, distance: float32(math.MaxFloat32)}
 	var bestNormal vectors.Vec2
 
-	for i := 0; i < len(polytope); i++ {
-		j := (i + 1) % len(polytope)
-		a := polytope[i]
-		b := polytope[j]
+	for bestEdge.distance == float32(math.MaxFloat32) {
+		for i := 0; i < len(polytope); i++ {
+			j := (i + 1) % len(polytope)
+			a := polytope[i]
+			b := polytope[j]
 
-		edge := b.Sub(a)
-		if edge.LengthSquared() < MIN_NORMAL_LENGTH { // Skip degenerate edges
-			continue
-		}
+			edge := b.Sub(a)
 
-		normal := vectors.Vec2{-edge.Y, edge.X}.NormalizedSafe()
-		distance := normal.Dot(a)
+			normal := vectors.Vec2{edge.Y, -edge.X}.Normalize()
+			distance := normal.Dot(a)
 
-		if distance < minDistance {
-			minDistance = distance
-			bestEdge = СlosestEdge{index: i, distance: distance}
-			bestNormal = normal
+			if distance < 0 {
+				distance *= -1
+				normal = normal.Neg()
+			}
+
+			if distance < bestEdge.distance {
+				bestEdge.distance = distance
+				bestEdge.index = j
+				bestNormal = normal
+			}
 		}
 	}
 
@@ -555,12 +610,4 @@ func (s *CollisionDetectionBVHSystem) findClosestEdge(polytope []vectors.Vec2) (
 type СlosestEdge struct {
 	index    int
 	distance float32
-}
-
-func (s *CollisionDetectionBVHSystem) insertPoint(polytope []vectors.Vec2, index int, point vectors.Vec2) []vectors.Vec2 {
-	newPolytope := make([]vectors.Vec2, 0, len(polytope)+1)
-	newPolytope = append(newPolytope, polytope[:index+1]...)
-	newPolytope = append(newPolytope, point)
-	newPolytope = append(newPolytope, polytope[index+1:]...)
-	return newPolytope
 }

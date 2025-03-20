@@ -41,12 +41,11 @@ const (
 )
 
 type BoxCollider struct {
-	Width   float32
-	Height  float32
-	OffsetX float32
-	OffsetY float32
-	Layer   CollisionLayer
-	Mask    CollisionMask
+	Width  float32
+	Height float32
+	Offset vectors.Vec2
+	Layer  CollisionLayer
+	Mask   CollisionMask
 }
 
 type BoxColliderComponentManager = ecs.ComponentManager[BoxCollider]
@@ -56,11 +55,10 @@ func NewBoxColliderComponentManager() BoxColliderComponentManager {
 }
 
 type CircleCollider struct {
-	Radius  float32
-	Layer   CollisionLayer
-	Mask    CollisionMask
-	OffsetX float32
-	OffsetY float32
+	Radius float32
+	Layer  CollisionLayer
+	Mask   CollisionMask
+	Offset vectors.Vec2
 }
 
 type CircleColliderComponentManager = ecs.ComponentManager[CircleCollider]
@@ -73,8 +71,7 @@ type PolygonCollider struct {
 	Vertices []vectors.Vec2
 	Layer    CollisionLayer
 	Mask     CollisionMask
-	OffsetX  float32
-	OffsetY  float32
+	Offset   vectors.Vec2
 }
 
 type PolygonColliderComponentManager = ecs.ComponentManager[PolygonCollider]
@@ -84,11 +81,10 @@ func NewPolygonColliderComponentManager() PolygonColliderComponentManager {
 }
 
 type GenericCollider struct {
-	Shape   ColliderShape
-	Layer   CollisionLayer
-	Mask    CollisionMask
-	OffsetX float32
-	OffsetY float32
+	Shape  ColliderShape
+	Layer  CollisionLayer
+	Mask   CollisionMask
+	Offset vectors.Vec2
 }
 
 type GenericColliderComponentManager = ecs.ComponentManager[GenericCollider]

@@ -41,6 +41,7 @@ type ComponentList struct {
 	Collision       stdcomponents.CollisionComponentManager
 	AABB            stdcomponents.AABBComponentManager
 	SpatialIndex    stdcomponents.SpatialIndexComponentManager
+	RigidBody       stdcomponents.RigidBodyComponentManager
 
 	Health               components.HpComponentManager
 	Controller           components.ControllerComponentManager
@@ -77,6 +78,7 @@ func NewComponentList() ComponentList {
 		Collision:       stdcomponents.NewCollisionComponentManager(),
 		AABB:            stdcomponents.NewAABBComponentManager(),
 		SpatialIndex:    stdcomponents.NewSpatialIndexComponentManager(),
+		RigidBody:       stdcomponents.NewRigidBodyComponentManager(),
 
 		Health:               components.NewHealthComponentManager(),
 		Controller:           components.NewControllerComponentManager(),

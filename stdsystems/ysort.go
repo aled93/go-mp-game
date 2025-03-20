@@ -42,7 +42,8 @@ func (s *YSortSystem) Run() {
 		yDepth := pos.Y * ySortOffsetScale
 
 		// Preserve original Z layer but add Y-based offset
-		renderOrder.CalculatedZ = float32(int(pos.Z)) + yDepth
+		//renderOrder.CalculatedZ = float32(int(pos.Z)) + yDepth
+		renderOrder.CalculatedZ = yDepth
 
 		return true
 	})
