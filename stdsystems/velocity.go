@@ -28,8 +28,8 @@ func (s *VelocitySystem) Run(dt time.Duration) {
 		velocity := s.Velocities.Get(e)
 		position := s.Positions.Get(e)
 
-		position.X += velocity.X * dtSec
-		position.Y += velocity.Y * dtSec
+		position.XY.X += velocity.X * dtSec
+		position.XY.Y += velocity.Y * dtSec
 		return true
 	})
 }

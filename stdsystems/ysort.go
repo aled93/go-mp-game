@@ -39,7 +39,7 @@ func (s *YSortSystem) Run() {
 		renderOrder := s.RenderOrders.Get(entity)
 
 		// Calculate depth based on Y position
-		yDepth := pos.Y * ySortOffsetScale
+		yDepth := pos.XY.Y * ySortOffsetScale
 
 		// Preserve original Z layer but add Y-based offset
 		//renderOrder.CalculatedZ = float32(int(pos.Z)) + yDepth

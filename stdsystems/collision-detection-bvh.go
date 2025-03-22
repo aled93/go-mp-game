@@ -28,7 +28,6 @@ import (
 const (
 	EPA_TOLERANCE      = 0.00001
 	EPA_MAX_ITERATIONS = 64
-	MIN_NORMAL_LENGTH  = 0.00001
 )
 
 func NewCollisionDetectionBVHSystem() CollisionDetectionBVHSystem {
@@ -117,7 +116,10 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 					Depth:  event.depth,
 				})
 
-				s.Positions.Create(proxy, stdcomponents.Position{X: pos.X, Y: pos.Y})
+				s.Positions.Create(proxy, stdcomponents.Position{
+					XY: vectors.Vec2{
+						X: pos.X, Y: pos.Y,
+					}})
 				s.activeCollisions[pair] = proxy
 			} else {
 				proxy := s.activeCollisions[pair]
@@ -126,8 +128,8 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 				collision.State = stdcomponents.CollisionStateStay
 				collision.Depth = event.depth
 				collision.Normal = event.normal
-				position.X = pos.X
-				position.Y = pos.Y
+				position.XY.X = pos.X
+				position.XY.Y = pos.Y
 			}
 		}
 		close(doneChan)
@@ -222,7 +224,7 @@ func (s *CollisionDetectionBVHSystem) checkCollisionGjk(colliderA, colliderB std
 
 	// If collision detected, get penetration details using EPA
 	normal, depth := s.epa(simplex, supportA, supportB)
-	position := posA.Add(posB.Sub(*posA))
+	position := posA.XY.Add(posB.XY.Sub(posA.XY))
 	return CollisionEvent{
 		entityA:  entityA,
 		entityB:  entityB,
@@ -232,50 +234,10 @@ func (s *CollisionDetectionBVHSystem) checkCollisionGjk(colliderA, colliderB std
 	}, true
 }
 
-func (s *CollisionDetectionBVHSystem) checkCollision(colliderA, colliderB stdcomponents.GenericCollider, entityA, entityB ecs.Entity) bool {
-	posA := s.Positions.Get(entityA)
-	posB := s.Positions.Get(entityB)
-	scaleA := s.getScaleOrDefault(entityA)
-	scaleB := s.getScaleOrDefault(entityB)
-
-	switch colliderA.Shape {
-	case stdcomponents.BoxColliderShape:
-		a := s.BoxColliders.Get(entityA)
-		switch colliderB.Shape {
-		case stdcomponents.BoxColliderShape:
-			return true // AABB overlap already confirmed
-		case stdcomponents.CircleColliderShape:
-			b := s.CircleColliders.Get(entityB)
-			return s.circleVsBox(b, *posB, scaleB, a, *posA, scaleA)
-		default:
-			return false
-		}
-	case stdcomponents.CircleColliderShape:
-		a := s.CircleColliders.Get(entityA)
-		switch colliderB.Shape {
-		case stdcomponents.BoxColliderShape:
-			b := s.BoxColliders.Get(entityB)
-			return s.circleVsBox(a, *posA, scaleA, b, *posB, scaleB)
-		case stdcomponents.CircleColliderShape:
-			b := s.CircleColliders.Get(entityB)
-			dx := posA.X - posB.X
-			dy := posA.Y - posB.Y
-			distanceSq := dx*dx + dy*dy
-			radiusA := a.Radius * scaleA.X
-			radiusB := b.Radius * scaleB.X
-			return distanceSq <= (radiusA+radiusB)*(radiusA+radiusB)
-		default:
-			return false
-		}
-	default:
-		return false
-	}
-}
-
 func (s *CollisionDetectionBVHSystem) getScaleOrDefault(entity ecs.Entity) vectors.Vec2 {
 	scale := s.Scales.Get(entity)
 	if scale != nil {
-		return vectors.Vec2{X: scale.X, Y: scale.Y} // Dereference the component pointer
+		return scale.XY // Dereference the component pointer
 	}
 	// Return default scale of 1 if component doesn't exist
 	return vectors.Vec2{X: 1, Y: 1}
@@ -288,29 +250,6 @@ func (s *CollisionDetectionBVHSystem) getRotationOrDefault(entity ecs.Entity) st
 	}
 	// Return default zero rotation if component doesn't exist
 	return stdcomponents.Rotation{Angle: 0}
-}
-
-func (s *CollisionDetectionBVHSystem) circleVsBox(circleCollider *stdcomponents.CircleCollider, circlePos stdcomponents.Position, circleScale vectors.Vec2, boxCollider *stdcomponents.BoxCollider, boxPos stdcomponents.Position, boxScale vectors.Vec2) bool {
-	radius := circleCollider.Radius * circleScale.X
-	boxWidth := boxCollider.Width * boxScale.X
-	boxHeight := boxCollider.Height * boxScale.Y
-
-	halfWidth := boxWidth / 2
-	halfHeight := boxHeight / 2
-
-	boxMinX := boxPos.X - halfWidth
-	boxMaxX := boxPos.X + halfWidth
-	boxMinY := boxPos.Y - halfHeight
-	boxMaxY := boxPos.Y + halfHeight
-
-	closestX := max(boxMinX, min(circlePos.X, boxMaxX))
-	closestY := max(boxMinY, min(circlePos.Y, boxMaxY))
-
-	dx := circlePos.X - closestX
-	dy := circlePos.Y - closestY
-	distanceSq := dx*dx + dy*dy
-
-	return distanceSq <= radius*radius
 }
 
 func (s *CollisionDetectionBVHSystem) processExitStates() {
@@ -356,34 +295,29 @@ func (s *CollisionDetectionBVHSystem) getSupportFunction(entity ecs.Entity, coll
 
 func (s *CollisionDetectionBVHSystem) circleSupport(circle *stdcomponents.CircleCollider, pos *stdcomponents.Position, scale vectors.Vec2, direction vectors.Vec2) vectors.Vec2 {
 	if direction.LengthSquared() == 0 {
-		return vectors.Vec2{X: pos.X, Y: pos.Y}
+		return pos.XY
 	}
 	radius := circle.Radius * scale.X
 	dirNorm := direction.Normalize()
-	return vectors.Vec2{
-		X: pos.X + dirNorm.X*radius,
-		Y: pos.Y + dirNorm.Y*radius,
-	}
+	return pos.XY.Add(dirNorm.Scale(radius))
 }
 
 func (s *CollisionDetectionBVHSystem) boxSupport(box *stdcomponents.BoxCollider, pos *stdcomponents.Position, rot *stdcomponents.Rotation, scale vectors.Vec2, direction vectors.Vec2) vectors.Vec2 {
-	halfWidth := box.Width * scale.X / 2
-	halfHeight := box.Height * scale.Y / 2
+	scaledWH := box.WH.Mul(scale)
 	vertices := [4]vectors.Vec2{
-		{X: halfWidth, Y: halfHeight},
-		{X: -halfWidth, Y: halfHeight},
-		{X: -halfWidth, Y: -halfHeight},
-		{X: halfWidth, Y: -halfHeight},
+		{X: scaledWH.X, Y: scaledWH.Y},
+		{X: 0, Y: scaledWH.Y},
+		{X: 0, Y: 0},
+		{X: scaledWH.X, Y: 0},
 	}
 
 	var maxPoint vectors.Vec2
 	var maxDistance float32 = -math.MaxFloat32
 
 	for i := range vertices {
-		// Apply rotation
-		rotated := vertices[i].Rotate(rot.Angle)
-		// Move to world space
-		worldVertex := vectors.Vec2{X: pos.X + rotated.X, Y: pos.Y + rotated.Y}
+		vertex := &vertices[i]
+		rotated := vertex.Sub(box.Offset.Mul(scale)).Rotate(rot.Angle)
+		worldVertex := pos.XY.Add(rotated)
 
 		distance := worldVertex.Dot(direction)
 		if distance > maxDistance {
@@ -402,7 +336,7 @@ func (s *CollisionDetectionBVHSystem) polygonSupport(poly *stdcomponents.Polygon
 	for _, v := range poly.Vertices {
 		scaled := vectors.Vec2{X: v.X * scale.X, Y: v.Y * scale.Y}
 		rotated := scaled.Rotate(rot.Angle)
-		worldVertex := vectors.Vec2{X: pos.X + rotated.X, Y: pos.Y + rotated.Y}
+		worldVertex := pos.XY.Add(rotated)
 		dot := float64(worldVertex.Dot(direction))
 		if dot > maxDot {
 			maxDot = dot
@@ -580,7 +514,7 @@ func (s *CollisionDetectionBVHSystem) epa(simplex []vectors.Vec2, supportA, supp
 		}
 	}
 
-	return minNormal, minDistance + EPA_TOLERANCE
+	return minNormal, minDistance
 }
 
 func (s *CollisionDetectionBVHSystem) findClosestEdge(polytope []vectors.Vec2) (СlosestEdge, vectors.Vec2) {

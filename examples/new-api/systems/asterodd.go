@@ -73,14 +73,14 @@ func (s *AssteroddSystem) Init() {
 		BoxColliders:  s.BoxColliders,
 		RigidBodies:   s.RigidBodies,
 	}, 500, 500, 0)
-	//entities.CreateSpaceSpawner(entities.CreateSpaceSpawnerManagers{
-	//	EntityManager: s.EntityManager,
-	//	Positions:     s.Positions,
-	//	Velocities:    s.Velocities,
-	//	SpaceSpawners: s.SpaceSpawnerTags,
-	//}, 16, -100, 1000, time.Millisecond*200)
+	entities.CreateSpaceSpawner(entities.CreateSpaceSpawnerManagers{
+		EntityManager: s.EntityManager,
+		Positions:     s.Positions,
+		Velocities:    s.Velocities,
+		SpaceSpawners: s.SpaceSpawnerTags,
+	}, 16, -100, 1000, time.Millisecond*200)
 
-	entities.CreateWall(entities.CreateWallManagers{
+	wallManager := entities.CreateWallManagers{
 		EntityManager: s.EntityManager,
 		Positions:     s.Positions,
 		Rotations:     s.Rotations,
@@ -88,35 +88,12 @@ func (s *AssteroddSystem) Init() {
 		BoxColliders:  s.BoxColliders,
 		Sprites:       s.Sprites,
 		WallTags:      s.WallTags,
-	}, 0, -1000, 0, 5000, 1000)
-	entities.CreateWall(entities.CreateWallManagers{
-		EntityManager: s.EntityManager,
-		Positions:     s.Positions,
-		Rotations:     s.Rotations,
-		Scales:        s.Scales,
-		BoxColliders:  s.BoxColliders,
-		Sprites:       s.Sprites,
-		WallTags:      s.WallTags,
-	}, 0, 5000, 0, 5000, 1000)
-
-	entities.CreateWall(entities.CreateWallManagers{
-		EntityManager: s.EntityManager,
-		Positions:     s.Positions,
-		Rotations:     s.Rotations,
-		Scales:        s.Scales,
-		BoxColliders:  s.BoxColliders,
-		Sprites:       s.Sprites,
-		WallTags:      s.WallTags,
-	}, -1000, -1000, 0, 1000, 7000)
-	entities.CreateWall(entities.CreateWallManagers{
-		EntityManager: s.EntityManager,
-		Positions:     s.Positions,
-		Rotations:     s.Rotations,
-		Scales:        s.Scales,
-		BoxColliders:  s.BoxColliders,
-		Sprites:       s.Sprites,
-		WallTags:      s.WallTags,
-	}, 5000, -1000, 0, 1000, 7000)
+		RigidBodies:   s.RigidBodies,
+	}
+	entities.CreateWall(&wallManager, 0, -1000, 0, 5000, 1000)
+	entities.CreateWall(&wallManager, 0, 5000, 0, 5000, 1000)
+	entities.CreateWall(&wallManager, -1000, -1000, 0, 1000, 7000)
+	entities.CreateWall(&wallManager, 5000, -1000, 0, 1000, 7000)
 
 	manager := s.EntityManager.Create()
 	s.SceneManager.Create(manager, components.AsteroidSceneManager{})

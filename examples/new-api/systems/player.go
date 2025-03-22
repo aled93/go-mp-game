@@ -52,8 +52,8 @@ func (s *PlayerSystem) Init() {
 			s.YSorts, s.RenderOrders, s.BoxColliders, s.GenericCollider,
 		)
 
-		npc.Position.X = 100 + rand.Float32()*700
-		npc.Position.Y = 100 + rand.Float32()*500
+		npc.Position.XY.X = 100 + rand.Float32()*700
+		npc.Position.XY.Y = 100 + rand.Float32()*500
 		npc.AnimationPlayer.Current = uint8(rand.Intn(7))
 	}
 
@@ -62,8 +62,8 @@ func (s *PlayerSystem) Init() {
 		s.Velocities, s.AnimationPlayers, s.AnimationStates, s.Tints, s.Flips, s.Renderables,
 		s.YSorts, s.RenderOrders, s.BoxColliders, s.GenericCollider,
 	)
-	player.Position.X = 100
-	player.Position.Y = 100
+	player.Position.XY.X = 100
+	player.Position.XY.Y = 100
 	player.GenericCollider.Layer = config.PlayerCollisionLayer
 	player.GenericCollider.Mask = 1 << config.EnemyCollisionLayer
 

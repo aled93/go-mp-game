@@ -14,10 +14,23 @@ Thank you for your support!
 
 package stdcomponents
 
-import "gomp/pkg/ecs"
+import (
+	"gomp/pkg/ecs"
+	"gomp/vectors"
+	"math"
+)
 
 type Rotation struct {
-	Angle float32
+	Angle vectors.Radians
+}
+
+func (r Rotation) SetFromDegrees(deg float64) Rotation {
+	r.Angle = deg * math.Pi / 180
+	return r
+}
+
+func (r Rotation) Degrees() float64 {
+	return r.Angle * 180 / math.Pi
 }
 
 type RotationComponentManager = ecs.ComponentManager[Rotation]

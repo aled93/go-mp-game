@@ -85,12 +85,12 @@ func (s *RenderBogdanSystem) Run(dt time.Duration) bool {
 		box := s.ColliderBoxes.Get(e)
 		pos := s.Positions.Get(e)
 
-		rl.DrawRectangleLines(int32(pos.X), int32(pos.Y), int32(box.Width), int32(box.Height), rl.Red)
+		rl.DrawRectangleLines(int32(pos.XY.X), int32(pos.XY.Y), int32(box.WH.X), int32(box.WH.Y), rl.Red)
 		return true
 	})
 	s.Collisions.EachEntity(func(entity ecs.Entity) bool {
 		pos := s.Positions.Get(entity)
-		rl.DrawRectangle(int32(pos.X), int32(pos.Y), 16, 16, rl.Red)
+		rl.DrawRectangle(int32(pos.XY.X), int32(pos.XY.X), 16, 16, rl.Red)
 		return true
 	})
 	rl.DrawRectangle(0, 0, 200, 60, rl.DarkBrown)
@@ -208,8 +208,8 @@ func (s *RenderBogdanSystem) preparePositions(wg *sync.WaitGroup, dt time.Durati
 		//decay := 16.0 // DECAY IS TICKRATE DEPENDENT
 		//texturePro.Dest.X = float32(s.expDecay(float64(texturePro.Dest.X), float64(position.X), decay, dts))
 		//texturePro.Dest.Y = float32(s.expDecay(float64(texturePro.Dest.Y), float64(position.Y), decay, dts))
-		texturePro.Dest.X = position.X
-		texturePro.Dest.Y = position.Y
+		texturePro.Dest.X = position.XY.X
+		texturePro.Dest.Y = position.XY.Y
 
 		return true
 	})
@@ -223,7 +223,7 @@ func (s *RenderBogdanSystem) prepareRotations(wg *sync.WaitGroup) {
 		if rotation == nil {
 			return true
 		}
-		texturePro.Rotation = rotation.Angle
+		texturePro.Rotation = float32(rotation.Angle)
 		return true
 	})
 }
@@ -236,8 +236,8 @@ func (s *RenderBogdanSystem) prepareScales(wg *sync.WaitGroup) {
 		if scale == nil {
 			return true
 		}
-		texturePro.Dest.Width *= scale.X
-		texturePro.Dest.Height *= scale.Y
+		texturePro.Dest.Width *= scale.XY.X
+		texturePro.Dest.Height *= scale.XY.Y
 		return true
 	})
 }

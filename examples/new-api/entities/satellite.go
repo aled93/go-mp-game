@@ -37,21 +37,23 @@ type CreateSatelliteManagers struct {
 func CreateSatellite(
 	props CreateSatelliteManagers,
 	posX, posY float32,
-	rotationAngle float32,
+	angle float64,
 ) ecs.Entity {
 	satellite := props.EntityManager.Create()
 	props.Positions.Create(satellite, stdcomponents.Position{
-		X: posX,
-		Y: posY,
+		XY: vectors.Vec2{
+			X: posX,
+			Y: posY,
+		},
 	})
 
-	props.Rotations.Create(satellite, stdcomponents.Rotation{
-		Angle: rotationAngle,
-	})
+	props.Rotations.Create(satellite, stdcomponents.Rotation{}.SetFromDegrees(angle))
 
 	props.Scales.Create(satellite, stdcomponents.Scale{
-		X: 1,
-		Y: 1,
+		XY: vectors.Vec2{
+			X: 1,
+			Y: 1,
+		},
 	})
 
 	props.Sprites.Create(satellite, stdcomponents.Sprite{
@@ -62,8 +64,10 @@ func CreateSatellite(
 	})
 
 	props.BoxColliders.Create(satellite, stdcomponents.BoxCollider{
-		Width:  64,
-		Height: 64,
+		WH: vectors.Vec2{
+			X: 64,
+			Y: 64,
+		},
 		Offset: vectors.Vec2{
 			X: 32,
 			Y: 32,
@@ -72,7 +76,7 @@ func CreateSatellite(
 		Mask:  1<<config.EnemyCollisionLayer | 1<<config.BulletCollisionLayer | 1<<config.PlayerCollisionLayer,
 	})
 	props.RigidBodies.Create(satellite, stdcomponents.RigidBody{
-		IsStatic: true,
+		IsStatic: false,
 	})
 
 	return satellite

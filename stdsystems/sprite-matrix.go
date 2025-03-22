@@ -27,9 +27,9 @@ type SpriteMatrixSystem struct {
 func (s *SpriteMatrixSystem) Init() {}
 func (s *SpriteMatrixSystem) Run() {
 	s.SpriteMatrixes.EachEntityParallel(func(entity ecs.Entity) bool {
-		spriteMatrix := s.SpriteMatrixes.Get(entity)    //
-		animationState := s.AnimationStates.Get(entity) //
+		spriteMatrix := s.SpriteMatrixes.Get(entity) //
 		position := s.Positions.Get(entity)
+		animationState := s.AnimationStates.Get(entity) //
 
 		frame := spriteMatrix.Animations[*animationState].Frame
 
@@ -39,7 +39,7 @@ func (s *SpriteMatrixSystem) Run() {
 				Texture: spriteMatrix.Texture, //
 				Frame:   frame,                //
 				Origin:  spriteMatrix.Origin,
-				Dest:    rl.Rectangle{X: position.X, Y: position.Y, Width: frame.Width, Height: frame.Height}, //
+				Dest:    rl.Rectangle{X: position.XY.X, Y: position.XY.Y, Width: frame.Width, Height: frame.Height}, //
 			})
 		} else {
 			// Run spriteRender

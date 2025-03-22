@@ -19,7 +19,9 @@ import (
 	"gomp/vectors"
 )
 
-type Position = vectors.Vec2
+type Position struct {
+	XY vectors.Vec2
+}
 
 type PositionComponentManager = ecs.ComponentManager[Position]
 

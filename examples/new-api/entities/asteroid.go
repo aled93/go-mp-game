@@ -36,33 +36,39 @@ type CreateAsteroidManagers struct {
 	Sprites       *stdcomponents.SpriteComponentManager
 	AsteroidTags  *components.AsteroidComponentManager
 	Hp            *components.HpComponentManager
+	RigidBodies   *stdcomponents.RigidBodyComponentManager
 }
 
 func CreateAsteroid(
 	props CreateAsteroidManagers,
-	posX, posY, angle float32,
+	posX, posY float32,
+	angle float64,
 	scaleFactor float32,
 	velocityX, velocityY float32,
 ) ecs.Entity {
 	bullet := props.EntityManager.Create()
 	props.Positions.Create(bullet, stdcomponents.Position{
-		X: posX,
-		Y: posY,
+		XY: vectors.Vec2{
+			X: posX,
+			Y: posY,
+		},
 	})
-	props.Rotations.Create(bullet, stdcomponents.Rotation{
-		Angle: angle,
-	})
+	props.Rotations.Create(bullet, stdcomponents.Rotation{}.SetFromDegrees(angle))
 	props.Scales.Create(bullet, stdcomponents.Scale{
-		X: 1 * scaleFactor,
-		Y: 1 * scaleFactor,
+		XY: vectors.Vec2{
+			X: 1 * scaleFactor,
+			Y: 1 * scaleFactor,
+		},
 	})
 	props.Velocities.Create(bullet, stdcomponents.Velocity{
 		X: velocityX,
 		Y: velocityY,
 	})
 	props.BoxColliders.Create(bullet, stdcomponents.BoxCollider{
-		Width:  32,
-		Height: 32,
+		WH: vectors.Vec2{
+			X: 32,
+			Y: 32,
+		},
 		Offset: vectors.Vec2{
 			X: 16,
 			Y: 16,
@@ -94,6 +100,10 @@ func CreateAsteroid(
 	props.Hp.Create(bullet, components.Hp{
 		Hp:    hp,
 		MaxHp: hp,
+	})
+	props.RigidBodies.Create(bullet, stdcomponents.RigidBody{
+		IsStatic: true,
+		Mass:     1,
 	})
 
 	return bullet

@@ -39,28 +39,33 @@ type CreateBulletManagers struct {
 
 func CreateBullet(
 	props CreateBulletManagers,
-	posX, posY, angle float32,
+	posX, posY float32,
+	angle float64,
 	velocityX, velocityY float32,
 ) ecs.Entity {
 	bullet := props.EntityManager.Create()
 	props.Positions.Create(bullet, stdcomponents.Position{
-		X: posX,
-		Y: posY,
+		XY: vectors.Vec2{
+			X: posX,
+			Y: posY,
+		},
 	})
-	props.Rotations.Create(bullet, stdcomponents.Rotation{
-		Angle: angle,
-	})
+	props.Rotations.Create(bullet, stdcomponents.Rotation{}.SetFromDegrees(angle))
 	props.Scales.Create(bullet, stdcomponents.Scale{
-		X: 1,
-		Y: 1,
+		XY: vectors.Vec2{
+			X: 1,
+			Y: 1,
+		},
 	})
 	props.Velocities.Create(bullet, stdcomponents.Velocity{
 		X: velocityX,
 		Y: velocityY,
 	})
 	props.BoxColliders.Create(bullet, stdcomponents.BoxCollider{
-		Width:  16,
-		Height: 16,
+		WH: vectors.Vec2{
+			X: 16,
+			Y: 16,
+		},
 		Offset: vectors.Vec2{
 			X: 8,
 			Y: 8,

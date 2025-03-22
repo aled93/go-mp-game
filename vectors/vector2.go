@@ -14,7 +14,9 @@ Thank you for your support!
 
 package vectors
 
-import "math"
+import (
+	"math"
+)
 
 type Vec2 struct {
 	X, Y float32
@@ -56,10 +58,10 @@ func (v Vec2) Normalize() Vec2 {
 	return v.Scale(1 / v.Length())
 }
 
-func (v Vec2) Rotate(angle float32) Vec2 {
+func (v Vec2) Rotate(angle Radians) Vec2 {
 	return Vec2{
-		v.X*float32(math.Cos(float64(angle))) - v.Y*float32(math.Sin(float64(angle))),
-		v.X*float32(math.Sin(float64(angle))) + v.Y*float32(math.Cos(float64(angle))),
+		v.X*float32(math.Cos(angle)) - v.Y*float32(math.Sin(angle)),
+		v.X*float32(math.Sin(angle)) + v.Y*float32(math.Cos(angle)),
 	}
 }
 
@@ -81,17 +83,4 @@ func (v Vec2) Perpendicular() Vec2 {
 
 func (v Vec2) Dot(other Vec2) float32 {
 	return v.X*other.X + v.Y*other.Y
-}
-
-const (
-	MIN_NORMAL_LENGTH = 0.00001
-)
-
-// NormalizedSafe is safe normalization method
-func (v Vec2) NormalizedSafe() Vec2 {
-	lengthSq := v.X*v.X + v.Y*v.Y
-	if lengthSq < MIN_NORMAL_LENGTH {
-		return Vec2{1, 0} // Default to right direction
-	}
-	return v.Scale(float32(1 / math.Sqrt(float64(lengthSq))))
 }

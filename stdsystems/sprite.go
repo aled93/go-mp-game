@@ -43,12 +43,12 @@ func (s *SpriteSystem) Run() {
 
 		renderable := s.Renderables.Get(entity)
 		if renderable == nil {
-			s.Renderables.Create(entity, stdcomponents.SpriteRenderableType)
+			renderable = s.Renderables.Create(entity, stdcomponents.SpriteRenderableType)
 		}
 
 		renderOrder := s.RenderOrder.Get(entity)
 		if renderOrder == nil {
-			s.RenderOrder.Create(entity, stdcomponents.RenderOrder{})
+			renderOrder = s.RenderOrder.Create(entity, stdcomponents.RenderOrder{})
 		}
 
 		tr := s.RLTexturePros.Get(entity)
@@ -57,10 +57,10 @@ func (s *SpriteSystem) Run() {
 				Texture: sprite.Texture, //
 				Frame:   sprite.Frame,   //
 				Origin: rl.Vector2{
-					X: sprite.Origin.X * scale.X,
-					Y: sprite.Origin.Y * scale.Y,
+					X: sprite.Origin.X * scale.XY.X,
+					Y: sprite.Origin.Y * scale.XY.Y,
 				},
-				Dest: rl.Rectangle{X: position.X, Y: position.Y, Width: sprite.Frame.Width, Height: sprite.Frame.Height}, //
+				Dest: rl.Rectangle{X: position.XY.X, Y: position.XY.Y, Width: sprite.Frame.Width, Height: sprite.Frame.Height}, //
 				Tint: stdcomponents.Tint{
 					R: 255,
 					G: 255,

@@ -41,7 +41,7 @@ func (s *NetworkSendSystem) Init() {
 	s.Positions.SetEncoder(func(components []stdcomponents.Position) []byte {
 		data := make([]byte, 0)
 		for _, component := range components {
-			binary := fmt.Sprintf("%b", component.X)
+			binary := fmt.Sprintf("%b", component.XY.X)
 			data = append(data, []byte(binary)...)
 		}
 

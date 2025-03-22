@@ -12,19 +12,6 @@ none :)
 Thank you for your support!
 */
 
-package stdcomponents
+package vectors
 
-import (
-	"gomp/pkg/ecs"
-	"gomp/vectors"
-)
-
-type Scale struct {
-	XY vectors.Vec2
-}
-
-type ScaleComponentManager = ecs.ComponentManager[Scale]
-
-func NewScaleComponentManager() ScaleComponentManager {
-	return ecs.NewComponentManager[Scale](ScaleComponentId)
-}
+type Radians = float64

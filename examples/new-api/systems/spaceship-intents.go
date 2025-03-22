@@ -19,6 +19,7 @@ import (
 	"gomp/examples/new-api/entities"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
+	"gomp/vectors"
 	"math"
 	"time"
 )
@@ -46,10 +47,12 @@ func (s *SpaceshipIntentsSystem) Init() {}
 func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 	var moveSpeedMax float32 = 300
 	var moveSpeedMaxBackwards float32 = -200
-	var rotateSpeed float32 = 10
+	var rotateSpeed vectors.Radians = 3
 	var speedIncrement float32 = 10
 
 	var bulletSpeed float32 = 300
+
+	dtSec := float32(dt.Seconds())
 
 	s.SpaceshipIntents.EachEntity(func(entity ecs.Entity) bool {
 		intent := s.SpaceshipIntents.Get(entity)
@@ -58,17 +61,11 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 		pos := s.Positions.Get(entity)
 		weapon := s.Weapons.Get(entity)
 
-		//if pos.Y < 0 || pos.Y > 5000 || pos.X < 0 || pos.X > 5000 {
-		//	vel.X *= -1
-		//	vel.Y *= -1
-		//	rot.Angle += 180
-		//}
-
 		if intent.RotateLeft {
-			rot.Angle -= rotateSpeed
+			rot.Angle -= rotateSpeed * vectors.Radians(dtSec)
 		}
 		if intent.RotateRight {
-			rot.Angle += rotateSpeed
+			rot.Angle += rotateSpeed * vectors.Radians(dtSec)
 		}
 		if intent.MoveUp {
 			s.moveSpeed += speedIncrement
@@ -91,22 +88,17 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 			}
 		}
 
-		rads := deg2rad(float64(rot.Angle)) + math.Pi
-
-		vel.Y = float32(math.Cos(rads)) * s.moveSpeed
-		vel.X = -float32(math.Sin(rads)) * s.moveSpeed
+		vel.Y = float32(math.Cos(rot.Angle+math.Pi)) * s.moveSpeed
+		vel.X = -float32(math.Sin(rot.Angle+math.Pi)) * s.moveSpeed
 
 		if weapon.CooldownLeft <= 0 {
 			if intent.Fire {
-				count := 360
-				ofs := 1
-				startAngle := rot.Angle - float32(count*ofs/2)
+				var count int = 360
 				for i := range count {
-					angle := startAngle + float32(i*ofs)
-					rads = deg2rad(float64(angle)) + math.Pi
+					var angle = math.Pi*2/float64(count)*float64(i) + rot.Angle - math.Pi/2
 
-					bulletVelocityY := vel.Y + float32(math.Cos(rads))*bulletSpeed
-					bulletVelocityX := vel.X - float32(math.Sin(rads))*bulletSpeed
+					bulletVelocityY := vel.Y + float32(math.Cos(angle+math.Pi))*bulletSpeed
+					bulletVelocityX := vel.X - float32(math.Sin(angle+math.Pi))*bulletSpeed
 					entities.CreateBullet(entities.CreateBulletManagers{
 						EntityManager: s.EntityManager,
 						Positions:     s.Positions,
@@ -117,7 +109,7 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 						Sprites:       s.Sprites,
 						BulletTags:    s.BulletTags,
 						Hps:           s.Hps,
-					}, pos.X, pos.Y, angle, bulletVelocityX, bulletVelocityY)
+					}, pos.XY.X, pos.XY.Y, angle, bulletVelocityX, bulletVelocityY)
 				}
 				weapon.CooldownLeft = weapon.Cooldown
 			}
@@ -130,7 +122,3 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 }
 
 func (s *SpaceshipIntentsSystem) Destroy() {}
-
-func deg2rad(deg float64) float64 {
-	return deg * math.Pi / 180
-}

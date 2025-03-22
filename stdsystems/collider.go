@@ -14,6 +14,7 @@ Thank you for your support!
 
 package stdsystems
 
+import "C"
 import (
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
@@ -29,6 +30,7 @@ type ColliderSystem struct {
 	EntityManager    *ecs.EntityManager
 	Positions        *stdcomponents.PositionComponentManager
 	Scales           *stdcomponents.ScaleComponentManager
+	Rotations        *stdcomponents.RotationComponentManager
 	GenericColliders *stdcomponents.GenericColliderComponentManager
 	BoxColliders     *stdcomponents.BoxColliderComponentManager
 	CircleColliders  *stdcomponents.CircleColliderComponentManager
@@ -52,18 +54,27 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 
 		position := s.Positions.Get(entity)
 		scale := s.Scales.Get(entity)
+		rotation := s.Rotations.Get(entity)
 		aabb := s.AABB.Get(entity)
 		if aabb == nil {
 			aabb = s.AABB.Create(entity, stdcomponents.AABB{})
 		}
-		aabb.Min = vectors.Vec2{
-			X: position.X - (boxCollider.Offset.X * scale.X),
-			Y: position.Y - (boxCollider.Offset.Y * scale.Y),
-		}
-		aabb.Max = vectors.Vec2{
-			X: position.X + (boxCollider.Width-boxCollider.Offset.X)*scale.X,
-			Y: position.Y + (boxCollider.Height-boxCollider.Offset.Y)*scale.Y,
-		}
+
+		a := boxCollider.WH
+		b := vectors.Vec2{X: 0, Y: boxCollider.WH.Y}
+		c := vectors.Vec2{X: 0, Y: 0}
+		d := vectors.Vec2{X: boxCollider.WH.X, Y: 0}
+
+		c = c.Sub(boxCollider.Offset).Rotate(rotation.Angle)
+		a = a.Sub(boxCollider.Offset).Rotate(rotation.Angle)
+		b = b.Sub(boxCollider.Offset).Rotate(rotation.Angle)
+		d = d.Sub(boxCollider.Offset).Rotate(rotation.Angle)
+
+		aabb.Min = vectors.Vec2{X: min(b.X, c.X, a.X, d.X), Y: min(b.Y, c.Y, a.Y, d.Y)}.Mul(scale.XY)
+		aabb.Max = vectors.Vec2{X: max(b.X, c.X, a.X, d.X), Y: max(b.Y, c.Y, a.Y, d.Y)}.Mul(scale.XY)
+
+		aabb.Min = position.XY.Add(aabb.Min)
+		aabb.Max = position.XY.Add(aabb.Max)
 
 		return true
 	})
@@ -91,14 +102,8 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 			aabb = s.AABB.Create(entity, stdcomponents.AABB{})
 		}
 
-		aabb.Min = vectors.Vec2{
-			X: position.X - (circleCollider.Offset.X * scale.X),
-			Y: position.Y + (circleCollider.Radius-circleCollider.Offset.Y)*scale.Y,
-		}
-		aabb.Max = vectors.Vec2{
-			X: position.X + (circleCollider.Radius-circleCollider.Offset.X)*scale.X,
-			Y: position.Y - (circleCollider.Offset.Y * scale.Y),
-		}
+		aabb.Min = position.XY.Sub(circleCollider.Offset.Mul(scale.XY))
+		aabb.Max = position.XY.Add(circleCollider.Offset.Scale(-1).SubScalar(circleCollider.Radius).Mul(scale.XY))
 
 		return true
 	})

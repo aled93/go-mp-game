@@ -45,21 +45,23 @@ type CreateSpaceShipManagers struct {
 func CreateSpaceShip(
 	props CreateSpaceShipManagers,
 	posX, posY float32,
-	rotationAngle float32,
+	angle float64,
 ) ecs.Entity {
 	spaceShip := props.EntityManager.Create()
 	props.Positions.Create(spaceShip, stdcomponents.Position{
-		X: posX,
-		Y: posY,
+		XY: vectors.Vec2{
+			X: posX,
+			Y: posY,
+		},
 	})
 
-	props.Rotations.Create(spaceShip, stdcomponents.Rotation{
-		Angle: rotationAngle,
-	})
+	props.Rotations.Create(spaceShip, stdcomponents.Rotation{}.SetFromDegrees(angle))
 
 	props.Scales.Create(spaceShip, stdcomponents.Scale{
-		X: 1,
-		Y: 1,
+		XY: vectors.Vec2{
+			X: 1,
+			Y: 1,
+		},
 	})
 
 	props.Velocities.Create(spaceShip, stdcomponents.Velocity{
@@ -75,8 +77,10 @@ func CreateSpaceShip(
 	})
 
 	props.BoxColliders.Create(spaceShip, stdcomponents.BoxCollider{
-		Width:  32,
-		Height: 32,
+		WH: vectors.Vec2{
+			X: 32,
+			Y: 32,
+		},
 		Offset: vectors.Vec2{
 			X: 16,
 			Y: 16,

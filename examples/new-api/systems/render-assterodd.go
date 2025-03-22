@@ -47,6 +47,7 @@ type RenderAssteroddSystem struct {
 	SpriteMatrixes   *stdcomponents.SpriteMatrixComponentManager
 	RenderOrders     *stdcomponents.RenderOrderComponentManager
 	ColliderBoxes    *stdcomponents.BoxColliderComponentManager
+	AABBs            *stdcomponents.AABBComponentManager
 	Collisions       *stdcomponents.CollisionComponentManager
 	renderList       []renderEntry
 	instanceData     []stdcomponents.RLTexturePro
@@ -104,6 +105,28 @@ func (s *RenderAssteroddSystem) Run(dt time.Duration) bool {
 func (s *RenderAssteroddSystem) Destroy() {}
 
 func (s *RenderAssteroddSystem) render() {
+	// ==========
+	// DEBUG
+	// ==========
+	rl.BeginMode2D(s.camera)
+	s.ColliderBoxes.EachEntity(func(e ecs.Entity) bool {
+		col := s.ColliderBoxes.Get(e)
+		scale := s.Scales.Get(e)
+		pos := s.Positions.Get(e)
+		rot := s.Rotations.Get(e)
+
+		rl.DrawRectanglePro(rl.Rectangle{
+			X:      pos.XY.X,
+			Y:      pos.XY.Y,
+			Width:  col.WH.X * scale.XY.X,
+			Height: col.WH.Y * scale.XY.Y,
+		}, rl.Vector2{
+			X: col.Offset.X * scale.XY.X,
+			Y: col.Offset.Y * scale.XY.Y,
+		}, float32(rot.Degrees()), rl.DarkGreen)
+		return true
+	})
+	rl.EndMode2D()
 
 	// Extract and sort entities
 	if cap(s.renderList) < s.Renderables.Len() {
@@ -158,24 +181,23 @@ func (s *RenderAssteroddSystem) render() {
 	s.submitBatch(currentTex, s.instanceData) // Submit last batch
 	s.renderList = s.renderList[:0]
 
+	// ==========
+	// DEBUG
+	// ==========
 	rl.BeginMode2D(s.camera)
-	s.Collisions.EachEntity(func(entity ecs.Entity) bool {
-		pos := s.Positions.Get(entity)
-		rl.DrawRectangle(int32(pos.X-8), int32(pos.Y-8), 16, 16, rl.Red)
+	s.AABBs.EachEntity(func(e ecs.Entity) bool {
+		aabb := s.AABBs.Get(e)
+		rl.DrawRectangleLines(int32(aabb.Min.X), int32(aabb.Min.Y), int32(aabb.Max.X-aabb.Min.X), int32(aabb.Max.Y-aabb.Min.Y), rl.Green)
 		return true
 	})
-	s.ColliderBoxes.EachEntity(func(e ecs.Entity) bool {
-		box := s.ColliderBoxes.Get(e)
-		pos := s.Positions.Get(e)
-		scale := s.Scales.Get(e)
-		col := s.ColliderBoxes.Get(e)
-
-		rl.DrawRectangleLines(int32(pos.X-(col.Offset.X*scale.X)), int32(pos.Y-(col.Offset.Y*scale.Y)), int32(box.Width*scale.X), int32(box.Height*scale.Y), rl.DarkGreen)
+	s.Collisions.EachEntity(func(entity ecs.Entity) bool {
+		pos := s.Positions.Get(entity)
+		rl.DrawRectangle(int32(pos.XY.X-8), int32(pos.XY.Y-8), 16, 16, rl.Red)
 		return true
 	})
 	s.Renderables.EachEntity(func(e ecs.Entity) bool {
 		position := s.Positions.Get(e)
-		rl.DrawRectangle(int32(position.X-2), int32(position.Y-2), 4, 4, rl.Red)
+		rl.DrawRectangle(int32(position.XY.X-2), int32(position.XY.Y-2), 4, 4, rl.Red)
 		return true
 	})
 	rl.EndMode2D()
@@ -227,14 +249,14 @@ func (s *RenderAssteroddSystem) prepareFlips(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
 		texturePro := s.RlTexturePros.Get(entity)
-		mirrored := s.Flips.Get(entity)
-		if mirrored == nil {
+		flipped := s.Flips.Get(entity)
+		if flipped == nil {
 			return true
 		}
-		if mirrored.X {
+		if flipped.X {
 			texturePro.Frame.Width *= -1
 		}
-		if mirrored.Y {
+		if flipped.Y {
 			texturePro.Frame.Height *= -1
 		}
 		return true
@@ -251,8 +273,8 @@ func (s *RenderAssteroddSystem) preparePositions(wg *sync.WaitGroup, dt time.Dur
 			return true
 		}
 		decay := 40.0 // DECAY IS TICKRATE DEPENDENT
-		x := float32(s.expDecay(float64(texturePro.Dest.X), float64(position.X), decay, dts))
-		y := float32(s.expDecay(float64(texturePro.Dest.Y), float64(position.Y), decay, dts))
+		x := float32(s.expDecay(float64(texturePro.Dest.X), float64(position.XY.X), decay, dts))
+		y := float32(s.expDecay(float64(texturePro.Dest.Y), float64(position.XY.Y), decay, dts))
 		texturePro.Dest.X = x
 		texturePro.Dest.Y = y
 		player := s.Player.Get(entity)
@@ -273,7 +295,7 @@ func (s *RenderAssteroddSystem) prepareRotations(wg *sync.WaitGroup) {
 		if rotation == nil {
 			return true
 		}
-		texturePro.Rotation = rotation.Angle
+		texturePro.Rotation = float32(rotation.Degrees())
 		return true
 	})
 }
@@ -286,8 +308,8 @@ func (s *RenderAssteroddSystem) prepareScales(wg *sync.WaitGroup) {
 		if scale == nil {
 			return true
 		}
-		texturePro.Dest.Width *= scale.X
-		texturePro.Dest.Height *= scale.Y
+		texturePro.Dest.Width *= scale.XY.X
+		texturePro.Dest.Height *= scale.XY.Y
 		return true
 	})
 }

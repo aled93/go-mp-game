@@ -19,13 +19,12 @@ import (
 	"golang.org/x/text/language"
 	"gomp"
 	"gomp/examples/new-api/scenes"
-	"log"
 	"os"
 )
 
 const appID = 12 // Rewrite this
 
-func init() {
+func initd() {
 	if steamworks.RestartAppIfNecessary(appID) {
 		os.Exit(1)
 	}
@@ -48,7 +47,7 @@ func SystemLang() language.Tag {
 }
 
 func main() {
-	log.Println(SystemLang())
+	//log.Println(SystemLang())
 	sceneList := scenes.NewSceneList()
 
 	game := gomp.NewGame(
@@ -58,5 +57,5 @@ func main() {
 	game.CurrentSceneId = scenes.AssteroddSceneId
 
 	engine := gomp.NewEngine(&game)
-	engine.Run(20, 0)
+	engine.Run(50, 0)
 }

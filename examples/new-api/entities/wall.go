@@ -23,6 +23,7 @@ import (
 	"gomp/stdcomponents"
 	"gomp/vectors"
 	"image/color"
+	"math"
 )
 
 type CreateWallManagers struct {
@@ -33,34 +34,44 @@ type CreateWallManagers struct {
 	BoxColliders  *stdcomponents.BoxColliderComponentManager
 	Sprites       *stdcomponents.SpriteComponentManager
 	WallTags      *components.WallTagComponentManager
+	RigidBodies   *stdcomponents.RigidBodyComponentManager
 }
 
 func CreateWall(
-	props CreateWallManagers,
-	posX, posY, angle float32,
+	props *CreateWallManagers,
+	posX, posY float32,
+	angle float64,
 	width, height float32,
 ) ecs.Entity {
 	entity := props.EntityManager.Create()
 	props.Positions.Create(entity, stdcomponents.Position{
-		X: posX,
-		Y: posY,
+		XY: vectors.Vec2{
+			X: posX,
+			Y: posY,
+		},
 	})
-	props.Rotations.Create(entity, stdcomponents.Rotation{
-		Angle: angle,
-	})
+	props.Rotations.Create(entity, stdcomponents.Rotation{}.SetFromDegrees(angle))
 	props.Scales.Create(entity, stdcomponents.Scale{
-		X: 1,
-		Y: 1,
+		XY: vectors.Vec2{
+			X: 1,
+			Y: 1,
+		},
 	})
 	props.BoxColliders.Create(entity, stdcomponents.BoxCollider{
-		Width:  width,
-		Height: height,
+		WH: vectors.Vec2{
+			X: width,
+			Y: height,
+		},
 		Offset: vectors.Vec2{
 			X: 0,
 			Y: 0,
 		},
 		Layer: config.WallCollisionLayer,
 		Mask:  0,
+	})
+	props.RigidBodies.Create(entity, stdcomponents.RigidBody{
+		IsStatic: true,
+		Mass:     math.MaxFloat32,
 	})
 	props.Sprites.Create(entity, stdcomponents.Sprite{
 		Texture: assets.Textures.Get("wall.png"),
@@ -71,8 +82,8 @@ func CreateWall(
 			Height: height,
 		},
 		Origin: rl.Vector2{
-			X: 32,
-			Y: 32,
+			X: 0,
+			Y: 0,
 		},
 		Tint: color.RGBA{
 			R: 255,

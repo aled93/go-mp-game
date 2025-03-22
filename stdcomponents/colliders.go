@@ -41,8 +41,7 @@ const (
 )
 
 type BoxCollider struct {
-	Width  float32
-	Height float32
+	WH     vectors.Vec2
 	Offset vectors.Vec2
 	Layer  CollisionLayer
 	Mask   CollisionMask

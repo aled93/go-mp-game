@@ -94,8 +94,8 @@ func (s *CollisionDetectionGridSystem) Run(dt time.Duration) {
 		scale := s.Scales.Get(entity)
 
 		collider := s.GenericCollider.Get(entity)
-		cellX := int(position.X-(collider.Offset.X*scale.X)) / s.cellSizeX
-		cellY := int(position.Y-(collider.Offset.Y*scale.Y)) / s.cellSizeY
+		cellX := int(position.XY.X-(collider.Offset.X*scale.XY.X)) / s.cellSizeX
+		cellY := int(position.XY.Y-(collider.Offset.Y*scale.XY.Y)) / s.cellSizeY
 		cell := stdcomponents.SpatialIndex{X: cellX, Y: cellY}
 		s.entityToCell[entity] = cell
 		s.spatialBuckets[cell] = append(s.spatialBuckets[cell], entity)
@@ -109,10 +109,10 @@ func (s *CollisionDetectionGridSystem) Run(dt time.Duration) {
 		collider := s.BoxColliders.Get(entity)
 		scale := s.Scales.Get(entity)
 		newAABB := aabb{
-			Left:   position.X - (collider.Offset.X * scale.X),
-			Right:  position.X + (collider.Width-collider.Offset.X)*scale.X,
-			Top:    position.Y - (collider.Offset.Y * scale.Y),
-			Bottom: position.Y + (collider.Height-collider.Offset.Y)*scale.Y,
+			Left:   position.XY.X - (collider.Offset.X * scale.XY.X),
+			Right:  position.XY.X + (collider.WH.X-collider.Offset.X)*scale.XY.X,
+			Top:    position.XY.Y - (collider.Offset.Y * scale.XY.Y),
+			Bottom: position.XY.Y + (collider.WH.Y-collider.Offset.Y)*scale.XY.Y,
 		}
 		s.aabbs[entity] = newAABB
 		return true
@@ -131,13 +131,18 @@ func (s *CollisionDetectionGridSystem) Run(dt time.Duration) {
 			if _, exists := s.activeCollisions[pair]; !exists {
 				proxy := s.EntityManager.Create()
 				s.Collisions.Create(proxy, stdcomponents.Collision{E1: pair.E1, E2: pair.E2, State: stdcomponents.CollisionStateEnter})
-				s.Positions.Create(proxy, stdcomponents.Position{X: event.position.X, Y: event.position.Y})
+				s.Positions.Create(proxy, stdcomponents.Position{
+					XY: vectors.Vec2{
+						X: event.position.X,
+						Y: event.position.Y,
+					},
+				})
 				s.activeCollisions[pair] = proxy
 			} else {
 				proxy := s.activeCollisions[pair]
 				s.Collisions.Get(proxy).State = stdcomponents.CollisionStateStay
-				s.Positions.Get(proxy).X = event.position.X
-				s.Positions.Get(proxy).Y = event.position.Y
+				s.Positions.Get(proxy).XY.X = event.position.X
+				s.Positions.Get(proxy).XY.Y = event.position.Y
 			}
 		}
 		close(doneChan)
@@ -212,12 +217,12 @@ func (s *CollisionDetectionGridSystem) registerCollision(entityA, entityB ecs.En
 	if _, exists := s.activeCollisions[pair]; !exists {
 		proxy := s.EntityManager.Create()
 		s.Collisions.Create(proxy, stdcomponents.Collision{E1: pair.E1, E2: pair.E2, State: stdcomponents.CollisionStateEnter})
-		s.Positions.Create(proxy, stdcomponents.Position{X: posX, Y: posY})
+		s.Positions.Create(proxy, stdcomponents.Position{XY: vectors.Vec2{X: posX, Y: posY}})
 		s.activeCollisions[pair] = proxy
 	} else {
 		s.Collisions.Get(s.activeCollisions[pair]).State = stdcomponents.CollisionStateStay
-		s.Positions.Get(s.activeCollisions[pair]).X = posX
-		s.Positions.Get(s.activeCollisions[pair]).Y = posY
+		s.Positions.Get(s.activeCollisions[pair]).XY.X = posX
+		s.Positions.Get(s.activeCollisions[pair]).XY.Y = posY
 	}
 }
 
@@ -284,8 +289,8 @@ func (s *CollisionDetectionGridSystem) boxToXCollision(entityA ecs.Entity, colli
 					continue
 				}
 
-				posX := (position1.X + position2.X) / 2
-				posY := (position1.Y + position2.Y) / 2
+				posX := (position1.XY.X + position2.XY.X) / 2
+				posY := (position1.XY.Y + position2.XY.Y) / 2
 				collisionChan <- CollisionEvent{entityA, entityB, vectors.Vec2{posX, posY}, vectors.Vec2{posX, posY}, 0}
 			case stdcomponents.CircleColliderShape:
 				panic("Circle-Box collision not implemented")

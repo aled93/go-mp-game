@@ -51,7 +51,7 @@ func (s *CollisionHandlerSystem) Run(dt time.Duration) {
 		pos := s.Positions.Get(e)
 		hp := s.Hps.Get(e)
 
-		if pos.Y > 5000 {
+		if pos.XY.Y > 5000 {
 			s.EntityManager.Delete(e)
 		}
 
@@ -64,7 +64,7 @@ func (s *CollisionHandlerSystem) Run(dt time.Duration) {
 
 	s.BulletTags.EachEntity(func(entity ecs.Entity) bool {
 		pos := s.Positions.Get(entity)
-		if pos.Y > 5000 || pos.Y < 0 || pos.X > 5000 || pos.X < 0 {
+		if pos.XY.Y > 5000 || pos.XY.Y < 0 || pos.XY.X > 5000 || pos.XY.X < 0 {
 			s.EntityManager.Delete(entity)
 		}
 		return true
@@ -102,16 +102,16 @@ func (s *CollisionHandlerSystem) checkPlayerCollisionEnter(e1, e2 ecs.Entity) bo
 			return true
 		}
 
-		wallTag := s.WallTags.Get(e2)
-		if wallTag != nil {
-			// reverse player movement vector
-			velocity := s.Velocities.Get(e1)
-			rotation := s.Rotations.Get(e1)
-			velocity.X *= -1
-			velocity.Y *= -1
-			rotation.Angle += 180
-			return true
-		}
+		//wallTag := s.WallTags.Get(e2)
+		//if wallTag != nil {
+		//	// reverse player movement vector
+		//	velocity := s.Velocities.Get(e1)
+		//	rotation := s.Rotations.Get(e1)
+		//	velocity.X *= -1
+		//	velocity.Y *= -1
+		//	rotation.Angle += 180
+		//	return true
+		//}
 	} else if e2Tag != nil {
 		// this is a player
 		asteroidTag := s.AsteroidTags.Get(e1)
@@ -121,16 +121,16 @@ func (s *CollisionHandlerSystem) checkPlayerCollisionEnter(e1, e2 ecs.Entity) bo
 			return true
 		}
 
-		wallTag := s.WallTags.Get(e1)
-		if wallTag != nil {
-			// reverse player movement vector
-			velocity := s.Velocities.Get(e2)
-			rotation := s.Rotations.Get(e2)
-			velocity.X *= -1
-			velocity.Y *= -1
-			rotation.Angle += 180
-			return true
-		}
+		//wallTag := s.WallTags.Get(e1)
+		//if wallTag != nil {
+		//	// reverse player movement vector
+		//	velocity := s.Velocities.Get(e2)
+		//	rotation := s.Rotations.Get(e2)
+		//	velocity.X *= -1
+		//	velocity.Y *= -1
+		//	rotation.Angle += 180
+		//	return true
+		//}
 	}
 
 	return false

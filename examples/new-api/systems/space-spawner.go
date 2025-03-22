@@ -38,6 +38,7 @@ type SpaceSpawnerSystem struct {
 	Velocities    *stdcomponents.VelocityComponentManager
 	Rotations     *stdcomponents.RotationComponentManager
 	Scales        *stdcomponents.ScaleComponentManager
+	RigidBodies   *stdcomponents.RigidBodyComponentManager
 }
 
 func (s *SpaceSpawnerSystem) Init() {}
@@ -46,7 +47,7 @@ func (s *SpaceSpawnerSystem) Run(dt time.Duration) {
 		position := s.Positions.Get(e)
 		velocity := s.Velocities.Get(e)
 
-		if position.X > 5000 || position.X < 0 {
+		if position.XY.X > 5000 || position.XY.X < 0 {
 			velocity.X = -velocity.X
 		}
 
@@ -67,7 +68,8 @@ func (s *SpaceSpawnerSystem) Run(dt time.Duration) {
 			Sprites:       s.Sprites,
 			AsteroidTags:  s.Asteroids,
 			Hp:            s.Hp,
-		}, pos.X, pos.Y, 0, 1+rand.Float32()*2, 0, 50+rand.Float32()*100)
+			RigidBodies:   s.RigidBodies,
+		}, pos.XY.X, pos.XY.Y, 0, 1+rand.Float32()*2, 0, 50+rand.Float32()*100)
 		spawner.CooldownLeft = spawner.Cooldown
 		return true
 	})
