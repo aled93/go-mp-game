@@ -63,7 +63,7 @@ func (s *AssteroddSystem) Init() {
 		Hps:              s.Hps,
 		Weapons:          s.Weapons,
 		SpaceshipIntents: s.SpaceshipIntents,
-	}, 300, 300, 0)
+	}, 300, 300, -44.9)
 	entities.CreateSatellite(entities.CreateSatelliteManagers{
 		EntityManager: s.EntityManager,
 		Positions:     s.Positions,

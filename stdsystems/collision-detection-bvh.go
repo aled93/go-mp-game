@@ -303,12 +303,11 @@ func (s *CollisionDetectionBVHSystem) circleSupport(circle *stdcomponents.Circle
 }
 
 func (s *CollisionDetectionBVHSystem) boxSupport(box *stdcomponents.BoxCollider, pos *stdcomponents.Position, rot *stdcomponents.Rotation, scale vectors.Vec2, direction vectors.Vec2) vectors.Vec2 {
-	scaledWH := box.WH.Mul(scale)
 	vertices := [4]vectors.Vec2{
-		{X: scaledWH.X, Y: scaledWH.Y},
-		{X: 0, Y: scaledWH.Y},
+		{X: box.WH.X, Y: box.WH.Y},
+		{X: 0, Y: box.WH.Y},
 		{X: 0, Y: 0},
-		{X: scaledWH.X, Y: 0},
+		{X: box.WH.X, Y: 0},
 	}
 
 	var maxPoint vectors.Vec2
@@ -316,8 +315,7 @@ func (s *CollisionDetectionBVHSystem) boxSupport(box *stdcomponents.BoxCollider,
 
 	for i := range vertices {
 		vertex := &vertices[i]
-		rotated := vertex.Sub(box.Offset.Mul(scale)).Rotate(rot.Angle)
-		worldVertex := pos.XY.Add(rotated)
+		worldVertex := vertex.Sub(box.Offset).Rotate(rot.Angle).Mul(scale).Add(pos.XY)
 
 		distance := worldVertex.Dot(direction)
 		if distance > maxDistance {
@@ -436,47 +434,6 @@ func (s *CollisionDetectionBVHSystem) tripleProduct(a, b, c vectors.Vec2) vector
 	}
 }
 
-/*
-		function EPA(polytope, shapeA, shapeB) {
-			let minIndex = 0;
-			let minDistance = Infinity;
-			let minNormal;
-
-			while (minDistance == Infinity) {
-				for (let i = 0; i < polytope.length; i++) {
-					let j = (i + 1) % polytope.length;
-
-					let vertexI = polytope[i].copy();
-					let vertexJ = polytope[j].copy();
-
-					let ij = vertexJ.sub(vertexI);
-
-					let normal = createVector(ij.y, -ij.x).normalize();
-					let distance = normal.dot(vertexI);
-
-					if (distance < 0) {
-						distance *= -1;
-						normal.mult(-1);
-					}
-
-					if (distance < minDistance) {
-						minDistance = distance;
-						minNormal = normal;
-						minIndex = j;
-					}
-				}
-			let support = support(shapeA, shapeB, minNormal);
-			let sDistance = minNormal.dot(support);
-
-			if (abs(sDistance - minDistance) > 0.001) {
-			 	minDistance = Infinity;
-				polytope.splice(minIndex, 0, support);
-			}
-		}
-
-		return minNormal.mult(minDistance + 0.001);
-	}
-*/
 func (s *CollisionDetectionBVHSystem) epa(simplex []vectors.Vec2, supportA, supportB func(vectors.Vec2) vectors.Vec2) (vectors.Vec2, float32) {
 	var minIndex int = 0
 	var minDistance float32 = float32(math.MaxFloat32)
@@ -489,6 +446,9 @@ func (s *CollisionDetectionBVHSystem) epa(simplex []vectors.Vec2, supportA, supp
 			b := simplex[j]
 
 			edge := b.Sub(a)
+			if edge.X == 0 && edge.Y == 0 {
+				panic("jk")
+			}
 
 			normal := vectors.Vec2{edge.Y, -edge.X}.Normalize()
 			distance := normal.Dot(a)
