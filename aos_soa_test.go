@@ -125,7 +125,7 @@ func OffsetSystem(offsets [][pageSize][AdditionalDataPer64]int64) {
 	}
 }
 
-func RenderSystem(positions [][pageSize]Float3, unitsToRender []int) {
+func renderSystem(positions [][pageSize]Float3, unitsToRender []int) {
 	for i := 0; i < len(positions); i++ {
 		for j := 0; j < len(positions[i]); j++ {
 			if ShouldRender(&positions[i][j]) {
@@ -170,7 +170,7 @@ func BenchmarkUpdateRodd(b *testing.B) {
 		PositionSystem(positions, velocities)
 		TakeDamageSystem(hps)
 		OffsetSystem(offsets)
-		RenderSystem(positions, unitsToRender)
+		renderSystem(positions, unitsToRender)
 		unitsToRender = unitsToRender[:0]
 	}
 }
