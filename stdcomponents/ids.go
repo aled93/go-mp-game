@@ -12,6 +12,7 @@ import (
 
 const (
 	InvalidComponentId ecs.ComponentId = iota
+	TransformComponentId
 	PositionComponentId
 	RotationComponentId
 	ScaleComponentId

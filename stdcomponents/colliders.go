@@ -17,6 +17,7 @@ package stdcomponents
 import (
 	"gomp/pkg/ecs"
 	"gomp/vectors"
+	"math"
 )
 
 type ColliderShape uint8
@@ -45,6 +46,31 @@ type BoxCollider struct {
 	Offset vectors.Vec2
 	Layer  CollisionLayer
 	Mask   CollisionMask
+}
+
+func (c *BoxCollider) GetSupport(direction vectors.Vec2, transform *Transform2d) vectors.Vec2 {
+	var maxDistance float32 = -math.MaxFloat32
+	var maxPoint vectors.Vec2
+
+	vertices := [4]vectors.Vec2{
+		{X: c.WH.X, Y: c.WH.Y},
+		{X: 0, Y: c.WH.Y},
+		{X: 0, Y: 0},
+		{X: c.WH.X, Y: 0},
+	}
+
+	for i := range vertices {
+		vertex := &vertices[i]
+		worldVertex := vertex.Sub(c.Offset).Rotate(transform.Rotation)
+
+		distance := worldVertex.Dot(direction)
+		if distance > maxDistance {
+			maxDistance = distance
+			maxPoint = worldVertex
+		}
+	}
+
+	return maxPoint.Mul(transform.Scale).Add(transform.Position)
 }
 
 type BoxColliderComponentManager = ecs.ComponentManager[BoxCollider]

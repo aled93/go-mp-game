@@ -16,6 +16,7 @@ package stdsystems
 
 import (
 	"gomp/pkg/bvh"
+	gjk "gomp/pkg/collision"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"gomp/vectors"
@@ -196,7 +197,7 @@ func (s *CollisionDetectionBVHSystem) checkEntityCollisions(entityA ecs.Entity, 
 			}
 
 			colliderB := s.GenericCollider.Get(entityB)
-			collision, ok := s.checkCollisionGjk(*colliderA, *colliderB, entityA, entityB)
+			collision, ok := s.checkCollisionGjk(colliderA, colliderB, entityA, entityB)
 			if ok {
 				collisionChan <- collision
 			}
@@ -204,26 +205,34 @@ func (s *CollisionDetectionBVHSystem) checkEntityCollisions(entityA ecs.Entity, 
 	}
 }
 
-func (s *CollisionDetectionBVHSystem) checkCollisionGjk(colliderA, colliderB stdcomponents.GenericCollider, entityA, entityB ecs.Entity) (e CollisionEvent, ok bool) {
+func (s *CollisionDetectionBVHSystem) checkCollisionGjk(colliderA, colliderB *stdcomponents.GenericCollider, entityA, entityB ecs.Entity) (e CollisionEvent, ok bool) {
+	colA := s.getGjkCollider(colliderA, entityA)
+	colB := s.getGjkCollider(colliderB, entityB)
 	posA := s.Positions.Get(entityA)
 	posB := s.Positions.Get(entityB)
 	scaleA := s.getScaleOrDefault(entityA)
 	scaleB := s.getScaleOrDefault(entityB)
-	rotA := s.getRotationOrDefault(entityA) // Implement similar to getScaleOrDefault
+	rotA := s.getRotationOrDefault(entityA)
 	rotB := s.getRotationOrDefault(entityB)
-
-	// Define support functions based on collider types
-	supportA := s.getSupportFunction(entityA, colliderA, posA, &rotA, scaleA)
-	supportB := s.getSupportFunction(entityB, colliderB, posB, &rotB, scaleB)
+	transformA := stdcomponents.Transform2d{
+		Position: posA.XY,
+		Rotation: rotA.Angle,
+		Scale:    scaleA,
+	}
+	transformB := stdcomponents.Transform2d{
+		Position: posB.XY,
+		Rotation: rotB.Angle,
+		Scale:    scaleB,
+	}
 
 	// First detect collision using GJK
-	collision, simplex := s.gjkCollides(supportA, supportB)
+	simplex, collision := gjk.CheckCollision(colA, colB, &transformA, &transformB)
 	if !collision {
 		return e, false
 	}
 
 	// If collision detected, get penetration details using EPA
-	normal, depth := s.epa(simplex, supportA, supportB)
+	normal, depth := gjk.EPA(colA, colB, &transformA, &transformB, &simplex)
 	position := posA.XY.Add(posB.XY.Sub(posA.XY))
 	return CollisionEvent{
 		entityA:  entityA,
@@ -271,26 +280,18 @@ func (s *CollisionDetectionBVHSystem) buildBVH(entities []ecs.Entity, aabbs []st
 
 }
 
-func (s *CollisionDetectionBVHSystem) getSupportFunction(entity ecs.Entity, collider stdcomponents.GenericCollider, pos *stdcomponents.Position, rot *stdcomponents.Rotation, scale vectors.Vec2) func(vectors.Vec2) vectors.Vec2 {
+func (s *CollisionDetectionBVHSystem) getGjkCollider(collider *stdcomponents.GenericCollider, entity ecs.Entity) gjk.AnyCollider {
 	switch collider.Shape {
 	case stdcomponents.BoxColliderShape:
-		box := s.BoxColliders.Get(entity)
-		return func(d vectors.Vec2) vectors.Vec2 {
-			return s.boxSupport(box, pos, rot, scale, d)
-		}
+		return s.BoxColliders.Get(entity)
 	case stdcomponents.CircleColliderShape:
-		circle := s.CircleColliders.Get(entity)
-		return func(d vectors.Vec2) vectors.Vec2 {
-			return s.circleSupport(circle, pos, scale, d)
-		}
+		// return s.CircleColliders.Get(entity)
 	case stdcomponents.PolygonColliderShape:
-		poly := s.PolygonColliders.Get(entity)
-		return func(d vectors.Vec2) vectors.Vec2 {
-			return s.polygonSupport(poly, pos, rot, scale, d)
-		}
+		// return s.PolygonColliders.Get(entity)
 	default:
 		panic("unsupported collider shape")
 	}
+	return nil
 }
 
 func (s *CollisionDetectionBVHSystem) circleSupport(circle *stdcomponents.CircleCollider, pos *stdcomponents.Position, scale vectors.Vec2, direction vectors.Vec2) vectors.Vec2 {
@@ -315,7 +316,7 @@ func (s *CollisionDetectionBVHSystem) boxSupport(box *stdcomponents.BoxCollider,
 
 	for i := range vertices {
 		vertex := &vertices[i]
-		worldVertex := vertex.Sub(box.Offset).Rotate(rot.Angle).Mul(scale).Add(pos.XY)
+		worldVertex := vertex.Sub(box.Offset).Rotate(rot.Angle)
 
 		distance := worldVertex.Dot(direction)
 		if distance > maxDistance {
@@ -324,7 +325,7 @@ func (s *CollisionDetectionBVHSystem) boxSupport(box *stdcomponents.BoxCollider,
 		}
 	}
 
-	return maxPoint
+	return maxPoint.Mul(scale).Add(pos.XY)
 }
 
 func (s *CollisionDetectionBVHSystem) polygonSupport(poly *stdcomponents.PolygonCollider, pos *stdcomponents.Position, rot *stdcomponents.Rotation, scale vectors.Vec2, direction vectors.Vec2) vectors.Vec2 {
@@ -342,173 +343,4 @@ func (s *CollisionDetectionBVHSystem) polygonSupport(poly *stdcomponents.Polygon
 		}
 	}
 	return maxVertex
-}
-
-func (s *CollisionDetectionBVHSystem) gjkCollides(supportA, supportB func(vectors.Vec2) vectors.Vec2) (bool, []vectors.Vec2) {
-	direction := vectors.Vec2{X: 1, Y: 0} // Initial direction
-	simplex := []vectors.Vec2{s.minkowskiSupport(supportA, supportB, direction)}
-
-	for { // Max iterations to prevent infinite loop
-		p := s.minkowskiSupport(supportA, supportB, direction)
-		if p.X == 0 && p.Y == 0 {
-			return false, simplex // No collision
-		}
-
-		if p.Dot(direction) < 0 {
-			return false, nil // No collision
-		}
-		simplex = append(simplex, p)
-		ok, newSimplex := s.containsOrigin(simplex, &direction)
-		simplex = newSimplex
-		if ok {
-			return true, simplex
-		}
-	}
-}
-
-func (s *CollisionDetectionBVHSystem) minkowskiSupport(supportA, supportB func(vectors.Vec2) vectors.Vec2, d vectors.Vec2) vectors.Vec2 {
-	a := supportA(d)
-	b := supportB(d.Neg())
-	return a.Sub(b)
-}
-
-func (s *CollisionDetectionBVHSystem) containsOrigin(simplex []vectors.Vec2, direction *vectors.Vec2) (bool, []vectors.Vec2) {
-	a := (simplex)[len(simplex)-1] // Last point added
-	ao := a.Neg()                  // Vector from A to origin
-
-	switch len(simplex) {
-	case 3: // Triangle case
-		b := (simplex)[1]
-		c := (simplex)[0]
-
-		ab := b.Sub(a)
-		ac := c.Sub(a)
-
-		// Perpendicular vectors
-		abPerp := s.tripleProduct(ac, ab, ab)
-		acPerp := s.tripleProduct(ab, ac, ac)
-
-		// Region AB
-		if abPerp.Dot(ao) > 0 {
-			simplex = []vectors.Vec2{a, b}
-			*direction = abPerp
-			return false, simplex
-		}
-
-		// Region AC
-		if acPerp.Dot(ao) > 0 {
-			simplex = []vectors.Vec2{a, c}
-			*direction = acPerp
-			return false, simplex
-		}
-
-		// Inside triangle
-		return true, simplex
-
-	case 2: // Line segment case
-		b := (simplex)[0]
-		ab := b.Sub(a)
-
-		// Perpendicular to AB facing origin
-		abPerp := ab.Perpendicular()
-		if abPerp.Dot(ao) > 0 {
-			*direction = abPerp
-		} else {
-			simplex = []vectors.Vec2{a}
-			*direction = ao
-		}
-		return false, simplex
-
-	default:
-		return false, simplex
-	}
-}
-
-// Helper function for vector triple product
-func (s *CollisionDetectionBVHSystem) tripleProduct(a, b, c vectors.Vec2) vectors.Vec2 {
-	ac := a.Dot(c)
-	bc := b.Dot(c)
-	return vectors.Vec2{
-		X: b.X*ac - a.X*bc,
-		Y: b.Y*ac - a.Y*bc,
-	}
-}
-
-func (s *CollisionDetectionBVHSystem) epa(simplex []vectors.Vec2, supportA, supportB func(vectors.Vec2) vectors.Vec2) (vectors.Vec2, float32) {
-	var minIndex int = 0
-	var minDistance float32 = float32(math.MaxFloat32)
-	var minNormal vectors.Vec2
-
-	for minDistance == float32(math.MaxFloat32) {
-		for i := 0; i < len(simplex); i++ {
-			j := (i + 1) % len(simplex)
-			a := simplex[i]
-			b := simplex[j]
-
-			edge := b.Sub(a)
-			if edge.X == 0 && edge.Y == 0 {
-				panic("jk")
-			}
-
-			normal := vectors.Vec2{edge.Y, -edge.X}.Normalize()
-			distance := normal.Dot(a)
-
-			if distance < 0 {
-				distance *= -1
-				normal = normal.Scale(-1)
-			}
-
-			if distance < minDistance {
-				minDistance = distance
-				minNormal = normal
-				minIndex = j
-			}
-		}
-
-		support := s.minkowskiSupport(supportA, supportB, minNormal)
-		sDistance := minNormal.Dot(support)
-
-		if math.Abs(float64(sDistance-minDistance)) > EPA_TOLERANCE {
-			minDistance = float32(math.MaxFloat32)
-			simplex = append(simplex[:minIndex], append([]vectors.Vec2{support}, simplex[minIndex:]...)...)
-		}
-	}
-
-	return minNormal, minDistance
-}
-
-func (s *CollisionDetectionBVHSystem) findClosestEdge(polytope []vectors.Vec2) (СlosestEdge, vectors.Vec2) {
-	bestEdge := СlosestEdge{index: -1, distance: float32(math.MaxFloat32)}
-	var bestNormal vectors.Vec2
-
-	for bestEdge.distance == float32(math.MaxFloat32) {
-		for i := 0; i < len(polytope); i++ {
-			j := (i + 1) % len(polytope)
-			a := polytope[i]
-			b := polytope[j]
-
-			edge := b.Sub(a)
-
-			normal := vectors.Vec2{edge.Y, -edge.X}.Normalize()
-			distance := normal.Dot(a)
-
-			if distance < 0 {
-				distance *= -1
-				normal = normal.Neg()
-			}
-
-			if distance < bestEdge.distance {
-				bestEdge.distance = distance
-				bestEdge.index = j
-				bestNormal = normal
-			}
-		}
-	}
-
-	return bestEdge, bestNormal
-}
-
-type СlosestEdge struct {
-	index    int
-	distance float32
 }
