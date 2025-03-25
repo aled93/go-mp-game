@@ -15,7 +15,6 @@ package gjk
 import (
 	"gomp/stdcomponents"
 	"gomp/vectors"
-	"math"
 )
 
 const (
@@ -53,60 +52,6 @@ func CheckCollision(
 	}
 
 	panic("GJK infinite loop")
-}
-
-func EPA(
-	a, b AnyCollider,
-	transformA, transformB *stdcomponents.Transform2d,
-	simplex *Simplex2d,
-) (vectors.Vec2, float32) {
-	var minIndex int = 0
-	var minDistance float32 = float32(math.MaxFloat32)
-	var minNormal vectors.Vec2
-	var polytope = simplex.toPolytope(make([]vectors.Vec2, 0, 6))
-
-	for range maxItterations {
-		for i := 0; i < len(polytope); i++ {
-			j := (i + 1) % len(polytope)
-			a := polytope[i]
-			b := polytope[j]
-
-			edge := b.Sub(a)
-
-			// normal := edge.Cross(a.ToVec3()).Cross(edge).ToVec2().Normalize()
-			normal := edge.Normal().Normalize()
-			distance := a.Dot(normal)
-
-			if distance < 0 {
-				normal = normal.Neg()
-				distance = -distance
-			}
-
-			if distance < minDistance {
-				minDistance = distance
-				minNormal = normal
-				minIndex = j
-			}
-		}
-
-		if minDistance == 0 {
-			return minNormal, minDistance
-		}
-
-		minNormal = minNormal.Normalize()
-
-		p := minkowskiSupport2d(a, b, transformA, transformB, minNormal)
-		normalDot := minNormal.Dot(p)
-		accuracy := math.Abs(float64(normalDot - minDistance))
-
-		if accuracy < epaTolerance {
-			return minNormal, minDistance
-		}
-
-		polytope = append(polytope[:minIndex], append([]vectors.Vec2{p}, polytope[minIndex:]...)...)
-	}
-
-	panic("EPA infinite loop")
 }
 
 func minkowskiSupport2d(a, b AnyCollider, transformA, transformB *stdcomponents.Transform2d, direction vectors.Vec2) vectors.Vec2 {
