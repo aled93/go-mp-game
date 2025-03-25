@@ -60,9 +60,11 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 		return
 	}
 
+	// Init trees
 	s.trees = make([]bvh.Tree2D, 0, 8)
 	s.treesLookup = make(map[stdcomponents.CollisionLayer]int, 8)
 
+	// Fill trees
 	s.AABB.EachEntity(func(entity ecs.Entity) bool {
 		aabb := s.AABB.Get(entity)
 		layer := s.GenericCollider.Get(entity).Layer
@@ -79,6 +81,7 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 		return true
 	})
 
+	// Build trees
 	wg := new(sync.WaitGroup)
 	wg.Add(len(s.trees))
 	for i := range s.trees {
@@ -137,8 +140,8 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 
 	close(collisionChan)
 	<-doneChan // Wait for result collector
-
 }
+
 func (s *CollisionDetectionBVHSystem) Destroy() {}
 
 func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity, aabbs []stdcomponents.AABB, collisionChan chan<- CollisionEvent) {
@@ -162,7 +165,7 @@ func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity
 
 			for i := range entities[start:end] {
 				entity := entities[i+startIndex]
-				s.checkEntityCollisions(entity, collisionChan)
+				s.broadPhase(entity, collisionChan)
 			}
 		}(startIndex, endIndex)
 	}
@@ -170,7 +173,7 @@ func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity
 	wg.Wait()
 }
 
-func (s *CollisionDetectionBVHSystem) checkEntityCollisions(entityA ecs.Entity, collisionChan chan<- CollisionEvent) {
+func (s *CollisionDetectionBVHSystem) broadPhase(entityA ecs.Entity, collisionChan chan<- CollisionEvent) {
 	colliderA := s.GenericCollider.Get(entityA)
 	aabb := s.AABB.Get(entityA)
 
@@ -191,7 +194,7 @@ func (s *CollisionDetectionBVHSystem) checkEntityCollisions(entityA ecs.Entity, 
 			}
 
 			colliderB := s.GenericCollider.Get(entityB)
-			collision, ok := s.checkCollisionGjk(colliderA, colliderB, entityA, entityB)
+			collision, ok := s.narrowPhase(colliderA, colliderB, entityA, entityB)
 			if ok {
 				collisionChan <- collision
 			}
@@ -199,7 +202,7 @@ func (s *CollisionDetectionBVHSystem) checkEntityCollisions(entityA ecs.Entity, 
 	}
 }
 
-func (s *CollisionDetectionBVHSystem) checkCollisionGjk(colliderA, colliderB *stdcomponents.GenericCollider, entityA, entityB ecs.Entity) (e CollisionEvent, ok bool) {
+func (s *CollisionDetectionBVHSystem) narrowPhase(colliderA, colliderB *stdcomponents.GenericCollider, entityA, entityB ecs.Entity) (e CollisionEvent, ok bool) {
 	colA := s.getGjkCollider(colliderA, entityA)
 	colB := s.getGjkCollider(colliderB, entityB)
 	posA := s.Positions.Get(entityA)

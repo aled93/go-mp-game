@@ -94,7 +94,7 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 
 		if weapon.CooldownLeft <= 0 {
 			if intent.Fire {
-				var count int = 360
+				var count int = 30
 				for i := range count {
 					var angle = math.Pi*2/float64(count)*float64(i) + rot.Angle - math.Pi/2
 
