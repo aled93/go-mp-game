@@ -19,13 +19,18 @@ import (
 
 const (
 	maxItterations = 64
-	epaTolerance   = 0.001
+	epaTolerance   = 0.00001
 )
 
 type AnyCollider interface {
 	GetSupport(direction vectors.Vec2, transform *stdcomponents.Transform2d) vectors.Vec2
 }
 
+/*
+CheckCollision - GJK, Distance, Closest Points
+https://www.youtube.com/watch?v=Qupqu1xe7Io
+https://dyn4j.org/2010/04/gjk-distance-closest-points/#gjk-distance
+*/
 func CheckCollision(
 	a, b AnyCollider,
 	transformA, transformB *stdcomponents.Transform2d,

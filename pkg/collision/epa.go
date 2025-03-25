@@ -20,6 +20,10 @@ import (
 	"math"
 )
 
+/*
+EPA - Expanding Polytope Algorithm
+Based on https://dyn4j.org/2010/05/epa-expanding-polytope-algorithm/#epa-alternatives
+*/
 func EPA(
 	a, b AnyCollider,
 	transformA, transformB *stdcomponents.Transform2d,
