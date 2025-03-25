@@ -20,7 +20,7 @@ import (
 
 const (
 	maxItterations = 64
-	epaTolerance   = 0.00001
+	epaTolerance   = 0.001
 )
 
 type AnyCollider interface {
@@ -52,7 +52,7 @@ func CheckCollision(
 		}
 	}
 
-	panic("Infinite loop")
+	panic("GJK infinite loop")
 }
 
 func EPA(
@@ -65,23 +65,21 @@ func EPA(
 	var minNormal vectors.Vec2
 	var polytope = simplex.toPolytope(make([]vectors.Vec2, 0, 6))
 
-	for minDistance == float32(math.MaxFloat32) {
+	for range maxItterations {
 		for i := 0; i < len(polytope); i++ {
 			j := (i + 1) % len(polytope)
 			a := polytope[i]
 			b := polytope[j]
 
 			edge := b.Sub(a)
-			if edge.X == 0 && edge.Y == 0 {
-				panic("jk")
-			}
 
+			// normal := edge.Cross(a.ToVec3()).Cross(edge).ToVec2().Normalize()
 			normal := edge.Normal().Normalize()
-			distance := normal.Dot(a)
+			distance := a.Dot(normal)
 
 			if distance < 0 {
-				distance *= -1
 				normal = normal.Neg()
+				distance = -distance
 			}
 
 			if distance < minDistance {
@@ -91,16 +89,24 @@ func EPA(
 			}
 		}
 
-		support := minkowskiSupport2d(a, b, transformA, transformB, minNormal)
-		sDistance := minNormal.Dot(support)
-
-		if math.Abs(float64(sDistance-minDistance)) > epaTolerance {
-			minDistance = float32(math.MaxFloat32)
-			polytope = append(polytope[:minIndex], append([]vectors.Vec2{support}, polytope[minIndex:]...)...)
+		if minDistance == 0 {
+			return minNormal, minDistance
 		}
+
+		minNormal = minNormal.Normalize()
+
+		p := minkowskiSupport2d(a, b, transformA, transformB, minNormal)
+		normalDot := minNormal.Dot(p)
+		accuracy := math.Abs(float64(normalDot - minDistance))
+
+		if accuracy < epaTolerance {
+			return minNormal, minDistance
+		}
+
+		polytope = append(polytope[:minIndex], append([]vectors.Vec2{p}, polytope[minIndex:]...)...)
 	}
 
-	return minNormal, minDistance + epaTolerance
+	panic("EPA infinite loop")
 }
 
 func minkowskiSupport2d(a, b AnyCollider, transformA, transformB *stdcomponents.Transform2d, direction vectors.Vec2) vectors.Vec2 {
