@@ -57,10 +57,8 @@ func findClosestEdge(polytope []vectors.Vec2) closestEdge {
 		a := polytope[i]
 		b := polytope[j]
 
-		edge := b.Sub(a).ToVec3()
-		oa := a.ToVec3()
-
-		normal := edge.Cross(oa).Cross(edge).ToVec2().Normalize()
+		edge := b.Sub(a)
+		normal := edge.Perpendicular().Normalize()
 		distance := normal.Dot(a)
 
 		if distance < closest.distance {

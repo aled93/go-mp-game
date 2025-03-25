@@ -74,10 +74,11 @@ func (v Vec2) Neg() Vec2 {
 	return Vec2{-v.X, -v.Y}
 }
 
+// Perpendicular - clockwise
 func (v Vec2) Perpendicular() Vec2 {
 	return Vec2{
-		X: -v.Y,
-		Y: v.X,
+		X: v.Y,
+		Y: -v.X,
 	}
 }
 

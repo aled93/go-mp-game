@@ -20,15 +20,9 @@ import (
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"gomp/vectors"
-	"math"
 	"runtime"
 	"sync"
 	"time"
-)
-
-const (
-	EPA_TOLERANCE      = 0.00001
-	EPA_MAX_ITERATIONS = 64
 )
 
 func NewCollisionDetectionBVHSystem() CollisionDetectionBVHSystem {
@@ -275,72 +269,16 @@ func (s *CollisionDetectionBVHSystem) processExitStates() {
 	}
 }
 
-// buildBVH constructs hierarchy using sorted morton codes
-func (s *CollisionDetectionBVHSystem) buildBVH(entities []ecs.Entity, aabbs []stdcomponents.AABB, mortonCodes []uint32) {
-
-}
-
 func (s *CollisionDetectionBVHSystem) getGjkCollider(collider *stdcomponents.GenericCollider, entity ecs.Entity) gjk.AnyCollider {
 	switch collider.Shape {
 	case stdcomponents.BoxColliderShape:
 		return s.BoxColliders.Get(entity)
 	case stdcomponents.CircleColliderShape:
-		// return s.CircleColliders.Get(entity)
+		return s.CircleColliders.Get(entity)
 	case stdcomponents.PolygonColliderShape:
-		// return s.PolygonColliders.Get(entity)
+		return s.PolygonColliders.Get(entity)
 	default:
 		panic("unsupported collider shape")
 	}
 	return nil
-}
-
-func (s *CollisionDetectionBVHSystem) circleSupport(circle *stdcomponents.CircleCollider, pos *stdcomponents.Position, scale vectors.Vec2, direction vectors.Vec2) vectors.Vec2 {
-	if direction.LengthSquared() == 0 {
-		return pos.XY
-	}
-	radius := circle.Radius * scale.X
-	dirNorm := direction.Normalize()
-	return pos.XY.Add(dirNorm.Scale(radius))
-}
-
-func (s *CollisionDetectionBVHSystem) boxSupport(box *stdcomponents.BoxCollider, pos *stdcomponents.Position, rot *stdcomponents.Rotation, scale vectors.Vec2, direction vectors.Vec2) vectors.Vec2 {
-	vertices := [4]vectors.Vec2{
-		{X: box.WH.X, Y: box.WH.Y},
-		{X: 0, Y: box.WH.Y},
-		{X: 0, Y: 0},
-		{X: box.WH.X, Y: 0},
-	}
-
-	var maxPoint vectors.Vec2
-	var maxDistance float32 = -math.MaxFloat32
-
-	for i := range vertices {
-		vertex := &vertices[i]
-		worldVertex := vertex.Sub(box.Offset).Rotate(rot.Angle)
-
-		distance := worldVertex.Dot(direction)
-		if distance > maxDistance {
-			maxDistance = distance
-			maxPoint = worldVertex
-		}
-	}
-
-	return maxPoint.Mul(scale).Add(pos.XY)
-}
-
-func (s *CollisionDetectionBVHSystem) polygonSupport(poly *stdcomponents.PolygonCollider, pos *stdcomponents.Position, rot *stdcomponents.Rotation, scale vectors.Vec2, direction vectors.Vec2) vectors.Vec2 {
-	maxDot := math.Inf(-1)
-	var maxVertex vectors.Vec2
-
-	for _, v := range poly.Vertices {
-		scaled := vectors.Vec2{X: v.X * scale.X, Y: v.Y * scale.Y}
-		rotated := scaled.Rotate(rot.Angle)
-		worldVertex := pos.XY.Add(rotated)
-		dot := float64(worldVertex.Dot(direction))
-		if dot > maxDot {
-			maxDot = dot
-			maxVertex = worldVertex
-		}
-	}
-	return maxVertex
 }

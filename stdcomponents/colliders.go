@@ -86,6 +86,15 @@ type CircleCollider struct {
 	Offset vectors.Vec2
 }
 
+func (c *CircleCollider) GetSupport(direction vectors.Vec2, transform *Transform2d) vectors.Vec2 {
+	if direction.LengthSquared() == 0 {
+		return transform.Position
+	}
+	radius := c.Radius * transform.Scale.X
+	dirNorm := direction.Normalize()
+	return transform.Position.Add(dirNorm.Scale(radius))
+}
+
 type CircleColliderComponentManager = ecs.ComponentManager[CircleCollider]
 
 func NewCircleColliderComponentManager() CircleColliderComponentManager {
@@ -97,6 +106,23 @@ type PolygonCollider struct {
 	Layer    CollisionLayer
 	Mask     CollisionMask
 	Offset   vectors.Vec2
+}
+
+func (c *PolygonCollider) GetSupport(direction vectors.Vec2, transform *Transform2d) vectors.Vec2 {
+	maxDot := math.Inf(-1)
+	var maxVertex vectors.Vec2
+
+	for _, v := range c.Vertices {
+		scaled := v.Mul(transform.Scale)
+		rotated := scaled.Rotate(transform.Rotation)
+		worldVertex := transform.Position.Add(rotated)
+		dot := float64(worldVertex.Dot(direction))
+		if dot > maxDot {
+			maxDot = dot
+			maxVertex = worldVertex
+		}
+	}
+	return maxVertex
 }
 
 type PolygonColliderComponentManager = ecs.ComponentManager[PolygonCollider]
