@@ -84,16 +84,14 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 
 		genCollider := s.GenericColliders.Get(entity)
 		if genCollider == nil {
-			s.GenericColliders.Create(entity, stdcomponents.GenericCollider{
-				Shape: stdcomponents.CircleColliderShape,
-				Layer: circleCollider.Layer,
-				Mask:  circleCollider.Mask,
-				Offset: vectors.Vec2{
-					X: circleCollider.Offset.X,
-					Y: circleCollider.Offset.Y,
-				},
-			})
+			genCollider = s.GenericColliders.Create(entity, stdcomponents.GenericCollider{})
 		}
+
+		genCollider.Layer = circleCollider.Layer
+		genCollider.Mask = circleCollider.Mask
+		genCollider.Offset.X = circleCollider.Offset.X
+		genCollider.Offset.Y = circleCollider.Offset.Y
+		genCollider.Shape = stdcomponents.CircleColliderShape
 
 		position := s.Positions.Get(entity)
 		scale := s.Scales.Get(entity)
@@ -102,8 +100,10 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 			aabb = s.AABB.Create(entity, stdcomponents.AABB{})
 		}
 
-		aabb.Min = position.XY.Sub(circleCollider.Offset.Mul(scale.XY))
-		aabb.Max = position.XY.Add(circleCollider.Offset.Scale(-1).SubScalar(circleCollider.Radius).Mul(scale.XY))
+		offset := circleCollider.Offset.Mul(scale.XY)
+		scaledRadius := scale.XY.Scale(circleCollider.Radius)
+		aabb.Min = position.XY.Add(offset).Sub(scaledRadius)
+		aabb.Max = position.XY.Add(offset).Add(scaledRadius)
 
 		return true
 	})

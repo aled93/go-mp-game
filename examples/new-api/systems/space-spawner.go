@@ -28,17 +28,17 @@ func NewSpaceSpawnerSystem() SpaceSpawnerSystem {
 }
 
 type SpaceSpawnerSystem struct {
-	EntityManager *ecs.EntityManager
-	Positions     *stdcomponents.PositionComponentManager
-	SpaceSpawners *components.SpaceSpawnerComponentManager
-	Asteroids     *components.AsteroidComponentManager
-	Hp            *components.HpComponentManager
-	Sprites       *stdcomponents.SpriteComponentManager
-	BoxColliders  *stdcomponents.BoxColliderComponentManager
-	Velocities    *stdcomponents.VelocityComponentManager
-	Rotations     *stdcomponents.RotationComponentManager
-	Scales        *stdcomponents.ScaleComponentManager
-	RigidBodies   *stdcomponents.RigidBodyComponentManager
+	EntityManager   *ecs.EntityManager
+	Positions       *stdcomponents.PositionComponentManager
+	SpaceSpawners   *components.SpaceSpawnerComponentManager
+	Asteroids       *components.AsteroidComponentManager
+	Hp              *components.HpComponentManager
+	Sprites         *stdcomponents.SpriteComponentManager
+	CircleColliders *stdcomponents.CircleColliderComponentManager
+	Velocities      *stdcomponents.VelocityComponentManager
+	Rotations       *stdcomponents.RotationComponentManager
+	Scales          *stdcomponents.ScaleComponentManager
+	RigidBodies     *stdcomponents.RigidBodyComponentManager
 }
 
 func (s *SpaceSpawnerSystem) Init() {}
@@ -59,16 +59,16 @@ func (s *SpaceSpawnerSystem) Run(dt time.Duration) {
 
 		pos := s.Positions.Get(e)
 		entities.CreateAsteroid(entities.CreateAsteroidManagers{
-			EntityManager: s.EntityManager,
-			Positions:     s.Positions,
-			Rotations:     s.Rotations,
-			Scales:        s.Scales,
-			Velocities:    s.Velocities,
-			BoxColliders:  s.BoxColliders,
-			Sprites:       s.Sprites,
-			AsteroidTags:  s.Asteroids,
-			Hp:            s.Hp,
-			RigidBodies:   s.RigidBodies,
+			EntityManager:   s.EntityManager,
+			Positions:       s.Positions,
+			Rotations:       s.Rotations,
+			Scales:          s.Scales,
+			Velocities:      s.Velocities,
+			CircleColliders: s.CircleColliders,
+			Sprites:         s.Sprites,
+			AsteroidTags:    s.Asteroids,
+			Hp:              s.Hp,
+			RigidBodies:     s.RigidBodies,
 		}, pos.XY.X, pos.XY.Y, 0, 1+rand.Float32()*2, 0, 50+rand.Float32()*100)
 		spawner.CooldownLeft = spawner.Cooldown
 		return true

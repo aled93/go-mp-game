@@ -20,6 +20,10 @@ import (
 	"math"
 )
 
+const (
+	epaMaxTolerance = 0.01 // should not be very low because of circle colliders
+)
+
 /*
 EPA - Expanding Polytope Algorithm
 Based on https://dyn4j.org/2010/05/epa-expanding-polytope-algorithm/#epa-alternatives
@@ -31,11 +35,12 @@ func EPA(
 ) (vectors.Vec2, float32) {
 	polytope := simplex.toPolytope(make([]vectors.Vec2, 0, 6))
 
-	for range maxItterations {
+	for range maxIterations {
 		edge := findClosestEdge(polytope)
 		point := minkowskiSupport2d(a, b, transformA, transformB, edge.normal)
 		distance := point.Dot(edge.normal)
-		if distance-edge.distance < epaTolerance {
+		tolerance := distance - edge.distance
+		if tolerance < epaMaxTolerance {
 			return edge.normal, distance
 		}
 

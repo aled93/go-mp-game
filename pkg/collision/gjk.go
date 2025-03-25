@@ -18,8 +18,7 @@ import (
 )
 
 const (
-	maxItterations = 64
-	epaTolerance   = 0.00001
+	maxIterations = 64
 )
 
 type AnyCollider interface {
@@ -42,7 +41,7 @@ func CheckCollision(
 	simplex.add(p.ToVec3())
 	direction = p.Neg()
 
-	for range maxItterations {
+	for range maxIterations {
 		p = minkowskiSupport2d(a, b, transformA, transformB, direction)
 
 		if p.Dot(direction) < 0 {

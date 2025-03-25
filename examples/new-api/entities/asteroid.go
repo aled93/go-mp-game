@@ -27,16 +27,16 @@ import (
 )
 
 type CreateAsteroidManagers struct {
-	EntityManager *ecs.EntityManager
-	Positions     *stdcomponents.PositionComponentManager
-	Rotations     *stdcomponents.RotationComponentManager
-	Scales        *stdcomponents.ScaleComponentManager
-	Velocities    *stdcomponents.VelocityComponentManager
-	BoxColliders  *stdcomponents.BoxColliderComponentManager
-	Sprites       *stdcomponents.SpriteComponentManager
-	AsteroidTags  *components.AsteroidComponentManager
-	Hp            *components.HpComponentManager
-	RigidBodies   *stdcomponents.RigidBodyComponentManager
+	EntityManager   *ecs.EntityManager
+	Positions       *stdcomponents.PositionComponentManager
+	Rotations       *stdcomponents.RotationComponentManager
+	Scales          *stdcomponents.ScaleComponentManager
+	Velocities      *stdcomponents.VelocityComponentManager
+	CircleColliders *stdcomponents.CircleColliderComponentManager
+	Sprites         *stdcomponents.SpriteComponentManager
+	AsteroidTags    *components.AsteroidComponentManager
+	Hp              *components.HpComponentManager
+	RigidBodies     *stdcomponents.RigidBodyComponentManager
 }
 
 func CreateAsteroid(
@@ -64,14 +64,11 @@ func CreateAsteroid(
 		X: velocityX,
 		Y: velocityY,
 	})
-	props.BoxColliders.Create(bullet, stdcomponents.BoxCollider{
-		WH: vectors.Vec2{
-			X: 32,
-			Y: 32,
-		},
+	props.CircleColliders.Create(bullet, stdcomponents.CircleCollider{
+		Radius: 24,
 		Offset: vectors.Vec2{
-			X: 16,
-			Y: 16,
+			X: 0,
+			Y: 0,
 		},
 		Layer: config.EnemyCollisionLayer,
 		Mask:  0,

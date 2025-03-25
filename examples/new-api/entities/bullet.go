@@ -26,15 +26,15 @@ import (
 )
 
 type CreateBulletManagers struct {
-	EntityManager *ecs.EntityManager
-	Positions     *stdcomponents.PositionComponentManager
-	Rotations     *stdcomponents.RotationComponentManager
-	Scales        *stdcomponents.ScaleComponentManager
-	Velocities    *stdcomponents.VelocityComponentManager
-	BoxColliders  *stdcomponents.BoxColliderComponentManager
-	Sprites       *stdcomponents.SpriteComponentManager
-	BulletTags    *components.BulletTagComponentManager
-	Hps           *components.HpComponentManager
+	EntityManager   *ecs.EntityManager
+	Positions       *stdcomponents.PositionComponentManager
+	Rotations       *stdcomponents.RotationComponentManager
+	Scales          *stdcomponents.ScaleComponentManager
+	Velocities      *stdcomponents.VelocityComponentManager
+	CircleColliders *stdcomponents.CircleColliderComponentManager
+	Sprites         *stdcomponents.SpriteComponentManager
+	BulletTags      *components.BulletTagComponentManager
+	Hps             *components.HpComponentManager
 }
 
 func CreateBullet(
@@ -61,14 +61,11 @@ func CreateBullet(
 		X: velocityX,
 		Y: velocityY,
 	})
-	props.BoxColliders.Create(bullet, stdcomponents.BoxCollider{
-		WH: vectors.Vec2{
-			X: 16,
-			Y: 16,
-		},
+	props.CircleColliders.Create(bullet, stdcomponents.CircleCollider{
+		Radius: 8,
 		Offset: vectors.Vec2{
-			X: 8,
-			Y: 8,
+			X: 0,
+			Y: 0,
 		},
 		Layer: config.BulletCollisionLayer,
 		Mask:  1<<config.EnemyCollisionLayer | 1<<config.WallCollisionLayer,

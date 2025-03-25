@@ -36,6 +36,7 @@ type SpaceshipIntentsSystem struct {
 	Rotations        *stdcomponents.RotationComponentManager
 	Scales           *stdcomponents.ScaleComponentManager
 	BoxColliders     *stdcomponents.BoxColliderComponentManager
+	CircleColliders  *stdcomponents.CircleColliderComponentManager
 	BulletTags       *components.BulletTagComponentManager
 	Sprites          *stdcomponents.SpriteComponentManager
 	Weapons          *components.WeaponComponentManager
@@ -100,15 +101,15 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 					bulletVelocityY := vel.Y + float32(math.Cos(angle+math.Pi))*bulletSpeed
 					bulletVelocityX := vel.X - float32(math.Sin(angle+math.Pi))*bulletSpeed
 					entities.CreateBullet(entities.CreateBulletManagers{
-						EntityManager: s.EntityManager,
-						Positions:     s.Positions,
-						Rotations:     s.Rotations,
-						Scales:        s.Scales,
-						Velocities:    s.Velocities,
-						BoxColliders:  s.BoxColliders,
-						Sprites:       s.Sprites,
-						BulletTags:    s.BulletTags,
-						Hps:           s.Hps,
+						EntityManager:   s.EntityManager,
+						Positions:       s.Positions,
+						Rotations:       s.Rotations,
+						Scales:          s.Scales,
+						Velocities:      s.Velocities,
+						CircleColliders: s.CircleColliders,
+						Sprites:         s.Sprites,
+						BulletTags:      s.BulletTags,
+						Hps:             s.Hps,
 					}, pos.XY.X, pos.XY.Y, angle, bulletVelocityX, bulletVelocityY)
 				}
 				weapon.CooldownLeft = weapon.Cooldown

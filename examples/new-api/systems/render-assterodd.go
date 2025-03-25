@@ -46,7 +46,8 @@ type RenderAssteroddSystem struct {
 	Sprites          *stdcomponents.SpriteComponentManager
 	SpriteMatrixes   *stdcomponents.SpriteMatrixComponentManager
 	RenderOrders     *stdcomponents.RenderOrderComponentManager
-	ColliderBoxes    *stdcomponents.BoxColliderComponentManager
+	BoxColliders     *stdcomponents.BoxColliderComponentManager
+	CircleColliders  *stdcomponents.CircleColliderComponentManager
 	AABBs            *stdcomponents.AABBComponentManager
 	Collisions       *stdcomponents.CollisionComponentManager
 	renderList       []renderEntry
@@ -109,8 +110,8 @@ func (s *RenderAssteroddSystem) render() {
 	// DEBUG
 	// ==========
 	rl.BeginMode2D(s.camera)
-	s.ColliderBoxes.EachEntity(func(e ecs.Entity) bool {
-		col := s.ColliderBoxes.Get(e)
+	s.BoxColliders.EachEntity(func(e ecs.Entity) bool {
+		col := s.BoxColliders.Get(e)
 		scale := s.Scales.Get(e)
 		pos := s.Positions.Get(e)
 		rot := s.Rotations.Get(e)
@@ -124,6 +125,15 @@ func (s *RenderAssteroddSystem) render() {
 			X: col.Offset.X * scale.XY.X,
 			Y: col.Offset.Y * scale.XY.Y,
 		}, float32(rot.Degrees()), rl.DarkGreen)
+		return true
+	})
+	s.CircleColliders.EachEntity(func(e ecs.Entity) bool {
+		col := s.CircleColliders.Get(e)
+		scale := s.Scales.Get(e)
+		pos := s.Positions.Get(e)
+
+		posWithOffset := pos.XY.Add(col.Offset.Mul(scale.XY))
+		rl.DrawCircle(int32(posWithOffset.X), int32(posWithOffset.Y), col.Radius*scale.XY.X, rl.DarkGreen)
 		return true
 	})
 	rl.EndMode2D()
