@@ -58,6 +58,10 @@ func (v Vec2) Length() float32 {
 	return float32(math.Sqrt(float64(v.X*v.X + v.Y*v.Y)))
 }
 
+func (v Vec2) Distance(other Vec2) float32 {
+	return v.Sub(other).Length()
+}
+
 func (v Vec2) Normalize() Vec2 {
 	return v.Scale(1 / v.Length())
 }

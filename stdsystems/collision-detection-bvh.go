@@ -125,6 +125,8 @@ func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity
 
 		go func(start int, end int, id int) {
 			defer wg.Done()
+			runtime.LockOSThread()
+			defer runtime.UnlockOSThread()
 
 			for i := range entities[start:end] {
 				entity := entities[i+startIndex]
@@ -178,6 +180,8 @@ func (s *CollisionDetectionBVHSystem) broadPhase(entityA ecs.Entity, workerId in
 	colliderA := s.GenericCollider.Get(entityA)
 	aabb := s.AABB.Get(entityA)
 
+	result := make([]ecs.Entity, 0, 64)
+
 	// Iterate through all trees
 	for treeIndex := range s.trees {
 		tree := &s.trees[treeIndex]
@@ -189,25 +193,22 @@ func (s *CollisionDetectionBVHSystem) broadPhase(entityA ecs.Entity, workerId in
 		}
 
 		// Traverse this BVH tree for potential collisions
-		result := tree.Query(aabb, make([]ecs.Entity, 0, 64))
+		result = tree.Query(aabb, result)
+	}
 
-		for _, entityB := range result {
-			if entityA == entityB {
-				continue
-			}
+	for _, entityB := range result {
+		if entityA == entityB {
+			continue
+		}
 
-			colliderB := s.GenericCollider.Get(entityB)
-			collision, ok := s.narrowPhase(colliderA, colliderB, entityA, entityB)
-			if ok {
-				s.collisionEvents[workerId].Append(collision)
-			}
+		colliderB := s.GenericCollider.Get(entityB)
+		if collision, ok := s.narrowPhase(colliderA, colliderB, entityA, entityB); ok {
+			s.collisionEvents[workerId].Append(collision)
 		}
 	}
 }
 
 func (s *CollisionDetectionBVHSystem) narrowPhase(colliderA, colliderB *stdcomponents.GenericCollider, entityA, entityB ecs.Entity) (e CollisionEvent, ok bool) {
-	colA := s.getGjkCollider(colliderA, entityA)
-	colB := s.getGjkCollider(colliderB, entityB)
 	posA := s.Positions.Get(entityA)
 	posB := s.Positions.Get(entityB)
 	scaleA := s.Scales.Get(entityA)
@@ -225,6 +226,25 @@ func (s *CollisionDetectionBVHSystem) narrowPhase(colliderA, colliderB *stdcompo
 		Scale:    scaleB.XY,
 	}
 
+	circleA := s.CircleColliders.Get(entityA)
+	circleB := s.CircleColliders.Get(entityB)
+	if circleA != nil && circleB != nil {
+		radiusA := circleA.Radius * scaleA.XY.X
+		radiusB := circleB.Radius * scaleB.XY.X
+		if transformA.Position.Distance(transformB.Position) < radiusA+radiusB {
+			return CollisionEvent{
+				entityA:  entityA,
+				entityB:  entityB,
+				position: transformA.Position,
+				normal:   transformB.Position.Sub(transformA.Position).Normalize(),
+				depth:    radiusA + radiusB - transformB.Position.Distance(transformA.Position),
+			}, true
+		}
+	}
+
+	// GJK strategy
+	colA := s.getGjkCollider(colliderA, entityA)
+	colB := s.getGjkCollider(colliderB, entityB)
 	// First detect collision using GJK
 	simplex, collision := gjk.CheckCollision(colA, colB, &transformA, &transformB)
 	if !collision {
