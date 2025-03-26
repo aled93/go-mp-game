@@ -86,7 +86,7 @@ func CreateSpaceShip(
 			Y: 16,
 		},
 		Layer: config.PlayerCollisionLayer,
-		Mask:  1<<config.EnemyCollisionLayer | 1<<config.WallCollisionLayer,
+		Mask:  1<<config.EnemyCollisionLayer | 1<<config.WallCollisionLayer | 1<<config.BulletCollisionLayer,
 	})
 
 	props.RigidBodies.Create(spaceShip, stdcomponents.RigidBody{

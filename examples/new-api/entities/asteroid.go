@@ -65,7 +65,7 @@ func CreateAsteroid(
 		Y: velocityY,
 	})
 	props.CircleColliders.Create(e, stdcomponents.CircleCollider{
-		Radius: 24,
+		Radius: 20,
 		Offset: vectors.Vec2{
 			X: 0,
 			Y: 0,

@@ -114,7 +114,7 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 			if intent.Fire {
 				var count int = 30
 				for i := range count {
-					var angle = math.Pi*2/float64(count)*float64(i) + rot.Angle - math.Pi/2
+					var angle = math.Pi*2/float64(count)*float64(i) + rot.Angle
 
 					bulletVelocityY := vel.Y + float32(math.Cos(angle+math.Pi))*bulletSpeed
 					bulletVelocityX := vel.X - float32(math.Sin(angle+math.Pi))*bulletSpeed

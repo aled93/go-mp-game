@@ -8,8 +8,11 @@ package stdsystems
 
 import (
 	"fmt"
+	//"github.com/felixge/fgprof"
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"log"
+	//"net/http"
+	_ "net/http/pprof"
 	"os"
 	"runtime/pprof"
 )
@@ -22,7 +25,12 @@ type DebugSystem struct {
 	pprofEnabled bool
 }
 
-func (s *DebugSystem) Init() {}
+func (s *DebugSystem) Init() {
+	//http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
+	//go func() {
+	//	log.Println(http.ListenAndServe(":6060", nil))
+	//}()
+}
 func (s *DebugSystem) Run() {
 	if rl.IsKeyPressed(rl.KeyF9) {
 		if s.pprofEnabled {

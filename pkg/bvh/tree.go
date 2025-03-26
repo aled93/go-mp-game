@@ -39,57 +39,65 @@ func NewTree2D(layer stdcomponents.CollisionLayer, prealloc int) Tree2D {
 	return Tree2D{
 		layer:      layer,
 		components: make([]treeComponent, 0, prealloc),
+		nodes:      ecs.NewPagedArray[Node](),
 	}
 }
 
 // Tree2D represents a BVH tree
 type Tree2D struct {
 	layer      stdcomponents.CollisionLayer
-	nodes      []Node
+	nodes      ecs.PagedArray[Node]
 	components []treeComponent
 	rootIndex  int
 }
 
 type treeComponent struct {
 	Entity ecs.Entity
-	AABB   stdcomponents.AABB
+	AABB   *stdcomponents.AABB
 }
 
 func (t *Tree2D) Layer() stdcomponents.CollisionLayer {
 	return t.layer
 }
 
-func (t *Tree2D) Query(aabb stdcomponents.AABB, handler func(entity ecs.Entity)) {
-	if t.rootIndex == -1 || len(t.nodes) == 0 { // Handle empty tree
-		return
+func (t *Tree2D) Query(aabb *stdcomponents.AABB, result []ecs.Entity) []ecs.Entity {
+	if t.rootIndex == -1 || t.nodes.Len() == 0 { // Handle empty tree
+		return result
 	}
 
 	// Use stack-based traversal
-	stack := make([]int, 0, 64)
-	stack = append(stack, t.rootIndex)
+	stack := [32]int{}
+	stackPtr := 0
+	stack[stackPtr] = t.rootIndex
+	stackPtr++
 
-	for len(stack) > 0 {
-		nodeIndex := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
-		node := &t.nodes[nodeIndex]
+	for stackPtr > 0 {
+		stackPtr--
+		nodeIndex := stack[stackPtr]
+		node := t.nodes.Get(nodeIndex)
 
 		// Early exit if no AABB overlap
-		if !t.aabbOverlap(&aabb, &node.Bounds) {
+		bounds := &node.Bounds
+		if bounds.Max.X < aabb.Min.X || bounds.Min.X > aabb.Max.X ||
+			bounds.Max.Y < aabb.Min.Y || bounds.Min.Y > aabb.Max.Y {
 			continue
 		}
 
-		if node.isLeaf() {
+		if node.Left == -1 && node.Right == -1 {
 			// Check detailed collision with node.Entity
-			// (Same as your existing collision logic)
-			handler(node.Entity)
+			result = append(result, node.Entity)
 		} else {
-			// Push children to stack
-			stack = append(stack, node.Right, node.Left)
+			// Push child indices (right and left) onto the stack.
+			stack[stackPtr] = node.Right
+			stack[stackPtr+1] = node.Left
+			stackPtr += 2
 		}
 	}
+
+	return result
 }
 
-func (t *Tree2D) AddComponent(entity ecs.Entity, aabbs stdcomponents.AABB) {
+func (t *Tree2D) AddComponent(entity ecs.Entity, aabbs *stdcomponents.AABB) {
 	t.components = append(t.components, treeComponent{
 		Entity: entity,
 		AABB:   aabbs,
@@ -110,23 +118,21 @@ type Task struct {
 }
 
 func (t *Tree2D) Build() {
-	if cap(t.nodes) < len(t.components)*2 {
-		t.nodes = make([]Node, 0, len(t.components)*2)
-	}
-	t.nodes = t.nodes[:0]
+	t.nodes.Reset()
 
 	// Create leaf nodes
 	leaves := make([]Node, len(t.components))
 	for i := range t.components {
-		aabb := t.components[i].AABB
+		component := &t.components[i]
+		aabb := component.AABB
 		center := aabb.Min.Add(aabb.Max).Scale(0.5)
 		code := t.morton2D(center.X, center.Y)
 		leaves[i] = Node{
 			Left:       -1,
 			Right:      -1,
 			MortonCode: code,
-			Entity:     t.components[i].Entity,
-			Bounds:     aabb,
+			Entity:     component.Entity,
+			Bounds:     *aabb,
 		}
 	}
 	t.components = t.components[:0]
@@ -136,7 +142,9 @@ func (t *Tree2D) Build() {
 		return int(a.MortonCode) - int(b.MortonCode)
 	})
 
-	t.nodes = append(t.nodes, leaves...)
+	for i := range leaves {
+		t.nodes.Append(leaves[i])
+	}
 
 	// Stack-based hierarchy construction
 	var resultStack []int
@@ -169,14 +177,16 @@ func (t *Tree2D) Build() {
 			resultStack = resultStack[:len(resultStack)-1]
 
 			// Create parent node and append to t.nodes
+			leftBounds := &t.nodes.Get(left).Bounds
+			rightBounds := &t.nodes.Get(right).Bounds
 			parent := Node{
 				Left:   left,
 				Right:  right,
-				Bounds: t.mergeAABB(&t.nodes[left].Bounds, &t.nodes[right].Bounds),
+				Bounds: t.mergeAABB(leftBounds, rightBounds),
 			}
-			t.nodes = append(t.nodes, parent)
+			t.nodes.Append(parent)
 			// Push parent index to result stack
-			resultStack = append(resultStack, len(t.nodes)-1)
+			resultStack = append(resultStack, t.nodes.Len()-1)
 		}
 	}
 
@@ -189,8 +199,8 @@ func (t *Tree2D) Build() {
 // findSplit finds the position where the highest bit changes
 func (t *Tree2D) findSplit(start, end int) int {
 	// Identical Morton sortedMortonCodes => split the range in the middle.
-	first := t.nodes[start].MortonCode
-	last := t.nodes[end].MortonCode
+	first := t.nodes.Get(start).MortonCode
+	last := t.nodes.Get(end).MortonCode
 
 	if first == last {
 		return (start + end) >> 1
@@ -211,7 +221,7 @@ func (t *Tree2D) findSplit(start, end int) int {
 		newSplit := split + step // proposed new position
 
 		if newSplit < end {
-			splitCode := t.nodes[newSplit].MortonCode
+			splitCode := t.nodes.Get(newSplit).MortonCode
 			splitPrefix := bits.LeadingZeros32(first ^ splitCode)
 			if splitPrefix > commonPrefix {
 				split = newSplit

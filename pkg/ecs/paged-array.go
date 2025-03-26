@@ -101,8 +101,8 @@ func (a *PagedArray[T]) SoftReduce() {
 }
 
 func (a *PagedArray[T]) Reset() {
-	for range a.currentPageIndex {
-		page := &a.book[a.currentPageIndex]
+	for i := 0; i <= a.currentPageIndex; i++ {
+		page := &a.book[i]
 		page.len = 0
 	}
 

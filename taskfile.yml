@@ -30,6 +30,10 @@ tasks:
     cmds:
       - protoc --go_out=. internal/**/*.proto
 
+  gpprof-cpu:
+    cmds:
+    - go tool pprof --http=:6061 http://localhost:6060/debug/fgprof?seconds=20
+
   pprof-cpu:
     cmds:
       - go tool pprof -http=":8000" ./cpu.out

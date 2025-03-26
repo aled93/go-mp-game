@@ -63,7 +63,7 @@ func CreateBullet(
 		Y: velocityY,
 	})
 	props.CircleColliders.Create(bullet, stdcomponents.CircleCollider{
-		Radius: 8,
+		Radius: 6,
 		Offset: vectors.Vec2{
 			X: 0,
 			Y: 0,

@@ -25,9 +25,12 @@ import (
 	"time"
 )
 
+var maxNumWorkers = runtime.NumCPU() - 2
+
 func NewCollisionDetectionBVHSystem() CollisionDetectionBVHSystem {
 	return CollisionDetectionBVHSystem{
 		activeCollisions: make(map[CollisionPair]ecs.Entity),
+		collisionEvents:  make([]ecs.PagedArray[CollisionEvent], maxNumWorkers),
 	}
 }
 
@@ -47,11 +50,17 @@ type CollisionDetectionBVHSystem struct {
 	trees       []bvh.Tree2D
 	treesLookup map[stdcomponents.CollisionLayer]int
 
+	collisionEvents []ecs.PagedArray[CollisionEvent]
+
 	activeCollisions  map[CollisionPair]ecs.Entity // Maps collision pairs to proxy entities
 	currentCollisions map[CollisionPair]struct{}
 }
 
-func (s *CollisionDetectionBVHSystem) Init() {}
+func (s *CollisionDetectionBVHSystem) Init() {
+	for i := range maxNumWorkers {
+		s.collisionEvents[i] = ecs.NewPagedArray[CollisionEvent]()
+	}
+}
 func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 	s.currentCollisions = make(map[CollisionPair]struct{})
 	defer s.processExitStates()
@@ -76,7 +85,7 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 			s.treesLookup[layer] = treeId
 		}
 
-		s.trees[treeId].AddComponent(entity, *aabb)
+		s.trees[treeId].AddComponent(entity, aabb)
 
 		return true
 	})
@@ -92,13 +101,43 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 	}
 	wg.Wait()
 
-	// Create collision channel
-	collisionChan := make(chan CollisionEvent, 4096*4)
-	doneChan := make(chan struct{})
+	entities := s.AABB.RawEntities(make([]ecs.Entity, 0, s.AABB.Len()))
 
-	// Start result collector
-	go func() {
-		for event := range collisionChan {
+	s.findEntityCollisions(entities)
+}
+
+func (s *CollisionDetectionBVHSystem) Destroy() {}
+
+func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity) {
+	var wg sync.WaitGroup
+	entitiesLength := len(entities)
+	// get minimum 1 worker for small amount of entities, and maximum maxNumWorkers for a lot of entities
+	numWorkers := max(min(entitiesLength/128, maxNumWorkers), 1)
+	chunkSize := entitiesLength / numWorkers
+
+	wg.Add(numWorkers)
+	for workedId := 0; workedId < numWorkers; workedId++ {
+		startIndex := workedId * chunkSize
+		endIndex := startIndex + chunkSize - 1
+		if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
+			endIndex = entitiesLength
+		}
+
+		go func(start int, end int, id int) {
+			defer wg.Done()
+
+			for i := range entities[start:end] {
+				entity := entities[i+startIndex]
+				s.broadPhase(entity, id)
+			}
+		}(startIndex, endIndex, workedId)
+	}
+	// Wait for workers and close collision channel
+	wg.Wait()
+
+	for i := range s.collisionEvents {
+		events := &s.collisionEvents[i]
+		events.AllData(func(event *CollisionEvent) bool {
 			pair := CollisionPair{event.entityA, event.entityB}
 			s.currentCollisions[pair] = struct{}{}
 			displacement := event.normal.Scale(event.depth)
@@ -129,51 +168,13 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 				position.XY.X = pos.X
 				position.XY.Y = pos.Y
 			}
-		}
-		close(doneChan)
-	}()
-
-	entities := s.AABB.RawEntities(make([]ecs.Entity, 0, s.AABB.Len()))
-	aabbs := s.AABB.RawComponents(make([]stdcomponents.AABB, 0, s.AABB.Len()))
-
-	s.findEntityCollisions(entities, aabbs, collisionChan)
-
-	close(collisionChan)
-	<-doneChan // Wait for result collector
-}
-
-func (s *CollisionDetectionBVHSystem) Destroy() {}
-
-func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity, aabbs []stdcomponents.AABB, collisionChan chan<- CollisionEvent) {
-	var wg sync.WaitGroup
-	maxNumWorkers := runtime.NumCPU()
-	entitiesLength := len(entities)
-	// get minimum 1 worker for small amount of entities, and maximum maxNumWorkers for a lot of entities
-	numWorkers := max(min(entitiesLength/128, maxNumWorkers), 1)
-	chunkSize := entitiesLength / numWorkers
-
-	wg.Add(numWorkers)
-	for workedId := 0; workedId < numWorkers; workedId++ {
-		startIndex := workedId * chunkSize
-		endIndex := startIndex + chunkSize - 1
-		if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
-			endIndex = entitiesLength
-		}
-
-		go func(start int, end int) {
-			defer wg.Done()
-
-			for i := range entities[start:end] {
-				entity := entities[i+startIndex]
-				s.broadPhase(entity, collisionChan)
-			}
-		}(startIndex, endIndex)
+			return true
+		})
+		s.collisionEvents[i].Reset()
 	}
-	// Wait for workers and close collision channel
-	wg.Wait()
 }
 
-func (s *CollisionDetectionBVHSystem) broadPhase(entityA ecs.Entity, collisionChan chan<- CollisionEvent) {
+func (s *CollisionDetectionBVHSystem) broadPhase(entityA ecs.Entity, workerId int) {
 	colliderA := s.GenericCollider.Get(entityA)
 	aabb := s.AABB.Get(entityA)
 
@@ -188,17 +189,19 @@ func (s *CollisionDetectionBVHSystem) broadPhase(entityA ecs.Entity, collisionCh
 		}
 
 		// Traverse this BVH tree for potential collisions
-		tree.Query(*aabb, func(entityB ecs.Entity) {
+		result := tree.Query(aabb, make([]ecs.Entity, 0, 64))
+
+		for _, entityB := range result {
 			if entityA == entityB {
-				return
+				continue
 			}
 
 			colliderB := s.GenericCollider.Get(entityB)
 			collision, ok := s.narrowPhase(colliderA, colliderB, entityA, entityB)
 			if ok {
-				collisionChan <- collision
+				s.collisionEvents[workerId].Append(collision)
 			}
-		})
+		}
 	}
 }
 
@@ -207,19 +210,19 @@ func (s *CollisionDetectionBVHSystem) narrowPhase(colliderA, colliderB *stdcompo
 	colB := s.getGjkCollider(colliderB, entityB)
 	posA := s.Positions.Get(entityA)
 	posB := s.Positions.Get(entityB)
-	scaleA := s.getScaleOrDefault(entityA)
-	scaleB := s.getScaleOrDefault(entityB)
-	rotA := s.getRotationOrDefault(entityA)
-	rotB := s.getRotationOrDefault(entityB)
+	scaleA := s.Scales.Get(entityA)
+	scaleB := s.Scales.Get(entityB)
+	rotA := s.Rotations.Get(entityA)
+	rotB := s.Rotations.Get(entityB)
 	transformA := stdcomponents.Transform2d{
 		Position: posA.XY,
 		Rotation: rotA.Angle,
-		Scale:    scaleA,
+		Scale:    scaleA.XY,
 	}
 	transformB := stdcomponents.Transform2d{
 		Position: posB.XY,
 		Rotation: rotB.Angle,
-		Scale:    scaleB,
+		Scale:    scaleB.XY,
 	}
 
 	// First detect collision using GJK
@@ -238,24 +241,6 @@ func (s *CollisionDetectionBVHSystem) narrowPhase(colliderA, colliderB *stdcompo
 		normal:   normal,
 		depth:    depth,
 	}, true
-}
-
-func (s *CollisionDetectionBVHSystem) getScaleOrDefault(entity ecs.Entity) vectors.Vec2 {
-	scale := s.Scales.Get(entity)
-	if scale != nil {
-		return scale.XY // Dereference the component pointer
-	}
-	// Return default scale of 1 if component doesn't exist
-	return vectors.Vec2{X: 1, Y: 1}
-}
-
-func (s *CollisionDetectionBVHSystem) getRotationOrDefault(entity ecs.Entity) stdcomponents.Rotation {
-	rotation := s.Rotations.Get(entity)
-	if rotation != nil {
-		return *rotation // Dereference the component pointer
-	}
-	// Return default zero rotation if component doesn't exist
-	return stdcomponents.Rotation{Angle: 0}
 }
 
 func (s *CollisionDetectionBVHSystem) processExitStates() {
