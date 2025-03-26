@@ -15,6 +15,7 @@ Thank you for your support!
 package systems
 
 import (
+	"gomp/examples/new-api/assets"
 	"gomp/examples/new-api/components"
 	"gomp/examples/new-api/entities"
 	"gomp/pkg/ecs"
@@ -22,6 +23,8 @@ import (
 	"gomp/vectors"
 	"math"
 	"time"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 func NewSpaceshipIntentsSystem() SpaceshipIntentsSystem {
@@ -39,6 +42,7 @@ type SpaceshipIntentsSystem struct {
 	CircleColliders  *stdcomponents.CircleColliderComponentManager
 	BulletTags       *components.BulletTagComponentManager
 	Sprites          *stdcomponents.SpriteComponentManager
+	RigidBodies      *stdcomponents.RigidBodyComponentManager
 	Weapons          *components.WeaponComponentManager
 	Hps              *components.HpComponentManager
 	moveSpeed        float32
@@ -61,6 +65,7 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 		rot := s.Rotations.Get(entity)
 		pos := s.Positions.Get(entity)
 		weapon := s.Weapons.Get(entity)
+		hp := s.Hps.Get(entity)
 
 		if intent.RotateLeft {
 			rot.Angle -= rotateSpeed * vectors.Radians(dtSec)
@@ -69,34 +74,46 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 			rot.Angle += rotateSpeed * vectors.Radians(dtSec)
 		}
 		if intent.MoveUp {
-			vel.Y += float32(math.Cos(rot.Angle+math.Pi)) * speedIncrement
-			vel.X -= float32(math.Sin(rot.Angle+math.Pi)) * speedIncrement
-			if vel.Vec2().Length() > moveSpeedMax {
-				vel.SetVec2(vel.Vec2().Normalize().Scale(moveSpeedMax))
+			s.moveSpeed += speedIncrement
+			if s.moveSpeed > moveSpeedMax {
+				s.moveSpeed = moveSpeedMax
 			}
 		}
 		if intent.MoveDown {
-			vel.Y -= float32(math.Cos(rot.Angle+math.Pi)) * speedIncrement
-			vel.X += float32(math.Sin(rot.Angle+math.Pi)) * speedIncrement
-			if vel.Vec2().Length() < moveSpeedMaxBackwards {
-				vel.SetVec2(vel.Vec2().Normalize().Scale(moveSpeedMaxBackwards))
+			s.moveSpeed -= speedIncrement
+			if s.moveSpeed < moveSpeedMaxBackwards {
+				s.moveSpeed = moveSpeedMaxBackwards
 			}
 		}
 
 		if !intent.MoveUp && !intent.MoveDown {
-			if vel.Vec2().Length() > 0 {
-				deceleration := vel.Vec2().Normalize().Scale(speedIncrement)
-				vel.SetVec2(vel.Vec2().Sub(deceleration))
-				if vel.Vec2().Length() < speedIncrement {
-					vel.SetVec2(vectors.Vec2{0, 0})
-				}
+			if s.moveSpeed > 0 {
+				s.moveSpeed -= speedIncrement
+			} else if s.moveSpeed < 0 {
+				s.moveSpeed += speedIncrement
 			}
 		}
 
+		flySound := assets.Audio.Get("fly_sound.wav")
+		flySoundIsPlaying := rl.IsSoundPlaying(*flySound)
+
+		absMoveSpeed := math.Abs(float64(s.moveSpeed))
+
+		rl.SetSoundVolume(*flySound, float32(absMoveSpeed/float64(moveSpeedMax)))
+
+		if (intent.MoveUp || intent.MoveDown || intent.RotateLeft || intent.RotateRight || s.moveSpeed != 0) && !flySoundIsPlaying {
+			rl.PlaySound(*flySound)
+		} else if !(intent.MoveUp || intent.MoveDown || intent.RotateLeft || intent.RotateRight || s.moveSpeed != 0) && flySoundIsPlaying || hp.Hp == 0 {
+			rl.StopSound(*flySound)
+		}
+
+		vel.Y = float32(math.Cos(rot.Angle+math.Pi)) * s.moveSpeed
+		vel.X = -float32(math.Sin(rot.Angle+math.Pi)) * s.moveSpeed
+
 		if weapon.CooldownLeft <= 0 {
 			if intent.Fire {
-				var count int = 360
-				for i := 0; i < count; i++ {
+				var count int = 30
+				for i := range count {
 					var angle = math.Pi*2/float64(count)*float64(i) + rot.Angle - math.Pi/2
 
 					bulletVelocityY := vel.Y + float32(math.Cos(angle+math.Pi))*bulletSpeed
@@ -108,12 +125,16 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 						Scales:          s.Scales,
 						Velocities:      s.Velocities,
 						CircleColliders: s.CircleColliders,
+						RigidBodies:     s.RigidBodies,
 						Sprites:         s.Sprites,
 						BulletTags:      s.BulletTags,
 						Hps:             s.Hps,
 					}, pos.XY.X, pos.XY.Y, angle, bulletVelocityX, bulletVelocityY)
 				}
 				weapon.CooldownLeft = weapon.Cooldown
+				fireSoundAsset := assets.Audio.Get("gun_sound.wav")
+				fireSound := rl.LoadSoundAlias(*fireSoundAsset)
+				rl.PlaySound(fireSound)
 			}
 		} else {
 			weapon.CooldownLeft -= dt
@@ -122,4 +143,5 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 		return true
 	})
 }
+
 func (s *SpaceshipIntentsSystem) Destroy() {}

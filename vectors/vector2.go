@@ -50,6 +50,10 @@ func (v Vec2) Scale(scalar float32) Vec2 {
 	return Vec2{v.X * scalar, v.Y * scalar}
 }
 
+func (v Vec2) Angle() Radians {
+	return math.Atan2(float64(v.Y), float64(v.X))
+}
+
 func (v Vec2) Length() float32 {
 	return float32(math.Sqrt(float64(v.X*v.X + v.Y*v.Y)))
 }

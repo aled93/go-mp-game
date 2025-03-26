@@ -15,6 +15,8 @@ Thank you for your support!
 package systems
 
 import (
+	rl "github.com/gen2brain/raylib-go/raylib"
+	"gomp/examples/new-api/assets"
 	"gomp/examples/new-api/components"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
@@ -47,29 +49,6 @@ type CollisionHandlerSystem struct {
 
 func (s *CollisionHandlerSystem) Init() {}
 func (s *CollisionHandlerSystem) Run(dt time.Duration) {
-	s.AsteroidTags.EachEntity(func(e ecs.Entity) bool {
-		pos := s.Positions.Get(e)
-		hp := s.Hps.Get(e)
-
-		if pos.XY.Y > 5000 {
-			s.EntityManager.Delete(e)
-		}
-
-		if hp.Hp <= 0 {
-			s.EntityManager.Delete(e)
-		}
-
-		return true
-	})
-
-	s.BulletTags.EachEntity(func(entity ecs.Entity) bool {
-		pos := s.Positions.Get(entity)
-		if pos.XY.Y > 5000 || pos.XY.Y < 0 || pos.XY.X > 5000 || pos.XY.X < 0 {
-			s.EntityManager.Delete(entity)
-		}
-		return true
-	})
-
 	s.Collisions.EachComponent(func(collision *stdcomponents.Collision) bool {
 		switch collision.State {
 		case stdcomponents.CollisionStateEnter:
@@ -77,6 +56,9 @@ func (s *CollisionHandlerSystem) Run(dt time.Duration) {
 				return true
 			}
 			if s.checkPlayerCollisionEnter(collision.E1, collision.E2) {
+				return true
+			}
+			if s.checkAsteroidCollisionEnter(collision.E1, collision.E2) {
 				return true
 			}
 		case stdcomponents.CollisionStateExit:
@@ -89,6 +71,22 @@ func (s *CollisionHandlerSystem) Run(dt time.Duration) {
 }
 func (s *CollisionHandlerSystem) Destroy() {}
 
+func (s *CollisionHandlerSystem) checkAsteroidCollisionEnter(e1, e2 ecs.Entity) bool {
+	e1Tag := s.AsteroidTags.Get(e1)
+	if e1Tag == nil {
+		return false
+	}
+
+	wallTag := s.WallTags.Get(e2)
+	if wallTag != nil {
+		hp := s.Hps.Get(e1)
+		hp.Hp = 0
+		return true
+	}
+
+	return false
+}
+
 func (s *CollisionHandlerSystem) checkPlayerCollisionEnter(e1, e2 ecs.Entity) bool {
 	e1Tag := s.PlayerTags.Get(e1)
 	e2Tag := s.PlayerTags.Get(e2)
@@ -98,7 +96,12 @@ func (s *CollisionHandlerSystem) checkPlayerCollisionEnter(e1, e2 ecs.Entity) bo
 		asteroidTag := s.AsteroidTags.Get(e2)
 		if asteroidTag != nil {
 			hp := s.Hps.Get(e1)
+			damageSound := assets.Audio.Get("damage_sound.wav")
+			rl.SetSoundPitch(*damageSound, float32(1.0+(float32(hp.MaxHp)-float32(hp.Hp))/float32(hp.MaxHp)))
+
 			hp.Hp -= 1
+
+			rl.PlaySound(*damageSound)
 			return true
 		}
 
@@ -148,6 +151,11 @@ func (s *CollisionHandlerSystem) checkBulletCollisionEnter(e1, e2 ecs.Entity) bo
 			asteroidHp := s.Hps.Get(e2)
 			asteroidHp.Hp -= 1
 			bulletHp.Hp -= 1
+			return true
+		}
+		wallTag := s.WallTags.Get(e2)
+		if wallTag != nil {
+			bulletHp.Hp = 0
 			return true
 		}
 	} else if e2Tag != nil {

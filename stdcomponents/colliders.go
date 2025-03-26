@@ -87,8 +87,13 @@ type CircleCollider struct {
 }
 
 func (c *CircleCollider) GetSupport(direction vectors.Vec2, transform *Transform2d) vectors.Vec2 {
-	scalesRadius := transform.Scale.Scale(c.Radius)
-	return transform.Position.Add(direction.Normalize().Mul(scalesRadius))
+	angle := direction.Angle()
+	rotatedRadius := vectors.Vec2{
+		X: c.Radius * float32(math.Cos(angle)),
+		Y: c.Radius * float32(math.Sin(angle)),
+	}
+	radiusWithOffset := rotatedRadius.Sub(c.Offset).Mul(transform.Scale)
+	return transform.Position.Add(radiusWithOffset)
 }
 
 type CircleColliderComponentManager = ecs.ComponentManager[CircleCollider]

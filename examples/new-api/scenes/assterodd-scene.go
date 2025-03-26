@@ -96,6 +96,7 @@ func (s *AssteroddScene) Init() {
 	s.World.Systems.RenderAssterodd.Init()
 	s.World.Systems.Debug.Init()
 	s.World.Systems.AssetLib.Init()
+	s.World.Systems.Audio.Init()
 }
 
 func (s *AssteroddScene) Update(dt time.Duration) gomp.SceneId {
@@ -157,6 +158,7 @@ func (s *AssteroddScene) Destroy() {
 	s.World.Systems.Debug.Destroy()
 	s.World.Systems.AssetLib.Destroy()
 	s.World.Systems.RenderAssterodd.Destroy()
+	s.World.Systems.Audio.Destroy()
 }
 
 func (s *AssteroddScene) OnEnter() {

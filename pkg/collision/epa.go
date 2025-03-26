@@ -35,7 +35,7 @@ func EPA(
 ) (vectors.Vec2, float32) {
 	polytope := simplex.toPolytope(make([]vectors.Vec2, 0, 6))
 
-	for range maxIterations {
+	for {
 		edge := findClosestEdge(polytope)
 		point := minkowskiSupport2d(a, b, transformA, transformB, edge.normal)
 		distance := point.Dot(edge.normal)
@@ -47,7 +47,7 @@ func EPA(
 		polytope = append(polytope[:edge.index], append([]vectors.Vec2{point}, polytope[edge.index:]...)...)
 	}
 
-	panic("EPA infinite loop")
+	//panic("EPA infinite loop")
 }
 
 func findClosestEdge(polytope []vectors.Vec2) closestEdge {

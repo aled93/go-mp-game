@@ -46,34 +46,34 @@ func CreateAsteroid(
 	scaleFactor float32,
 	velocityX, velocityY float32,
 ) ecs.Entity {
-	bullet := props.EntityManager.Create()
-	props.Positions.Create(bullet, stdcomponents.Position{
+	e := props.EntityManager.Create()
+	props.Positions.Create(e, stdcomponents.Position{
 		XY: vectors.Vec2{
 			X: posX,
 			Y: posY,
 		},
 	})
-	props.Rotations.Create(bullet, stdcomponents.Rotation{}.SetFromDegrees(angle))
-	props.Scales.Create(bullet, stdcomponents.Scale{
+	props.Rotations.Create(e, stdcomponents.Rotation{}.SetFromDegrees(angle))
+	props.Scales.Create(e, stdcomponents.Scale{
 		XY: vectors.Vec2{
 			X: 1 * scaleFactor,
 			Y: 1 * scaleFactor,
 		},
 	})
-	props.Velocities.Create(bullet, stdcomponents.Velocity{
+	props.Velocities.Create(e, stdcomponents.Velocity{
 		X: velocityX,
 		Y: velocityY,
 	})
-	props.CircleColliders.Create(bullet, stdcomponents.CircleCollider{
+	props.CircleColliders.Create(e, stdcomponents.CircleCollider{
 		Radius: 24,
 		Offset: vectors.Vec2{
 			X: 0,
 			Y: 0,
 		},
 		Layer: config.EnemyCollisionLayer,
-		Mask:  0,
+		Mask:  1<<config.EnemyCollisionLayer | 1<<config.WallCollisionLayer,
 	})
-	props.Sprites.Create(bullet, stdcomponents.Sprite{
+	props.Sprites.Create(e, stdcomponents.Sprite{
 		Texture: assets.Textures.Get("meteor_large.png"),
 		Frame: rl.Rectangle{
 			X:      0,
@@ -92,16 +92,16 @@ func CreateAsteroid(
 			A: 255,
 		},
 	})
-	props.AsteroidTags.Create(bullet, components.AsteroidTag{})
+	props.AsteroidTags.Create(e, components.AsteroidTag{})
 	hp := int32(3 + rand.Intn(6))
-	props.Hp.Create(bullet, components.Hp{
+	props.Hp.Create(e, components.Hp{
 		Hp:    hp,
 		MaxHp: hp,
 	})
-	props.RigidBodies.Create(bullet, stdcomponents.RigidBody{
-		IsStatic: true,
-		Mass:     10,
+	props.RigidBodies.Create(e, stdcomponents.RigidBody{
+		IsStatic: false,
+		Mass:     1,
 	})
 
-	return bullet
+	return e
 }
