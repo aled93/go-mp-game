@@ -69,6 +69,7 @@ func (s *AssteroddSystem) Init() {
 		Positions:     s.Positions,
 		Rotations:     s.Rotations,
 		Scales:        s.Scales,
+		Velocities:    s.Velocities,
 		Sprites:       s.Sprites,
 		BoxColliders:  s.BoxColliders,
 		RigidBodies:   s.RigidBodies,

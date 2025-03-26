@@ -91,7 +91,7 @@ func CreateSpaceShip(
 
 	props.RigidBodies.Create(spaceShip, stdcomponents.RigidBody{
 		IsStatic: false,
-		Mass:     1,
+		Mass:     2,
 	})
 
 	props.PlayerTags.Create(spaceShip, components.PlayerTag{})
