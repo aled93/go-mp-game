@@ -14,10 +14,22 @@ Thank you for your support!
 
 package stdcomponents
 
-import "gomp/pkg/ecs"
+import (
+	"gomp/pkg/ecs"
+	"gomp/vectors"
+)
 
 type Velocity struct {
 	X, Y float32
+}
+
+func (v Velocity) Vec2() vectors.Vec2 {
+	return vectors.Vec2{X: v.X, Y: v.Y}
+}
+
+func (v *Velocity) SetVec2(velocity vectors.Vec2) {
+	v.X = velocity.X
+	v.Y = velocity.Y
 }
 
 type VelocityComponentManager = ecs.ComponentManager[Velocity]

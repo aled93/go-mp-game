@@ -100,7 +100,7 @@ func CreateAsteroid(
 	})
 	props.RigidBodies.Create(bullet, stdcomponents.RigidBody{
 		IsStatic: true,
-		Mass:     1,
+		Mass:     10,
 	})
 
 	return bullet

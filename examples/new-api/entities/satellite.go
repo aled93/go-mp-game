@@ -32,6 +32,7 @@ type CreateSatelliteManagers struct {
 	Sprites       *stdcomponents.SpriteComponentManager
 	BoxColliders  *stdcomponents.BoxColliderComponentManager
 	RigidBodies   *stdcomponents.RigidBodyComponentManager
+	Velocities    *stdcomponents.VelocityComponentManager
 }
 
 func CreateSatellite(
@@ -56,6 +57,11 @@ func CreateSatellite(
 		},
 	})
 
+	props.Velocities.Create(satellite, stdcomponents.Velocity{
+		X: 0,
+		Y: 0,
+	})
+
 	props.Sprites.Create(satellite, stdcomponents.Sprite{
 		Texture: assets.Textures.Get("satellite_B.png"),
 		Origin:  rl.Vector2{X: 32, Y: 40},
@@ -77,6 +83,7 @@ func CreateSatellite(
 	})
 	props.RigidBodies.Create(satellite, stdcomponents.RigidBody{
 		IsStatic: false,
+		Mass:     1,
 	})
 
 	return satellite

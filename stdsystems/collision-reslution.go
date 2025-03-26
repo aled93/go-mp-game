@@ -30,6 +30,7 @@ type CollisionResolutionSystem struct {
 	Collisions    *stdcomponents.CollisionComponentManager
 	Positions     *stdcomponents.PositionComponentManager
 	RigidBodies   *stdcomponents.RigidBodyComponentManager
+	Velocities    *stdcomponents.VelocityComponentManager
 }
 
 func (s *CollisionResolutionSystem) Init() {}
@@ -67,7 +68,34 @@ func (s *CollisionResolutionSystem) Run(dt time.Duration) {
 				p2.XY.X, p2.XY.Y = p2d.X, p2d.Y
 			}
 
-			// Apply forces or velocity changes
+			// Apply impulse resolution
+			velocity1 := s.Velocities.Get(collision.E1)
+			velocity2 := s.Velocities.Get(collision.E2)
+
+			if velocity1 == nil || velocity2 == nil {
+				return true
+			}
+
+			relativeVelocity := velocity2.Vec2().Sub(velocity1.Vec2())
+			velocityAlongNormal := relativeVelocity.Dot(collision.Normal)
+
+			if velocityAlongNormal > 0 {
+				return true
+			}
+
+			e := float32(1.0) // Coefficient of restitution (elasticity)
+			j := -(1 + e) * velocityAlongNormal
+			j /= 1/rigidbody1.Mass + 1/rigidbody2.Mass
+
+			impulse := collision.Normal.Scale(j)
+
+			if !rigidbody1.IsStatic {
+				velocity1.SetVec2(velocity1.Vec2().Sub(impulse.Scale(1 / rigidbody1.Mass)))
+			}
+
+			if !rigidbody2.IsStatic {
+				velocity2.SetVec2(velocity2.Vec2().Add(impulse.Scale(1 / rigidbody2.Mass)))
+			}
 		}
 		return true
 	})
