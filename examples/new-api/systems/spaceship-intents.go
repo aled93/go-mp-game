@@ -15,6 +15,7 @@ Thank you for your support!
 package systems
 
 import (
+	"gomp/examples/new-api/assets"
 	"gomp/examples/new-api/components"
 	"gomp/examples/new-api/entities"
 	"gomp/pkg/ecs"
@@ -22,6 +23,8 @@ import (
 	"gomp/vectors"
 	"math"
 	"time"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 func NewSpaceshipIntentsSystem() SpaceshipIntentsSystem {
@@ -61,6 +64,7 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 		rot := s.Rotations.Get(entity)
 		pos := s.Positions.Get(entity)
 		weapon := s.Weapons.Get(entity)
+		hp := s.Hps.Get(entity)
 
 		if intent.RotateLeft {
 			rot.Angle -= rotateSpeed * vectors.Radians(dtSec)
@@ -89,6 +93,19 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 			}
 		}
 
+		flySound := assets.Audio.Get("fly_sound.wav")
+		flySoundIsPlaying := rl.IsSoundPlaying(*flySound)
+
+		absMoveSpeed := math.Abs(float64(s.moveSpeed))
+
+		rl.SetSoundVolume(*flySound, float32(absMoveSpeed/float64(moveSpeedMax)))
+
+		if (intent.MoveUp || intent.MoveDown || intent.RotateLeft || intent.RotateRight || s.moveSpeed != 0) && !flySoundIsPlaying {
+			rl.PlaySound(*flySound)
+		} else if !(intent.MoveUp || intent.MoveDown || intent.RotateLeft || intent.RotateRight || s.moveSpeed != 0) && flySoundIsPlaying || hp.Hp == 0 {
+			rl.StopSound(*flySound)
+		}
+
 		vel.Y = float32(math.Cos(rot.Angle+math.Pi)) * s.moveSpeed
 		vel.X = -float32(math.Sin(rot.Angle+math.Pi)) * s.moveSpeed
 
@@ -113,6 +130,9 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 					}, pos.XY.X, pos.XY.Y, angle, bulletVelocityX, bulletVelocityY)
 				}
 				weapon.CooldownLeft = weapon.Cooldown
+				fireSoundAsset := assets.Audio.Get("gun_sound.wav")
+				fireSound := rl.LoadSoundAlias(*fireSoundAsset)
+				rl.PlaySound(fireSound)
 			}
 		} else {
 			weapon.CooldownLeft -= dt
