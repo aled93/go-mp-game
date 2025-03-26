@@ -32,6 +32,7 @@ type CreateBulletManagers struct {
 	Scales          *stdcomponents.ScaleComponentManager
 	Velocities      *stdcomponents.VelocityComponentManager
 	CircleColliders *stdcomponents.CircleColliderComponentManager
+	RigidBodies     *stdcomponents.RigidBodyComponentManager
 	Sprites         *stdcomponents.SpriteComponentManager
 	BulletTags      *components.BulletTagComponentManager
 	Hps             *components.HpComponentManager
@@ -68,7 +69,7 @@ func CreateBullet(
 			Y: 0,
 		},
 		Layer: config.BulletCollisionLayer,
-		Mask:  1<<config.EnemyCollisionLayer | 1<<config.WallCollisionLayer,
+		Mask:  1<<config.EnemyCollisionLayer | 1<<config.WallCollisionLayer | 1<<config.BulletCollisionLayer,
 	})
 	props.Sprites.Create(bullet, stdcomponents.Sprite{
 		Texture: assets.Textures.Get("bullet.png"),
@@ -93,6 +94,10 @@ func CreateBullet(
 	props.Hps.Create(bullet, components.Hp{
 		Hp:    1,
 		MaxHp: 1,
+	})
+	props.RigidBodies.Create(bullet, stdcomponents.RigidBody{
+		IsStatic: false,
+		Mass:     1,
 	})
 
 	return bullet

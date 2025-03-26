@@ -71,7 +71,7 @@ func (t *Tree2D) Query(aabb stdcomponents.AABB, handler func(entity ecs.Entity))
 	for len(stack) > 0 {
 		nodeIndex := stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
-		node := t.nodes[nodeIndex]
+		node := &t.nodes[nodeIndex]
 
 		// Early exit if no AABB overlap
 		if !t.aabbOverlap(&aabb, &node.Bounds) {

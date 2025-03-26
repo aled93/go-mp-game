@@ -39,6 +39,7 @@ type SpaceshipIntentsSystem struct {
 	CircleColliders  *stdcomponents.CircleColliderComponentManager
 	BulletTags       *components.BulletTagComponentManager
 	Sprites          *stdcomponents.SpriteComponentManager
+	RigidBodies      *stdcomponents.RigidBodyComponentManager
 	Weapons          *components.WeaponComponentManager
 	Hps              *components.HpComponentManager
 	moveSpeed        float32
@@ -107,6 +108,7 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 						Scales:          s.Scales,
 						Velocities:      s.Velocities,
 						CircleColliders: s.CircleColliders,
+						RigidBodies:     s.RigidBodies,
 						Sprites:         s.Sprites,
 						BulletTags:      s.BulletTags,
 						Hps:             s.Hps,

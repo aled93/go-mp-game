@@ -78,7 +78,7 @@ func (s *AssteroddSystem) Init() {
 		Positions:     s.Positions,
 		Velocities:    s.Velocities,
 		SpaceSpawners: s.SpaceSpawnerTags,
-	}, 16, -100, 1000, time.Millisecond*200)
+	}, 16, 100, 1000, time.Millisecond*200)
 
 	wallManager := entities.CreateWallManagers{
 		EntityManager: s.EntityManager,

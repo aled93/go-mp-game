@@ -92,8 +92,8 @@ func (c *CircleCollider) GetSupport(direction vectors.Vec2, transform *Transform
 		X: c.Radius * float32(math.Cos(angle)),
 		Y: c.Radius * float32(math.Sin(angle)),
 	}
-	scaledOffset := c.Offset.Mul(transform.Scale)
-	return transform.Position.Sub(scaledOffset).Add(rotatedRadius.Mul(transform.Scale))
+	radiusWithOffset := rotatedRadius.Sub(c.Offset).Mul(transform.Scale)
+	return transform.Position.Add(radiusWithOffset)
 }
 
 type CircleColliderComponentManager = ecs.ComponentManager[CircleCollider]
