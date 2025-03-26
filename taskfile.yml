@@ -60,14 +60,14 @@ tasks:
     env:
       CGO_ENABLED: 1
     cmds:
-      - env CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -o ./.dist/game-darwin-amd64 examples/new-api/game.go
+      - env CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -o ./.dist/game-darwin-amd64 -tags opengl43 examples/new-api/game.go
       - chmod +x ./.dist/game-darwin-amd64
 
   build-darwin-arm64:
     env:
       CGO_ENABLED: 1
     cmds:
-      - env CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -o ./.dist/game-darwin-arm64 examples/new-api/game.go
+      - env CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -o ./.dist/game-darwin-arm64 -tags opengl43 examples/new-api/game.go
       - chmod +x ./.dist/game-darwin-arm64
 
   build-darwin-universal:
