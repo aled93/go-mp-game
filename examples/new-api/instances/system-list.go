@@ -46,6 +46,7 @@ func NewSystemList() SystemList {
 
 		Audio: systems.NewAudioSystem(),
 
+		DampingSystem:    systems.NewDampingSystem(),
 		AssteroddSystem:  systems.NewAssteroddSystem(),
 		CollisionHandler: systems.NewCollisionHandlerSystem(),
 		SpaceshipIntents: systems.NewSpaceshipIntentsSystem(),
@@ -80,6 +81,7 @@ type SystemList struct {
 
 	Audio systems.AudioSystem
 
+	DampingSystem    systems.DampingSystem
 	AssteroddSystem  systems.AssteroddSystem
 	CollisionHandler systems.CollisionHandlerSystem
 	SpaceshipIntents systems.SpaceshipIntentsSystem

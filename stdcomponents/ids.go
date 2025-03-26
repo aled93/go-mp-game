@@ -37,6 +37,5 @@ const (
 	SpatialIndexComponentId
 	AABBComponentId
 	RigidBodyComponentId
-	MassComponentId
 	StdComponentIds
 )

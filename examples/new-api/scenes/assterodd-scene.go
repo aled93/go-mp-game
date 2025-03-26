@@ -76,6 +76,7 @@ func (s *AssteroddScene) Init() {
 	s.World.Systems.ColliderSystem.Init()
 
 	// Scenes
+	s.World.Systems.DampingSystem.Init()
 	s.World.Systems.SpaceSpawner.Init()
 	s.World.Systems.AssteroddSystem.Init()
 	s.World.Systems.SpaceshipIntents.Init()
@@ -109,6 +110,7 @@ func (s *AssteroddScene) Update(dt time.Duration) gomp.SceneId {
 func (s *AssteroddScene) FixedUpdate(dt time.Duration) {
 	s.World.Systems.SpaceshipIntents.Run(dt)
 	s.World.Systems.Velocity.Run(dt)
+	s.World.Systems.DampingSystem.Run(dt)
 	s.World.Systems.SpaceSpawner.Run(dt)
 	s.World.Systems.CollisionDetectionBVH.Run(dt)
 	s.World.Systems.CollisionResolution.Run(dt)
@@ -145,6 +147,10 @@ func (s *AssteroddScene) Destroy() {
 
 	s.World.Systems.CollisionDetectionBVH.Destroy()
 	s.World.Systems.CollisionResolution.Destroy()
+	s.World.Systems.CollisionHandler.Destroy()
+	s.World.Systems.Hp.Destroy()
+	s.World.Systems.Velocity.Destroy()
+	s.World.Systems.DampingSystem.Destroy()
 
 	// Animation
 	s.World.Systems.AnimationSpriteMatrix.Destroy()
