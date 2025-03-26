@@ -15,6 +15,8 @@ Thank you for your support!
 package systems
 
 import (
+	rl "github.com/gen2brain/raylib-go/raylib"
+	"gomp/examples/new-api/assets"
 	"gomp/examples/new-api/components"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
@@ -94,7 +96,12 @@ func (s *CollisionHandlerSystem) checkPlayerCollisionEnter(e1, e2 ecs.Entity) bo
 		asteroidTag := s.AsteroidTags.Get(e2)
 		if asteroidTag != nil {
 			hp := s.Hps.Get(e1)
+			damageSound := assets.Audio.Get("damage_sound.wav")
+			rl.SetSoundPitch(*damageSound, float32(1.0+(float32(hp.MaxHp)-float32(hp.Hp))/float32(hp.MaxHp)))
+
 			hp.Hp -= 1
+
+			rl.PlaySound(*damageSound)
 			return true
 		}
 

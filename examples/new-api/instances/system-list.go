@@ -34,7 +34,7 @@ func NewSystemList() SystemList {
 		TextureRenderSpriteSheet: stdsystems.NewTextureRenderSpriteSheetSystem(),
 		Sprite:                   stdsystems.NewSpriteSystem(),
 		SpriteMatrix:             stdsystems.NewSpriteMatrixSystem(),
-		AssetLib:                 stdsystems.NewAssetLibSystem([]gomp.AnyAssetLibrary{&assets.Textures}),
+		AssetLib:                 stdsystems.NewAssetLibSystem([]gomp.AnyAssetLibrary{&assets.Textures, &assets.Audio}),
 		YSort:                    stdsystems.NewYSortSystem(),
 		CollisionDetectionGrid:   stdsystems.NewCollisionDetectionGridSystem(),
 		CollisionDetectionBVH:    stdsystems.NewCollisionDetectionBVHSystem(),
@@ -43,6 +43,8 @@ func NewSystemList() SystemList {
 
 		RenderAssterodd: systems.NewRenderAssteroddSystem(),
 		RenderBogdan:    systems.NewRenderBogdanSystem(),
+
+		Audio: systems.NewAudioSystem(),
 
 		AssteroddSystem:  systems.NewAssteroddSystem(),
 		CollisionHandler: systems.NewCollisionHandlerSystem(),
@@ -75,6 +77,8 @@ type SystemList struct {
 
 	RenderAssterodd systems.RenderAssteroddSystem
 	RenderBogdan    systems.RenderBogdanSystem
+
+	Audio systems.AudioSystem
 
 	AssteroddSystem  systems.AssteroddSystem
 	CollisionHandler systems.CollisionHandlerSystem
