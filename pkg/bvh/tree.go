@@ -78,8 +78,11 @@ func (t *Tree2D) Query(aabb *stdcomponents.AABB, result []ecs.Entity) []ecs.Enti
 
 		// Early exit if no AABB overlap
 		bounds := &node.Bounds
-		if bounds.Max.X < aabb.Min.X || bounds.Min.X > aabb.Max.X ||
-			bounds.Max.Y < aabb.Min.Y || bounds.Min.Y > aabb.Max.Y {
+		if bounds.Max.X < aabb.Min.X || bounds.Min.X > aabb.Max.X {
+			continue
+		}
+
+		if bounds.Max.Y < aabb.Min.Y || bounds.Min.Y > aabb.Max.Y {
 			continue
 		}
 
