@@ -47,7 +47,7 @@ type CollisionDetectionBVHSystem struct {
 	SpatialIndex     *stdcomponents.SpatialIndexComponentManager
 	AABB             *stdcomponents.AABBComponentManager
 
-	trees       []bvh.Tree2Du
+	trees       []bvh.GenTree
 	treesLookup map[stdcomponents.CollisionLayer]int
 
 	collisionEvents []ecs.PagedArray[CollisionEvent]
@@ -70,7 +70,7 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 	}
 
 	// Init trees
-	s.trees = make([]bvh.Tree2Du, 0, 8)
+	s.trees = make([]bvh.GenTree, 0, 8)
 	s.treesLookup = make(map[stdcomponents.CollisionLayer]int, 8)
 
 	// Fill trees
@@ -81,7 +81,7 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 		treeId, exists := s.treesLookup[layer]
 		if !exists {
 			treeId = len(s.trees)
-			s.trees = append(s.trees, bvh.NewTree2Du(layer, s.AABB.Len()))
+			s.trees = append(s.trees, bvh.NewGenTree(layer, s.AABB.Len()))
 			s.treesLookup[layer] = treeId
 		}
 
