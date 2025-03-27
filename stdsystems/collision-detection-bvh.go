@@ -25,7 +25,7 @@ import (
 	"time"
 )
 
-var maxNumWorkers = runtime.NumCPU() - 2
+var maxNumWorkers = runtime.NumCPU() - 1
 
 func NewCollisionDetectionBVHSystem() CollisionDetectionBVHSystem {
 	return CollisionDetectionBVHSystem{

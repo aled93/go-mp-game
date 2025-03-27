@@ -26,6 +26,8 @@ import (
 	"time"
 )
 
+const debug = false
+
 func NewRenderAssteroddSystem() RenderAssteroddSystem {
 	return RenderAssteroddSystem{
 		instanceData: make([]stdcomponents.RLTexturePro, 0, 8192),
@@ -109,34 +111,36 @@ func (s *RenderAssteroddSystem) render() {
 	// ==========
 	// DEBUG
 	// ==========
-	//rl.BeginMode2D(s.camera)
-	//s.BoxColliders.EachEntity(func(e ecs.Entity) bool {
-	//	col := s.BoxColliders.Get(e)
-	//	scale := s.Scales.Get(e)
-	//	pos := s.Positions.Get(e)
-	//	rot := s.Rotations.Get(e)
-	//
-	//	rl.DrawRectanglePro(rl.Rectangle{
-	//		X:      pos.XY.X,
-	//		Y:      pos.XY.Y,
-	//		Width:  col.WH.X * scale.XY.X,
-	//		Height: col.WH.Y * scale.XY.Y,
-	//	}, rl.Vector2{
-	//		X: col.Offset.X * scale.XY.X,
-	//		Y: col.Offset.Y * scale.XY.Y,
-	//	}, float32(rot.Degrees()), rl.DarkGreen)
-	//	return true
-	//})
-	//s.CircleColliders.EachEntity(func(e ecs.Entity) bool {
-	//	col := s.CircleColliders.Get(e)
-	//	scale := s.Scales.Get(e)
-	//	pos := s.Positions.Get(e)
-	//
-	//	posWithOffset := pos.XY.Add(col.Offset.Mul(scale.XY))
-	//	rl.DrawCircle(int32(posWithOffset.X), int32(posWithOffset.Y), col.Radius*scale.XY.X, rl.DarkGreen)
-	//	return true
-	//})
-	//rl.EndMode2D()
+	if debug {
+		rl.BeginMode2D(s.camera)
+		s.BoxColliders.EachEntity(func(e ecs.Entity) bool {
+			col := s.BoxColliders.Get(e)
+			scale := s.Scales.Get(e)
+			pos := s.Positions.Get(e)
+			rot := s.Rotations.Get(e)
+
+			rl.DrawRectanglePro(rl.Rectangle{
+				X:      pos.XY.X,
+				Y:      pos.XY.Y,
+				Width:  col.WH.X * scale.XY.X,
+				Height: col.WH.Y * scale.XY.Y,
+			}, rl.Vector2{
+				X: col.Offset.X * scale.XY.X,
+				Y: col.Offset.Y * scale.XY.Y,
+			}, float32(rot.Degrees()), rl.DarkGreen)
+			return true
+		})
+		s.CircleColliders.EachEntity(func(e ecs.Entity) bool {
+			col := s.CircleColliders.Get(e)
+			scale := s.Scales.Get(e)
+			pos := s.Positions.Get(e)
+
+			posWithOffset := pos.XY.Add(col.Offset.Mul(scale.XY))
+			rl.DrawCircle(int32(posWithOffset.X), int32(posWithOffset.Y), col.Radius*scale.XY.X, rl.DarkGreen)
+			return true
+		})
+		rl.EndMode2D()
+	}
 
 	// Extract and sort entities
 	if cap(s.renderList) < s.Renderables.Len() {
@@ -194,23 +198,25 @@ func (s *RenderAssteroddSystem) render() {
 	// ==========
 	// DEBUG
 	// ==========
-	//rl.BeginMode2D(s.camera)
-	//s.AABBs.EachEntity(func(e ecs.Entity) bool {
-	//	aabb := s.AABBs.Get(e)
-	//	rl.DrawRectangleLines(int32(aabb.Min.X), int32(aabb.Min.Y), int32(aabb.Max.X-aabb.Min.X), int32(aabb.Max.Y-aabb.Min.Y), rl.Green)
-	//	return true
-	//})
-	//s.Collisions.EachEntity(func(entity ecs.Entity) bool {
-	//	pos := s.Positions.Get(entity)
-	//	rl.DrawRectangle(int32(pos.XY.X-8), int32(pos.XY.Y-8), 16, 16, rl.Red)
-	//	return true
-	//})
-	//s.Renderables.EachEntity(func(e ecs.Entity) bool {
-	//	position := s.Positions.Get(e)
-	//	rl.DrawRectangle(int32(position.XY.X-2), int32(position.XY.Y-2), 4, 4, rl.Red)
-	//	return true
-	//})
-	//rl.EndMode2D()
+	if debug {
+		rl.BeginMode2D(s.camera)
+		s.AABBs.EachEntity(func(e ecs.Entity) bool {
+			aabb := s.AABBs.Get(e)
+			rl.DrawRectangleLines(int32(aabb.Min.X), int32(aabb.Min.Y), int32(aabb.Max.X-aabb.Min.X), int32(aabb.Max.Y-aabb.Min.Y), rl.Green)
+			return true
+		})
+		s.Collisions.EachEntity(func(entity ecs.Entity) bool {
+			pos := s.Positions.Get(entity)
+			rl.DrawRectangle(int32(pos.XY.X-8), int32(pos.XY.Y-8), 16, 16, rl.Red)
+			return true
+		})
+		s.Renderables.EachEntity(func(e ecs.Entity) bool {
+			position := s.Positions.Get(e)
+			rl.DrawRectangle(int32(position.XY.X-2), int32(position.XY.Y-2), 4, 4, rl.Red)
+			return true
+		})
+		rl.EndMode2D()
+	}
 }
 
 func (s *RenderAssteroddSystem) submitBatch(texID int, data []stdcomponents.RLTexturePro) {

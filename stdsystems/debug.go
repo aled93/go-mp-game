@@ -8,14 +8,16 @@ package stdsystems
 
 import (
 	"fmt"
-	//"github.com/felixge/fgprof"
+	"github.com/felixge/fgprof"
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"log"
-	//"net/http"
+	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"runtime/pprof"
 )
+
+const gpprof = false
 
 func NewDebugSystem() DebugSystem {
 	return DebugSystem{}
@@ -26,10 +28,13 @@ type DebugSystem struct {
 }
 
 func (s *DebugSystem) Init() {
-	//http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
-	//go func() {
-	//	log.Println(http.ListenAndServe(":6060", nil))
-	//}()
+	if gpprof {
+		http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
+		go func() {
+			log.Println(http.ListenAndServe(":6060", nil))
+		}()
+	}
+
 }
 func (s *DebugSystem) Run() {
 	if rl.IsKeyPressed(rl.KeyF9) {

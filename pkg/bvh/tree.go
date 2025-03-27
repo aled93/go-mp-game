@@ -24,7 +24,7 @@ import (
 )
 
 type node struct {
-	childIndex int16 // if < 0 then points to leaf
+	childIndex int32 // if < 0 then points to leaf
 }
 
 type leaf struct {
@@ -106,7 +106,7 @@ func (t *Tree) Build() {
 func (t *Tree) buildH(parentIndex int, start, end int) {
 	if start == end {
 		// Is a leaf
-		t.nodes[parentIndex].childIndex = -int16(start)
+		t.nodes[parentIndex].childIndex = -int32(start)
 		t.aabbNodes[parentIndex] = *t.aabbLeaves[start]
 		return
 	}
@@ -123,7 +123,7 @@ func (t *Tree) buildH(parentIndex int, start, end int) {
 	t.nodes = append(t.nodes, node{-1})
 	t.aabbNodes = append(t.aabbNodes, stdcomponents.AABB{})
 
-	t.nodes[parentIndex].childIndex = int16(leftIndex)
+	t.nodes[parentIndex].childIndex = int32(leftIndex)
 
 	t.buildH(leftIndex, start, split)
 	t.buildH(rightIndex, split+1, end)
@@ -237,19 +237,18 @@ func (t *Tree) mergeAABB(a, b *stdcomponents.AABB) stdcomponents.AABB {
 
 // Expands a 10-bit integer into 20 bits by inserting 1 zero after each bit
 func (t *Tree) expandBits2D(v uint32) uint32 {
-	v = (v * 0x00010001) & 0xFF0000FF
-	v = (v * 0x00000101) & 0x0F00F00F
-	v = (v * 0x00000011) & 0xC30C30C3
-	v = (v * 0x00000005) & 0x24924924
+	v = (v | (v << 16)) & 0x030000FF
+	v = (v | (v << 8)) & 0x0300F00F
+	v = (v | (v << 4)) & 0x030C30C3
+	v = (v | (v << 2)) & 0x09249249
 	return v
 }
 
+const mortonPrecision = 1 << 16
+
 // 2D Morton code for centroids coordinates in [0,1] range
 func (t *Tree) morton2D(x, y float32) uint32 {
-	xx := uint32(math.Min(math.Max(float64(x)*1024.0, 0.0), 1023.0))
-	yy := uint32(math.Min(math.Max(float64(y)*1024.0, 0.0), 1023.0))
+	xx := uint32(math.Min(math.Max(float64(x)*mortonPrecision, 0.0), mortonPrecision-1))
+	yy := uint32(math.Min(math.Max(float64(y)*mortonPrecision, 0.0), mortonPrecision-1))
 	return (t.expandBits2D(xx) << 1) | t.expandBits2D(yy)
 }
-
-const a = 0xFF0000FF
-const b = 0x030000FF
