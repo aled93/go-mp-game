@@ -61,6 +61,7 @@ func (s *CollisionDetectionBVHSystem) Init() {
 		s.collisionEvents[i] = ecs.NewPagedArray[CollisionEvent]()
 	}
 }
+
 func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 	s.currentCollisions = make(map[CollisionPair]struct{})
 	defer s.processExitStates()
