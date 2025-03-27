@@ -47,7 +47,7 @@ type CollisionDetectionBVHSystem struct {
 	SpatialIndex     *stdcomponents.SpatialIndexComponentManager
 	AABB             *stdcomponents.AABBComponentManager
 
-	trees       []bvh.GenTree
+	trees       []bvh.Tree
 	treesLookup map[stdcomponents.CollisionLayer]int
 
 	collisionEvents []ecs.PagedArray[CollisionEvent]
@@ -71,7 +71,7 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 	}
 
 	// Init trees
-	s.trees = make([]bvh.GenTree, 0, 8)
+	s.trees = make([]bvh.Tree, 0, 8)
 	s.treesLookup = make(map[stdcomponents.CollisionLayer]int, 8)
 
 	// Fill trees

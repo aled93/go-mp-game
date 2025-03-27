@@ -23,57 +23,57 @@ import (
 	"slices"
 )
 
-type genNode struct {
+type node struct {
 	childIndex int16 // if < 0 then points to leaf
 }
 
-type genLeaf struct {
+type leaf struct {
 	id ecs.Entity
 }
 
-type genTreeComponent struct {
+type component struct {
 	entity ecs.Entity
 	aabb   *stdcomponents.AABB
 	code   uint32
 }
 
-func NewGenTree(layer stdcomponents.CollisionLayer, prealloc int) GenTree {
-	return GenTree{
-		nodes:      make([]genNode, 0, prealloc),
+func NewGenTree(layer stdcomponents.CollisionLayer, prealloc int) Tree {
+	return Tree{
+		nodes:      make([]node, 0, prealloc),
 		aabbNodes:  make([]stdcomponents.AABB, 0, prealloc),
-		leaves:     make([]genLeaf, 0, prealloc),
+		leaves:     make([]leaf, 0, prealloc),
 		aabbLeaves: make([]*stdcomponents.AABB, 0, prealloc),
 		codes:      make([]uint32, 0, prealloc),
-		components: make([]genTreeComponent, 0, prealloc),
+		components: make([]component, 0, prealloc),
 		layer:      layer,
 	}
 }
 
-type GenTree struct {
-	nodes     []genNode
+type Tree struct {
+	nodes     []node
 	aabbNodes []stdcomponents.AABB
 
-	leaves     []genLeaf
+	leaves     []leaf
 	aabbLeaves []*stdcomponents.AABB
 
 	codes []uint32
 
-	components []genTreeComponent
+	components []component
 
 	layer stdcomponents.CollisionLayer
 }
 
-func (t *GenTree) AddComponent(entity ecs.Entity, aabb *stdcomponents.AABB) {
+func (t *Tree) AddComponent(entity ecs.Entity, aabb *stdcomponents.AABB) {
 	center := aabb.Min.Add(aabb.Max).Scale(0.5)
 	code := t.morton2D(center.X, center.Y)
-	t.components = append(t.components, genTreeComponent{
+	t.components = append(t.components, component{
 		entity: entity,
 		aabb:   aabb,
 		code:   code,
 	})
 }
 
-func (t *GenTree) Build() {
+func (t *Tree) Build() {
 	// Reset tree
 	t.nodes = t.nodes[:0]
 	t.aabbNodes = t.aabbNodes[:0]
@@ -81,14 +81,14 @@ func (t *GenTree) Build() {
 	t.aabbLeaves = t.aabbLeaves[:0]
 
 	// Sort components by morton code
-	slices.SortFunc(t.components, func(a, b genTreeComponent) int {
+	slices.SortFunc(t.components, func(a, b component) int {
 		return int(a.code) - int(b.code)
 	})
 
 	// Add leaves
 	for i := 0; i < len(t.components); i++ {
 		component := &t.components[i]
-		t.leaves = append(t.leaves, genLeaf{
+		t.leaves = append(t.leaves, leaf{
 			id: component.entity,
 		})
 		t.aabbLeaves = append(t.aabbLeaves, component.aabb)
@@ -97,13 +97,13 @@ func (t *GenTree) Build() {
 	t.components = t.components[:0]
 
 	// Add root node
-	t.nodes = append(t.nodes, genNode{-1})
+	t.nodes = append(t.nodes, node{-1})
 	t.aabbNodes = append(t.aabbNodes, stdcomponents.AABB{})
 
 	t.buildH(0, 0, len(t.leaves)-1)
 }
 
-func (t *GenTree) buildH(parentIndex int, start, end int) {
+func (t *Tree) buildH(parentIndex int, start, end int) {
 	if start == end {
 		// Is a leaf
 		t.nodes[parentIndex].childIndex = -int16(start)
@@ -115,12 +115,12 @@ func (t *GenTree) buildH(parentIndex int, start, end int) {
 
 	// Add left node
 	leftIndex := len(t.nodes)
-	t.nodes = append(t.nodes, genNode{-1})
+	t.nodes = append(t.nodes, node{-1})
 	t.aabbNodes = append(t.aabbNodes, stdcomponents.AABB{})
 
 	// Add right node
 	rightIndex := len(t.nodes)
-	t.nodes = append(t.nodes, genNode{-1})
+	t.nodes = append(t.nodes, node{-1})
 	t.aabbNodes = append(t.aabbNodes, stdcomponents.AABB{})
 
 	t.nodes[parentIndex].childIndex = int16(leftIndex)
@@ -131,11 +131,11 @@ func (t *GenTree) buildH(parentIndex int, start, end int) {
 	t.aabbNodes[parentIndex] = t.mergeAABB(&t.aabbNodes[leftIndex], &t.aabbNodes[rightIndex])
 }
 
-func (t *GenTree) Layer() stdcomponents.CollisionLayer {
+func (t *Tree) Layer() stdcomponents.CollisionLayer {
 	return t.layer
 }
 
-func (t *GenTree) Query(aabb *stdcomponents.AABB, result []ecs.Entity) []ecs.Entity {
+func (t *Tree) Query(aabb *stdcomponents.AABB, result []ecs.Entity) []ecs.Entity {
 	if len(t.nodes) == 0 { // Handle empty tree
 		return result
 	}
@@ -176,13 +176,13 @@ func (t *GenTree) Query(aabb *stdcomponents.AABB, result []ecs.Entity) []ecs.Ent
 }
 
 // go:inline aabbOverlap checks if two AABB intersect
-func (t *GenTree) aabbOverlap(a, b *stdcomponents.AABB) bool {
+func (t *Tree) aabbOverlap(a, b *stdcomponents.AABB) bool {
 	return a.Max.X >= b.Min.X && a.Min.X <= b.Max.X &&
 		a.Max.Y >= b.Min.Y && a.Min.Y <= b.Max.Y
 }
 
 // findSplit finds the position where the highest bit changes
-func (t *GenTree) findSplit(start, end int) int {
+func (t *Tree) findSplit(start, end int) int {
 	// Identical Morton sortedMortonCodes => split the range in the middle.
 	first := t.codes[start]
 	last := t.codes[end]
@@ -222,7 +222,7 @@ func (t *GenTree) findSplit(start, end int) int {
 }
 
 // mergeAABB combines two AABB
-func (t *GenTree) mergeAABB(a, b *stdcomponents.AABB) stdcomponents.AABB {
+func (t *Tree) mergeAABB(a, b *stdcomponents.AABB) stdcomponents.AABB {
 	return stdcomponents.AABB{
 		Min: vectors.Vec2{
 			X: min(a.Min.X, b.Min.X),
@@ -236,7 +236,7 @@ func (t *GenTree) mergeAABB(a, b *stdcomponents.AABB) stdcomponents.AABB {
 }
 
 // Expands a 10-bit integer into 20 bits by inserting 1 zero after each bit
-func (t *GenTree) expandBits2D(v uint32) uint32 {
+func (t *Tree) expandBits2D(v uint32) uint32 {
 	v = (v * 0x00010001) & 0xFF0000FF
 	v = (v * 0x00000101) & 0x0F00F00F
 	v = (v * 0x00000011) & 0xC30C30C3
@@ -245,7 +245,7 @@ func (t *GenTree) expandBits2D(v uint32) uint32 {
 }
 
 // 2D Morton code for centroids coordinates in [0,1] range
-func (t *GenTree) morton2D(x, y float32) uint32 {
+func (t *Tree) morton2D(x, y float32) uint32 {
 	xx := uint32(math.Min(math.Max(float64(x)*1024.0, 0.0), 1023.0))
 	yy := uint32(math.Min(math.Max(float64(y)*1024.0, 0.0), 1023.0))
 	return (t.expandBits2D(xx) << 1) | t.expandBits2D(yy)
