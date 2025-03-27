@@ -51,11 +51,6 @@ type Tree2D struct {
 	rootIndex  int
 }
 
-type treeComponent struct {
-	Entity ecs.Entity
-	AABB   *stdcomponents.AABB
-}
-
 func (t *Tree2D) Layer() stdcomponents.CollisionLayer {
 	return t.layer
 }
