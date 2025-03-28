@@ -82,7 +82,7 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 		treeId, exists := s.treesLookup[layer]
 		if !exists {
 			treeId = len(s.trees)
-			s.trees = append(s.trees, bvh.NewGenTree(layer, s.AABB.Len()))
+			s.trees = append(s.trees, bvh.NewTree(layer))
 			s.treesLookup[layer] = treeId
 		}
 

@@ -37,36 +37,32 @@ type component struct {
 	code   uint32
 }
 
-func NewGenTree(layer stdcomponents.CollisionLayer, prealloc int) Tree {
+func NewTree(layer stdcomponents.CollisionLayer) Tree {
 	return Tree{
 		nodes:      ecs.NewPagedArray[node](),
-		aabbNodes:  make([]stdcomponents.AABB, 0, prealloc),
-		leaves:     make([]leaf, 0, prealloc),
-		aabbLeaves: make([]*stdcomponents.AABB, 0, prealloc),
-		codes:      make([]uint32, 0, prealloc),
-		components: make([]component, 0, prealloc),
+		aabbNodes:  ecs.NewPagedArray[stdcomponents.AABB](),
+		leaves:     ecs.NewPagedArray[leaf](),
+		aabbLeaves: ecs.NewPagedArray[*stdcomponents.AABB](),
+		codes:      ecs.NewPagedArray[uint32](),
+		components: ecs.NewPagedArray[component](),
 		layer:      layer,
 	}
 }
 
 type Tree struct {
-	nodes     ecs.PagedArray[node]
-	aabbNodes []stdcomponents.AABB
-
-	leaves     []leaf
-	aabbLeaves []*stdcomponents.AABB
-
-	codes []uint32
-
-	components []component
-
-	layer stdcomponents.CollisionLayer
+	nodes      ecs.PagedArray[node]
+	aabbNodes  ecs.PagedArray[stdcomponents.AABB]
+	leaves     ecs.PagedArray[leaf]
+	aabbLeaves ecs.PagedArray[*stdcomponents.AABB]
+	codes      ecs.PagedArray[uint32]
+	components ecs.PagedArray[component]
+	layer      stdcomponents.CollisionLayer
 }
 
 func (t *Tree) AddComponent(entity ecs.Entity, aabb *stdcomponents.AABB) {
 	center := aabb.Min.Add(aabb.Max).Scale(0.5)
 	code := t.morton2D(center.X, center.Y)
-	t.components = append(t.components, component{
+	t.components.Append(component{
 		entity: entity,
 		aabb:   aabb,
 		code:   code,
@@ -76,37 +72,36 @@ func (t *Tree) AddComponent(entity ecs.Entity, aabb *stdcomponents.AABB) {
 func (t *Tree) Build() {
 	// Reset tree
 	t.nodes.Reset()
-	t.aabbNodes = t.aabbNodes[:0]
-	t.leaves = t.leaves[:0]
-	t.aabbLeaves = t.aabbLeaves[:0]
-	t.codes = t.codes[:0]
+	t.aabbNodes.Reset()
+	t.leaves.Reset()
+	t.aabbLeaves.Reset()
+	t.codes.Reset()
 
-	// Sort components by morton code
-	slices.SortFunc(t.components, func(a, b component) int {
+	// Extract and sort components by morton code
+	var componentsSlice = make([]component, 0, t.components.Len())
+	for i := 0; i < t.components.Len(); i++ {
+		componentsSlice = append(componentsSlice, t.components.GetValue(i))
+	}
+	slices.SortFunc(componentsSlice, func(a, b component) int {
 		return int(a.code) - int(b.code)
 	})
 
 	// Add leaves
-	for i := 0; i < len(t.components); i++ {
-		component := &t.components[i]
-		t.leaves = append(t.leaves, leaf{
-			id: component.entity,
-		})
-		t.aabbLeaves = append(t.aabbLeaves, component.aabb)
-		t.codes = append(t.codes, component.code)
+	for i := range componentsSlice {
+		component := &componentsSlice[i]
+		t.leaves.Append(leaf{id: component.entity})
+		t.aabbLeaves.Append(component.aabb)
+		t.codes.Append(component.code)
 	}
-	t.components = t.components[:0]
+	t.components.Reset()
 
-	if len(t.leaves) == 0 {
-		// No leaves, reset nodes and return
-		t.nodes.Reset()
-		t.aabbNodes = t.aabbNodes[:0]
+	if t.leaves.Len() == 0 {
 		return
 	}
 
 	// Add root node
 	t.nodes.Append(node{-1})
-	t.aabbNodes = append(t.aabbNodes, stdcomponents.AABB{})
+	t.aabbNodes.Append(stdcomponents.AABB{})
 
 	type buildTask struct {
 		parentIndex     int
@@ -116,7 +111,7 @@ func (t *Tree) Build() {
 	}
 
 	stack := []buildTask{
-		{parentIndex: 0, start: 0, end: len(t.leaves) - 1, childrenCreated: false},
+		{parentIndex: 0, start: 0, end: t.leaves.Len() - 1, childrenCreated: false},
 	}
 
 	for len(stack) > 0 {
@@ -128,7 +123,7 @@ func (t *Tree) Build() {
 			if task.start == task.end {
 				// Leaf node
 				t.nodes.Get(task.parentIndex).childIndex = -int32(task.start)
-				t.aabbNodes[task.parentIndex] = *t.aabbLeaves[task.start]
+				t.aabbNodes.Set(task.parentIndex, *t.aabbLeaves.GetValue(task.start))
 				continue
 			}
 
@@ -138,7 +133,8 @@ func (t *Tree) Build() {
 			leftIndex := t.nodes.Len()
 			t.nodes.Append(node{-1})
 			t.nodes.Append(node{-1})
-			t.aabbNodes = append(t.aabbNodes, stdcomponents.AABB{}, stdcomponents.AABB{})
+			t.aabbNodes.Append(stdcomponents.AABB{})
+			t.aabbNodes.Append(stdcomponents.AABB{})
 
 			// Set parent's childIndex to leftIndex
 			t.nodes.Get(task.parentIndex).childIndex = int32(leftIndex)
@@ -171,11 +167,11 @@ func (t *Tree) Build() {
 			leftChildIndex := int(t.nodes.Get(task.parentIndex).childIndex)
 			rightChildIndex := leftChildIndex + 1
 
-			leftAABB := &t.aabbNodes[leftChildIndex]
-			rightAABB := &t.aabbNodes[rightChildIndex]
+			leftAABB := t.aabbNodes.Get(leftChildIndex)
+			rightAABB := t.aabbNodes.Get(rightChildIndex)
 
 			merged := t.mergeAABB(leftAABB, rightAABB)
-			t.aabbNodes[task.parentIndex] = merged
+			t.aabbNodes.Set(task.parentIndex, merged)
 		}
 	}
 }
@@ -199,7 +195,7 @@ func (t *Tree) Query(aabb *stdcomponents.AABB, result []ecs.Entity) []ecs.Entity
 	for stackPtr > 0 {
 		stackPtr--
 		nodeIndex := stack[stackPtr]
-		a := &t.aabbNodes[nodeIndex]
+		a := t.aabbNodes.Get(nodeIndex)
 		b := aabb
 
 		// Early exit if no AABB overlap
@@ -210,8 +206,8 @@ func (t *Tree) Query(aabb *stdcomponents.AABB, result []ecs.Entity) []ecs.Entity
 		node := t.nodes.Get(nodeIndex)
 		if node.childIndex <= 0 {
 			// Is a leaf
-			index := -node.childIndex
-			result = append(result, t.leaves[index].id)
+			index := -int(node.childIndex)
+			result = append(result, t.leaves.Get(index).id)
 			continue
 		}
 
@@ -233,8 +229,8 @@ func (t *Tree) aabbOverlap(a, b *stdcomponents.AABB) bool {
 // findSplit finds the position where the highest bit changes
 func (t *Tree) findSplit(start, end int) int {
 	// Identical Morton sortedMortonCodes => split the range in the middle.
-	first := t.codes[start]
-	last := t.codes[end]
+	first := t.codes.GetValue(start)
+	last := t.codes.GetValue(end)
 
 	if first == last {
 		return (start + end) >> 1
@@ -255,7 +251,7 @@ func (t *Tree) findSplit(start, end int) int {
 		newSplit := split + step // proposed new position
 
 		if newSplit < end {
-			splitCode := t.codes[newSplit]
+			splitCode := t.codes.GetValue(newSplit)
 			splitPrefix := bits.LeadingZeros32(first ^ splitCode)
 			if splitPrefix > commonPrefix {
 				split = newSplit
@@ -284,7 +280,7 @@ func (t *Tree) mergeAABB(a, b *stdcomponents.AABB) stdcomponents.AABB {
 	}
 }
 
-// Expands a 10-bit integer into 20 bits by inserting 1 zero after each bit
+// Expands a 16-bit integer into 32 bits by inserting 1 zero after each bit
 func (t *Tree) expandBits2D(v uint32) uint32 {
 	v = (v | (v << 16)) & 0x030000FF
 	v = (v | (v << 8)) & 0x0300F00F
