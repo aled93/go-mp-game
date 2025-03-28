@@ -39,7 +39,7 @@ type component struct {
 
 func NewGenTree(layer stdcomponents.CollisionLayer, prealloc int) Tree {
 	return Tree{
-		nodes:      make([]node, 0, prealloc),
+		nodes:      ecs.NewPagedArray[node](),
 		aabbNodes:  make([]stdcomponents.AABB, 0, prealloc),
 		leaves:     make([]leaf, 0, prealloc),
 		aabbLeaves: make([]*stdcomponents.AABB, 0, prealloc),
@@ -50,7 +50,7 @@ func NewGenTree(layer stdcomponents.CollisionLayer, prealloc int) Tree {
 }
 
 type Tree struct {
-	nodes     []node
+	nodes     ecs.PagedArray[node]
 	aabbNodes []stdcomponents.AABB
 
 	leaves     []leaf
@@ -75,7 +75,7 @@ func (t *Tree) AddComponent(entity ecs.Entity, aabb *stdcomponents.AABB) {
 
 func (t *Tree) Build() {
 	// Reset tree
-	t.nodes = t.nodes[:0]
+	t.nodes.Reset()
 	t.aabbNodes = t.aabbNodes[:0]
 	t.leaves = t.leaves[:0]
 	t.aabbLeaves = t.aabbLeaves[:0]
@@ -99,13 +99,13 @@ func (t *Tree) Build() {
 
 	if len(t.leaves) == 0 {
 		// No leaves, reset nodes and return
-		t.nodes = t.nodes[:0]
+		t.nodes.Reset()
 		t.aabbNodes = t.aabbNodes[:0]
 		return
 	}
 
 	// Add root node
-	t.nodes = append(t.nodes, node{-1})
+	t.nodes.Append(node{-1})
 	t.aabbNodes = append(t.aabbNodes, stdcomponents.AABB{})
 
 	type buildTask struct {
@@ -127,7 +127,7 @@ func (t *Tree) Build() {
 		if !task.childrenCreated {
 			if task.start == task.end {
 				// Leaf node
-				t.nodes[task.parentIndex].childIndex = -int32(task.start)
+				t.nodes.Get(task.parentIndex).childIndex = -int32(task.start)
 				t.aabbNodes[task.parentIndex] = *t.aabbLeaves[task.start]
 				continue
 			}
@@ -135,12 +135,13 @@ func (t *Tree) Build() {
 			split := t.findSplit(task.start, task.end)
 
 			// Create left and right nodes
-			leftIndex := len(t.nodes)
-			t.nodes = append(t.nodes, node{-1}, node{-1}) // append left and right nodes
+			leftIndex := t.nodes.Len()
+			t.nodes.Append(node{-1})
+			t.nodes.Append(node{-1})
 			t.aabbNodes = append(t.aabbNodes, stdcomponents.AABB{}, stdcomponents.AABB{})
 
 			// Set parent's childIndex to leftIndex
-			t.nodes[task.parentIndex].childIndex = int32(leftIndex)
+			t.nodes.Get(task.parentIndex).childIndex = int32(leftIndex)
 
 			// Push parent task back with childrenCreated=true
 			stack = append(stack, buildTask{
@@ -167,7 +168,7 @@ func (t *Tree) Build() {
 			})
 		} else {
 			// Merge children's AABBs into parent
-			leftChildIndex := int(t.nodes[task.parentIndex].childIndex)
+			leftChildIndex := int(t.nodes.Get(task.parentIndex).childIndex)
 			rightChildIndex := leftChildIndex + 1
 
 			leftAABB := &t.aabbNodes[leftChildIndex]
@@ -184,7 +185,7 @@ func (t *Tree) Layer() stdcomponents.CollisionLayer {
 }
 
 func (t *Tree) Query(aabb *stdcomponents.AABB, result []ecs.Entity) []ecs.Entity {
-	if len(t.nodes) == 0 { // Handle empty tree
+	if t.nodes.Len() == 0 { // Handle empty tree
 		return result
 	}
 
@@ -206,7 +207,7 @@ func (t *Tree) Query(aabb *stdcomponents.AABB, result []ecs.Entity) []ecs.Entity
 			continue
 		}
 
-		node := &t.nodes[nodeIndex]
+		node := t.nodes.Get(nodeIndex)
 		if node.childIndex <= 0 {
 			// Is a leaf
 			index := -node.childIndex
