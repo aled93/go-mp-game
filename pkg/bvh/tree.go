@@ -79,6 +79,7 @@ func (t *Tree) Build() {
 	t.aabbNodes = t.aabbNodes[:0]
 	t.leaves = t.leaves[:0]
 	t.aabbLeaves = t.aabbLeaves[:0]
+	t.codes = t.codes[:0]
 
 	// Sort components by morton code
 	slices.SortFunc(t.components, func(a, b component) int {
@@ -96,39 +97,86 @@ func (t *Tree) Build() {
 	}
 	t.components = t.components[:0]
 
+	if len(t.leaves) == 0 {
+		// No leaves, reset nodes and return
+		t.nodes = t.nodes[:0]
+		t.aabbNodes = t.aabbNodes[:0]
+		return
+	}
+
 	// Add root node
 	t.nodes = append(t.nodes, node{-1})
 	t.aabbNodes = append(t.aabbNodes, stdcomponents.AABB{})
 
-	t.buildH(0, 0, len(t.leaves)-1)
-}
-
-func (t *Tree) buildH(parentIndex int, start, end int) {
-	if start == end {
-		// Is a leaf
-		t.nodes[parentIndex].childIndex = -int32(start)
-		t.aabbNodes[parentIndex] = *t.aabbLeaves[start]
-		return
+	type buildTask struct {
+		parentIndex     int
+		start           int
+		end             int
+		childrenCreated bool
 	}
 
-	split := t.findSplit(start, end)
+	stack := []buildTask{
+		{parentIndex: 0, start: 0, end: len(t.leaves) - 1, childrenCreated: false},
+	}
 
-	// Add left node
-	leftIndex := len(t.nodes)
-	t.nodes = append(t.nodes, node{-1})
-	t.aabbNodes = append(t.aabbNodes, stdcomponents.AABB{})
+	for len(stack) > 0 {
+		// Pop the last task
+		task := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
 
-	// Add right node
-	rightIndex := len(t.nodes)
-	t.nodes = append(t.nodes, node{-1})
-	t.aabbNodes = append(t.aabbNodes, stdcomponents.AABB{})
+		if !task.childrenCreated {
+			if task.start == task.end {
+				// Leaf node
+				t.nodes[task.parentIndex].childIndex = -int32(task.start)
+				t.aabbNodes[task.parentIndex] = *t.aabbLeaves[task.start]
+				continue
+			}
 
-	t.nodes[parentIndex].childIndex = int32(leftIndex)
+			split := t.findSplit(task.start, task.end)
 
-	t.buildH(leftIndex, start, split)
-	t.buildH(rightIndex, split+1, end)
+			// Create left and right nodes
+			leftIndex := len(t.nodes)
+			t.nodes = append(t.nodes, node{-1}, node{-1}) // append left and right nodes
+			t.aabbNodes = append(t.aabbNodes, stdcomponents.AABB{}, stdcomponents.AABB{})
 
-	t.aabbNodes[parentIndex] = t.mergeAABB(&t.aabbNodes[leftIndex], &t.aabbNodes[rightIndex])
+			// Set parent's childIndex to leftIndex
+			t.nodes[task.parentIndex].childIndex = int32(leftIndex)
+
+			// Push parent task back with childrenCreated=true
+			stack = append(stack, buildTask{
+				parentIndex:     task.parentIndex,
+				start:           task.start,
+				end:             task.end,
+				childrenCreated: true,
+			})
+
+			// Push right child task (split+1 to end)
+			stack = append(stack, buildTask{
+				parentIndex:     leftIndex + 1,
+				start:           split + 1,
+				end:             task.end,
+				childrenCreated: false,
+			})
+
+			// Push left child task (start to split)
+			stack = append(stack, buildTask{
+				parentIndex:     leftIndex,
+				start:           task.start,
+				end:             split,
+				childrenCreated: false,
+			})
+		} else {
+			// Merge children's AABBs into parent
+			leftChildIndex := int(t.nodes[task.parentIndex].childIndex)
+			rightChildIndex := leftChildIndex + 1
+
+			leftAABB := &t.aabbNodes[leftChildIndex]
+			rightAABB := &t.aabbNodes[rightChildIndex]
+
+			merged := t.mergeAABB(leftAABB, rightAABB)
+			t.aabbNodes[task.parentIndex] = merged
+		}
+	}
 }
 
 func (t *Tree) Layer() stdcomponents.CollisionLayer {
