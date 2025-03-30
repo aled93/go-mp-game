@@ -35,7 +35,7 @@ func main() {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
-	sdl.SetHint(sdl.HintRenderDriver, "gpu")
+	sdl.SetHint(sdl.HintRenderDriver, "gpu,software")
 	must(sdl.Init(sdl.InitVideo))
 	defer sdl.Quit()
 
@@ -43,6 +43,9 @@ func main() {
 	must(e)
 	defer w.Destroy()
 	defer r.Destroy()
+
+	n, err := r.Name()
+	fmt.Println(n, sdl.GetRenderDriver(0))
 
 	var renderTicker *time.Ticker
 	if framerate > 0 {

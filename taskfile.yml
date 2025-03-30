@@ -46,13 +46,18 @@ tasks:
     cmds:
       - go tool trace trace.out
 
+  build-sdl:
+    env:
+      CGO_ENABLED: 1
+    cmds:
+      - go build -o ./.dist/sdl3-cgo-game.exe internal/sdl3-cgo/sdl3cgo-game.go
+      - go build -o ./.dist/sdl3-purego-game.exe internal/sdl3-pure/sdl-game.go
+
   build-win64:
     env:
       CGO_ENABLED: 1
     cmds:
       - go build -o ./.dist/game-win64.exe -tags opengl43 examples/new-api/game.go
-  #      - go build -o ./.dist/cgo-game.exe internal/sdl3-pure/sdl-game.go
-  #      - CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 go build -tags static -ldflags "-s -w" internal/sdl2/sdl-game.go
 
   build-mac:
     - task: build-darwin-amd64

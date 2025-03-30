@@ -34,7 +34,7 @@ func main() {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
-	sdl.SetHint(sdl.HintRenderDriver, "gpu")
+	sdl.SetHint(sdl.HintRenderDriver, "gpu,software")
 	defer sdl.Quit()
 	if !sdl.Init(sdl.InitVideo) {
 		panic(sdl.GetError())
@@ -48,6 +48,8 @@ func main() {
 	}
 	defer sdl.DestroyRenderer(r)
 	defer sdl.DestroyWindow(w)
+
+	fmt.Println(sdl.GetRendererName(r), sdl.GetRenderDriver(0))
 
 	var dt time.Duration = time.Second
 	var fps, avgFps float64
