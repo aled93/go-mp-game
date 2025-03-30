@@ -34,5 +34,5 @@ type SoundEffect struct {
 type SoundEffectsComponentManager = ecs.ComponentManager[SoundEffect]
 
 func NewSoundEffectsComponentManager() SoundEffectsComponentManager {
-	return ecs.NewComponentManager[SoundEffect](SoundEffectId)
+	return ecs.NewComponentManager[SoundEffect](SoundEffectManagerComponentId)
 }
