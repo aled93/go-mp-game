@@ -15,7 +15,6 @@ Thank you for your support!
 package systems
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/examples/new-api/assets"
 	"gomp/examples/new-api/components"
 	"gomp/pkg/ecs"
@@ -45,6 +44,7 @@ type CollisionHandlerSystem struct {
 	Sprites          *stdcomponents.SpriteComponentManager
 	BoxColliders     *stdcomponents.BoxColliderComponentManager
 	WallTags         *components.WallTagComponentManager
+	SoundEffects     *components.SoundEffectsComponentManager
 }
 
 func (s *CollisionHandlerSystem) Init() {}
@@ -96,12 +96,23 @@ func (s *CollisionHandlerSystem) checkPlayerCollisionEnter(e1, e2 ecs.Entity) bo
 		asteroidTag := s.AsteroidTags.Get(e2)
 		if asteroidTag != nil {
 			hp := s.Hps.Get(e1)
-			damageSound := assets.Audio.Get("damage_sound.wav")
-			rl.SetSoundPitch(*damageSound, float32(1.0+(float32(hp.MaxHp)-float32(hp.Hp))/float32(hp.MaxHp)))
 
 			hp.Hp -= 1
 
-			rl.PlaySound(*damageSound)
+			sfxEntity := s.EntityManager.Create()
+
+			playerPos := s.Positions.Get(e1)
+			s.Positions.Create(sfxEntity, stdcomponents.Position{XY: playerPos.XY})
+
+			s.SoundEffects.Create(sfxEntity, components.SoundEffect{
+				Clip:      assets.Audio.Get("damage_sound.wav"),
+				Pitch:     float32(1.0 + (float32(hp.MaxHp)-float32(hp.Hp))/float32(hp.MaxHp)), // higher pitch = less hp
+				IsPlaying: false,
+				IsLooping: false,
+				Volume:    1.0,
+				Pan:       0.5,
+			})
+
 			return true
 		}
 

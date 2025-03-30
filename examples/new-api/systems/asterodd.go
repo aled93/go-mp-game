@@ -47,6 +47,7 @@ type AssteroddSystem struct {
 	Collisions       *stdcomponents.CollisionComponentManager
 	SceneManager     *components.AsteroidSceneManagerComponentManager
 	WallTags         *components.WallTagComponentManager
+	SoundEffects     *components.SoundEffectsComponentManager
 }
 
 func (s *AssteroddSystem) Init() {
@@ -63,6 +64,7 @@ func (s *AssteroddSystem) Init() {
 		Hps:              s.Hps,
 		Weapons:          s.Weapons,
 		SpaceshipIntents: s.SpaceshipIntents,
+		SoundEffects:     s.SoundEffects,
 	}, 300, 300, -44.9)
 	entities.CreateSatellite(entities.CreateSatelliteManagers{
 		EntityManager: s.EntityManager,

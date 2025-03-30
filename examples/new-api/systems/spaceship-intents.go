@@ -23,8 +23,6 @@ import (
 	"gomp/vectors"
 	"math"
 	"time"
-
-	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 func NewSpaceshipIntentsSystem() SpaceshipIntentsSystem {
@@ -45,6 +43,7 @@ type SpaceshipIntentsSystem struct {
 	RigidBodies      *stdcomponents.RigidBodyComponentManager
 	Weapons          *components.WeaponComponentManager
 	Hps              *components.HpComponentManager
+	SoundEffects     *components.SoundEffectsComponentManager
 	moveSpeed        float32
 }
 
@@ -66,6 +65,7 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 		pos := s.Positions.Get(entity)
 		weapon := s.Weapons.Get(entity)
 		hp := s.Hps.Get(entity)
+		flySfx := s.SoundEffects.Get(entity)
 
 		if intent.RotateLeft {
 			rot.Angle -= rotateSpeed * vectors.Radians(dtSec)
@@ -94,17 +94,13 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 			}
 		}
 
-		flySound := assets.Audio.Get("fly_sound.wav")
-		flySoundIsPlaying := rl.IsSoundPlaying(*flySound)
-
 		absMoveSpeed := math.Abs(float64(s.moveSpeed))
+		flySfx.Volume = float32(absMoveSpeed / float64(moveSpeedMax))
 
-		rl.SetSoundVolume(*flySound, float32(absMoveSpeed/float64(moveSpeedMax)))
-
-		if (intent.MoveUp || intent.MoveDown || intent.RotateLeft || intent.RotateRight || s.moveSpeed != 0) && !flySoundIsPlaying {
-			rl.PlaySound(*flySound)
-		} else if !(intent.MoveUp || intent.MoveDown || intent.RotateLeft || intent.RotateRight || s.moveSpeed != 0) && flySoundIsPlaying || hp.Hp == 0 {
-			rl.StopSound(*flySound)
+		if (intent.MoveUp || intent.MoveDown || intent.RotateLeft || intent.RotateRight || s.moveSpeed != 0) && !flySfx.IsPlaying {
+			flySfx.IsPlaying = true
+		} else if !(intent.MoveUp || intent.MoveDown || intent.RotateLeft || intent.RotateRight || s.moveSpeed != 0) && flySfx.IsPlaying || hp.Hp == 0 {
+			flySfx.IsPlaying = false
 		}
 
 		vel.Y = float32(math.Cos(rot.Angle+math.Pi)) * s.moveSpeed
@@ -132,9 +128,17 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 					}, pos.XY.X, pos.XY.Y, angle, bulletVelocityX, bulletVelocityY)
 				}
 				weapon.CooldownLeft = weapon.Cooldown
-				fireSoundAsset := assets.Audio.Get("gun_sound.wav")
-				fireSound := rl.LoadSoundAlias(*fireSoundAsset)
-				rl.PlaySound(fireSound)
+
+				fireSoundEntity := s.EntityManager.Create()
+
+				s.SoundEffects.Create(fireSoundEntity, components.SoundEffect{
+					Clip:      assets.Audio.Get("gun_sound.wav"),
+					IsPlaying: false,
+					IsLooping: false,
+					Pitch:     1.0,
+					Volume:    1.0,
+					Pan:       0.5,
+				})
 			}
 		} else {
 			weapon.CooldownLeft -= dt

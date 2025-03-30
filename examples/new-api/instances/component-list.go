@@ -54,6 +54,7 @@ type ComponentList struct {
 	Weapon               components.WeaponComponentManager
 	SpaceshipIntent      components.SpaceshipIntentComponentManager
 	AsteroidSceneManager components.AsteroidSceneManagerComponentManager
+	SoundEffects         components.SoundEffectsComponentManager
 }
 
 func NewComponentList() ComponentList {
@@ -92,5 +93,6 @@ func NewComponentList() ComponentList {
 		Weapon:               components.NewWeaponComponentManager(),
 		SpaceshipIntent:      components.NewSpaceshipIntentComponentManager(),
 		AsteroidSceneManager: components.NewAsteroidSceneManagerComponentManager(),
+		SoundEffects:         components.NewSoundEffectsComponentManager(),
 	}
 }
