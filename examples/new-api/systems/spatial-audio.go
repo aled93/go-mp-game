@@ -75,7 +75,7 @@ func (s *SpatialAudioSystem) Run(dt time.Duration) {
 			return true
 		}
 
-		pan := s.CalculatePan(playerPos.XY, position.XY)
+		pan := s.calculatePan(playerPos.XY, position.XY)
 		rl.SetSoundPan(*clip, pan)
 
 		return true
@@ -84,7 +84,7 @@ func (s *SpatialAudioSystem) Run(dt time.Duration) {
 func (s *SpatialAudioSystem) Destroy() {
 }
 
-func (s *SpatialAudioSystem) CalculatePan(listener vectors.Vec2, source vectors.Vec2) float32 {
+func (s *SpatialAudioSystem) calculatePan(listener vectors.Vec2, source vectors.Vec2) float32 {
 	dx := float64(source.X - listener.X)
 	dy := float64(source.Y - listener.Y)
 	distanceSq := dx*dx + dy*dy

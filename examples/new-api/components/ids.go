@@ -29,5 +29,5 @@ const (
 	WeaponComponentId
 	SpaceshipIntentComponentId
 	AsteroidSceneManagerComponentId
-	SoundEffectId
+	SoundEffectManagerComponentId
 )
