@@ -35,17 +35,18 @@ func NewCollisionDetectionBVHSystem() CollisionDetectionBVHSystem {
 }
 
 type CollisionDetectionBVHSystem struct {
-	EntityManager    *ecs.EntityManager
-	Positions        *stdcomponents.PositionComponentManager
-	Rotations        *stdcomponents.RotationComponentManager
-	Scales           *stdcomponents.ScaleComponentManager
-	GenericCollider  *stdcomponents.GenericColliderComponentManager
-	BoxColliders     *stdcomponents.BoxColliderComponentManager
-	CircleColliders  *stdcomponents.CircleColliderComponentManager
-	PolygonColliders *stdcomponents.PolygonColliderComponentManager
-	Collisions       *stdcomponents.CollisionComponentManager
-	SpatialIndex     *stdcomponents.SpatialIndexComponentManager
-	AABB             *stdcomponents.AABBComponentManager
+	EntityManager                      *ecs.EntityManager
+	Positions                          *stdcomponents.PositionComponentManager
+	Rotations                          *stdcomponents.RotationComponentManager
+	Scales                             *stdcomponents.ScaleComponentManager
+	GenericCollider                    *stdcomponents.GenericColliderComponentManager
+	BoxColliders                       *stdcomponents.BoxColliderComponentManager
+	CircleColliders                    *stdcomponents.CircleColliderComponentManager
+	PolygonColliders                   *stdcomponents.PolygonColliderComponentManager
+	Collisions                         *stdcomponents.CollisionComponentManager
+	SpatialIndex                       *stdcomponents.SpatialIndexComponentManager
+	AABB                               *stdcomponents.AABBComponentManager
+	ColliderSleepStateComponentManager *stdcomponents.ColliderSleepStateComponentManager
 
 	trees       []bvh.Tree
 	treesLookup map[stdcomponents.CollisionLayer]int
@@ -177,6 +178,13 @@ func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity
 
 func (s *CollisionDetectionBVHSystem) broadPhase(entityA ecs.Entity, workerId int) {
 	colliderA := s.GenericCollider.Get(entityA)
+	if colliderA.AllowSleep {
+		isSleeping := s.ColliderSleepStateComponentManager.Get(entityA)
+		if isSleeping != nil {
+			return
+		}
+	}
+
 	aabb := s.AABB.Get(entityA)
 
 	result := make([]ecs.Entity, 0, 64)

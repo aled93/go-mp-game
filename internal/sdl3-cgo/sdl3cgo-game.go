@@ -30,6 +30,7 @@ func main() {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
+	sdl.SetHint(sdl.HintRenderDriver, "gpu")
 	must(sdl.Init(sdl.InitVideo))
 	defer sdl.Quit()
 

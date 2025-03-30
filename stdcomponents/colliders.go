@@ -42,10 +42,11 @@ const (
 )
 
 type BoxCollider struct {
-	WH     vectors.Vec2
-	Offset vectors.Vec2
-	Layer  CollisionLayer
-	Mask   CollisionMask
+	WH         vectors.Vec2
+	Offset     vectors.Vec2
+	Layer      CollisionLayer
+	Mask       CollisionMask
+	AllowSleep bool
 }
 
 func (c *BoxCollider) GetSupport(direction vectors.Vec2, transform *Transform2d) vectors.Vec2 {
@@ -80,10 +81,11 @@ func NewBoxColliderComponentManager() BoxColliderComponentManager {
 }
 
 type CircleCollider struct {
-	Radius float32
-	Layer  CollisionLayer
-	Mask   CollisionMask
-	Offset vectors.Vec2
+	Radius     float32
+	Layer      CollisionLayer
+	Mask       CollisionMask
+	Offset     vectors.Vec2
+	AllowSleep bool
 }
 
 func (c *CircleCollider) GetSupport(direction vectors.Vec2, transform *Transform2d) vectors.Vec2 {
@@ -103,10 +105,11 @@ func NewCircleColliderComponentManager() CircleColliderComponentManager {
 }
 
 type PolygonCollider struct {
-	Vertices []vectors.Vec2
-	Layer    CollisionLayer
-	Mask     CollisionMask
-	Offset   vectors.Vec2
+	Vertices   []vectors.Vec2
+	Layer      CollisionLayer
+	Mask       CollisionMask
+	Offset     vectors.Vec2
+	AllowSleep bool
 }
 
 func (c *PolygonCollider) GetSupport(direction vectors.Vec2, transform *Transform2d) vectors.Vec2 {
@@ -133,14 +136,23 @@ func NewPolygonColliderComponentManager() PolygonColliderComponentManager {
 }
 
 type GenericCollider struct {
-	Shape  ColliderShape
-	Layer  CollisionLayer
-	Mask   CollisionMask
-	Offset vectors.Vec2
+	Shape      ColliderShape
+	Layer      CollisionLayer
+	Mask       CollisionMask
+	Offset     vectors.Vec2
+	AllowSleep bool
 }
 
 type GenericColliderComponentManager = ecs.ComponentManager[GenericCollider]
 
 func NewGenericColliderComponentManager() GenericColliderComponentManager {
 	return ecs.NewComponentManager[GenericCollider](GenericColliderComponentId)
+}
+
+type ColliderSleepState struct{}
+
+type ColliderSleepStateComponentManager = ecs.ComponentManager[ColliderSleepState]
+
+func NewColliderSleepStateComponentManager() ColliderSleepStateComponentManager {
+	return ecs.NewComponentManager[ColliderSleepState](ColliderSleepStateComponentId)
 }

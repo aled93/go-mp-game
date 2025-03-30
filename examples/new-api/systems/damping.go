@@ -34,6 +34,12 @@ func (s *DampingSystem) Run(dt time.Duration) {
 		if rigidbody != nil && !rigidbody.IsStatic {
 			velocity.X *= dampingFactor
 			velocity.Y *= dampingFactor
+			if velocity.X < 0.1 && velocity.X > -0.1 {
+				velocity.X = 0
+			}
+			if velocity.Y < 0.1 && velocity.Y > -0.1 {
+				velocity.Y = 0
+			}
 		}
 		return true
 	})

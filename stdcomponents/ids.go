@@ -32,6 +32,7 @@ const (
 	GenericColliderComponentId
 	ColliderBoxComponentId
 	ColliderCircleComponentId
+	ColliderSleepStateComponentId
 	PolygonColliderComponentId
 	CollisionComponentId
 	SpatialIndexComponentId

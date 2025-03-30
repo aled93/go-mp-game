@@ -61,16 +61,12 @@ func (s *SpriteSystem) Run() {
 					Y: sprite.Origin.Y * scale.XY.Y,
 				},
 				Dest: rl.Rectangle{X: position.XY.X, Y: position.XY.Y, Width: sprite.Frame.Width, Height: sprite.Frame.Height}, //
-				Tint: stdcomponents.Tint{
-					R: 255,
-					G: 255,
-					B: 255,
-					A: 255,
-				},
+				Tint: sprite.Tint,
 			})
 		} else {
 			tr.Dest.Width = sprite.Frame.Width
 			tr.Dest.Height = sprite.Frame.Height
+			tr.Tint = sprite.Tint
 		}
 		return true
 	})

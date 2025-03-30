@@ -20,28 +20,29 @@ import (
 )
 
 type ComponentList struct {
-	Position        stdcomponents.PositionComponentManager
-	Rotation        stdcomponents.RotationComponentManager
-	Scale           stdcomponents.ScaleComponentManager
-	Velocity        stdcomponents.VelocityComponentManager
-	Flip            stdcomponents.FlipComponentManager
-	Sprite          stdcomponents.SpriteComponentManager
-	SpriteMatrix    stdcomponents.SpriteMatrixComponentManager
-	Tint            stdcomponents.TintComponentManager
-	AnimationPlayer stdcomponents.AnimationPlayerComponentManager
-	AnimationState  stdcomponents.AnimationStateComponentManager
-	RLTexturePro    stdcomponents.RLTextureProComponentManager
-	Network         stdcomponents.NetworkComponentManager
-	Renderable      stdcomponents.RenderableComponentManager
-	YSort           stdcomponents.YSortComponentManager
-	RenderOrder     stdcomponents.RenderOrderComponentManager
-	GenericCollider stdcomponents.GenericColliderComponentManager
-	ColliderBox     stdcomponents.BoxColliderComponentManager
-	ColliderCircle  stdcomponents.CircleColliderComponentManager
-	Collision       stdcomponents.CollisionComponentManager
-	AABB            stdcomponents.AABBComponentManager
-	SpatialIndex    stdcomponents.SpatialIndexComponentManager
-	RigidBody       stdcomponents.RigidBodyComponentManager
+	Position           stdcomponents.PositionComponentManager
+	Rotation           stdcomponents.RotationComponentManager
+	Scale              stdcomponents.ScaleComponentManager
+	Velocity           stdcomponents.VelocityComponentManager
+	Flip               stdcomponents.FlipComponentManager
+	Sprite             stdcomponents.SpriteComponentManager
+	SpriteMatrix       stdcomponents.SpriteMatrixComponentManager
+	Tint               stdcomponents.TintComponentManager
+	AnimationPlayer    stdcomponents.AnimationPlayerComponentManager
+	AnimationState     stdcomponents.AnimationStateComponentManager
+	RLTexturePro       stdcomponents.RLTextureProComponentManager
+	Network            stdcomponents.NetworkComponentManager
+	Renderable         stdcomponents.RenderableComponentManager
+	YSort              stdcomponents.YSortComponentManager
+	RenderOrder        stdcomponents.RenderOrderComponentManager
+	GenericCollider    stdcomponents.GenericColliderComponentManager
+	ColliderBox        stdcomponents.BoxColliderComponentManager
+	ColliderCircle     stdcomponents.CircleColliderComponentManager
+	ColliderSleepState stdcomponents.ColliderSleepStateComponentManager
+	Collision          stdcomponents.CollisionComponentManager
+	AABB               stdcomponents.AABBComponentManager
+	SpatialIndex       stdcomponents.SpatialIndexComponentManager
+	RigidBody          stdcomponents.RigidBodyComponentManager
 
 	Health               components.HpComponentManager
 	Controller           components.ControllerComponentManager
@@ -57,28 +58,29 @@ type ComponentList struct {
 
 func NewComponentList() ComponentList {
 	return ComponentList{
-		Position:        stdcomponents.NewPositionComponentManager(),
-		Rotation:        stdcomponents.NewRotationComponentManager(),
-		Scale:           stdcomponents.NewScaleComponentManager(),
-		Velocity:        stdcomponents.NewVelocityComponentManager(),
-		Flip:            stdcomponents.NewFlipComponentManager(),
-		Sprite:          stdcomponents.NewSpriteComponentManager(),
-		SpriteMatrix:    stdcomponents.NewSpriteMatrixComponentManager(),
-		Tint:            stdcomponents.NewTintComponentManager(),
-		AnimationPlayer: stdcomponents.NewAnimationPlayerComponentManager(),
-		AnimationState:  stdcomponents.NewAnimationStateComponentManager(),
-		RLTexturePro:    stdcomponents.NewRlTextureProComponentManager(),
-		Network:         stdcomponents.NewNetworkComponentManager(),
-		Renderable:      stdcomponents.NewRenderableComponentManager(),
-		YSort:           stdcomponents.NewYSortComponentManager(),
-		RenderOrder:     stdcomponents.NewRenderOrderComponentManager(),
-		GenericCollider: stdcomponents.NewGenericColliderComponentManager(),
-		ColliderBox:     stdcomponents.NewBoxColliderComponentManager(),
-		ColliderCircle:  stdcomponents.NewCircleColliderComponentManager(),
-		Collision:       stdcomponents.NewCollisionComponentManager(),
-		AABB:            stdcomponents.NewAABBComponentManager(),
-		SpatialIndex:    stdcomponents.NewSpatialIndexComponentManager(),
-		RigidBody:       stdcomponents.NewRigidBodyComponentManager(),
+		Position:           stdcomponents.NewPositionComponentManager(),
+		Rotation:           stdcomponents.NewRotationComponentManager(),
+		Scale:              stdcomponents.NewScaleComponentManager(),
+		Velocity:           stdcomponents.NewVelocityComponentManager(),
+		Flip:               stdcomponents.NewFlipComponentManager(),
+		Sprite:             stdcomponents.NewSpriteComponentManager(),
+		SpriteMatrix:       stdcomponents.NewSpriteMatrixComponentManager(),
+		Tint:               stdcomponents.NewTintComponentManager(),
+		AnimationPlayer:    stdcomponents.NewAnimationPlayerComponentManager(),
+		AnimationState:     stdcomponents.NewAnimationStateComponentManager(),
+		RLTexturePro:       stdcomponents.NewRlTextureProComponentManager(),
+		Network:            stdcomponents.NewNetworkComponentManager(),
+		Renderable:         stdcomponents.NewRenderableComponentManager(),
+		YSort:              stdcomponents.NewYSortComponentManager(),
+		RenderOrder:        stdcomponents.NewRenderOrderComponentManager(),
+		GenericCollider:    stdcomponents.NewGenericColliderComponentManager(),
+		ColliderBox:        stdcomponents.NewBoxColliderComponentManager(),
+		ColliderCircle:     stdcomponents.NewCircleColliderComponentManager(),
+		ColliderSleepState: stdcomponents.NewColliderSleepStateComponentManager(),
+		Collision:          stdcomponents.NewCollisionComponentManager(),
+		AABB:               stdcomponents.NewAABBComponentManager(),
+		SpatialIndex:       stdcomponents.NewSpatialIndexComponentManager(),
+		RigidBody:          stdcomponents.NewRigidBodyComponentManager(),
 
 		Health:               components.NewHealthComponentManager(),
 		Controller:           components.NewControllerComponentManager(),

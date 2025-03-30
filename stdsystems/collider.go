@@ -27,19 +27,21 @@ func NewColliderSystem() ColliderSystem {
 }
 
 type ColliderSystem struct {
-	EntityManager    *ecs.EntityManager
-	Positions        *stdcomponents.PositionComponentManager
-	Scales           *stdcomponents.ScaleComponentManager
-	Rotations        *stdcomponents.RotationComponentManager
-	GenericColliders *stdcomponents.GenericColliderComponentManager
-	BoxColliders     *stdcomponents.BoxColliderComponentManager
-	CircleColliders  *stdcomponents.CircleColliderComponentManager
-	AABB             *stdcomponents.AABBComponentManager
+	EntityManager                      *ecs.EntityManager
+	Positions                          *stdcomponents.PositionComponentManager
+	Scales                             *stdcomponents.ScaleComponentManager
+	Rotations                          *stdcomponents.RotationComponentManager
+	Velocities                         *stdcomponents.VelocityComponentManager
+	GenericColliders                   *stdcomponents.GenericColliderComponentManager
+	BoxColliders                       *stdcomponents.BoxColliderComponentManager
+	CircleColliders                    *stdcomponents.CircleColliderComponentManager
+	ColliderSleepStateComponentManager *stdcomponents.ColliderSleepStateComponentManager
+	AABB                               *stdcomponents.AABBComponentManager
 }
 
 func (s *ColliderSystem) Init() {}
 func (s *ColliderSystem) Run(dt time.Duration) {
-	s.BoxColliders.EachEntity(func(entity ecs.Entity) bool {
+	s.BoxColliders.EachEntityParallel(func(entity ecs.Entity) bool {
 		boxCollider := s.BoxColliders.Get(entity)
 
 		genCollider := s.GenericColliders.Get(entity)
@@ -51,6 +53,7 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		genCollider.Offset.X = boxCollider.Offset.X
 		genCollider.Offset.Y = boxCollider.Offset.Y
 		genCollider.Shape = stdcomponents.BoxColliderShape
+		genCollider.AllowSleep = boxCollider.AllowSleep
 
 		position := s.Positions.Get(entity)
 		scale := s.Scales.Get(entity)
@@ -79,7 +82,7 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		return true
 	})
 
-	s.CircleColliders.EachEntity(func(entity ecs.Entity) bool {
+	s.CircleColliders.EachEntityParallel(func(entity ecs.Entity) bool {
 		circleCollider := s.CircleColliders.Get(entity)
 
 		genCollider := s.GenericColliders.Get(entity)
@@ -92,6 +95,7 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		genCollider.Offset.X = circleCollider.Offset.X
 		genCollider.Offset.Y = circleCollider.Offset.Y
 		genCollider.Shape = stdcomponents.CircleColliderShape
+		genCollider.AllowSleep = circleCollider.AllowSleep
 
 		position := s.Positions.Get(entity)
 		scale := s.Scales.Get(entity)
@@ -105,6 +109,31 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		aabb.Min = position.XY.Add(offset).Sub(scaledRadius)
 		aabb.Max = position.XY.Add(offset).Add(scaledRadius)
 
+		return true
+	})
+
+	s.GenericColliders.EachEntityParallel(func(entity ecs.Entity) bool {
+		genCollider := s.GenericColliders.Get(entity)
+
+		if genCollider.AllowSleep {
+			shouldSleep := true
+			velocity := s.Velocities.Get(entity)
+			if velocity != nil {
+				if velocity.Vec2().LengthSquared() != 0 {
+					shouldSleep = false
+				}
+			}
+			isSleeping := s.ColliderSleepStateComponentManager.Get(entity)
+			if shouldSleep {
+				if isSleeping == nil {
+					isSleeping = s.ColliderSleepStateComponentManager.Create(entity, stdcomponents.ColliderSleepState{})
+				}
+			} else {
+				if isSleeping != nil {
+					s.ColliderSleepStateComponentManager.Remove(entity)
+				}
+			}
+		}
 		return true
 	})
 }

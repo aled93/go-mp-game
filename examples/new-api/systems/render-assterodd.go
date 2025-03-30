@@ -26,8 +26,6 @@ import (
 	"time"
 )
 
-const debug = false
-
 func NewRenderAssteroddSystem() RenderAssteroddSystem {
 	return RenderAssteroddSystem{
 		instanceData: make([]stdcomponents.RLTexturePro, 0, 8192),
@@ -35,32 +33,34 @@ func NewRenderAssteroddSystem() RenderAssteroddSystem {
 }
 
 type RenderAssteroddSystem struct {
-	EntityManager    *ecs.EntityManager
-	RlTexturePros    *stdcomponents.RLTextureProComponentManager
-	Positions        *stdcomponents.PositionComponentManager
-	Rotations        *stdcomponents.RotationComponentManager
-	Scales           *stdcomponents.ScaleComponentManager
-	AnimationPlayers *stdcomponents.AnimationPlayerComponentManager
-	Tints            *stdcomponents.TintComponentManager
-	Flips            *stdcomponents.FlipComponentManager
-	Renderables      *stdcomponents.RenderableComponentManager
-	AnimationStates  *stdcomponents.AnimationStateComponentManager
-	Sprites          *stdcomponents.SpriteComponentManager
-	SpriteMatrixes   *stdcomponents.SpriteMatrixComponentManager
-	RenderOrders     *stdcomponents.RenderOrderComponentManager
-	BoxColliders     *stdcomponents.BoxColliderComponentManager
-	CircleColliders  *stdcomponents.CircleColliderComponentManager
-	AABBs            *stdcomponents.AABBComponentManager
-	Collisions       *stdcomponents.CollisionComponentManager
-	renderList       []renderEntry
-	instanceData     []stdcomponents.RLTexturePro
-	camera           rl.Camera2D
-	SceneManager     *components.AsteroidSceneManagerComponentManager
+	EntityManager                      *ecs.EntityManager
+	RlTexturePros                      *stdcomponents.RLTextureProComponentManager
+	Positions                          *stdcomponents.PositionComponentManager
+	Rotations                          *stdcomponents.RotationComponentManager
+	Scales                             *stdcomponents.ScaleComponentManager
+	AnimationPlayers                   *stdcomponents.AnimationPlayerComponentManager
+	Tints                              *stdcomponents.TintComponentManager
+	Flips                              *stdcomponents.FlipComponentManager
+	Renderables                        *stdcomponents.RenderableComponentManager
+	AnimationStates                    *stdcomponents.AnimationStateComponentManager
+	Sprites                            *stdcomponents.SpriteComponentManager
+	SpriteMatrixes                     *stdcomponents.SpriteMatrixComponentManager
+	RenderOrders                       *stdcomponents.RenderOrderComponentManager
+	BoxColliders                       *stdcomponents.BoxColliderComponentManager
+	CircleColliders                    *stdcomponents.CircleColliderComponentManager
+	AABBs                              *stdcomponents.AABBComponentManager
+	Collisions                         *stdcomponents.CollisionComponentManager
+	ColliderSleepStateComponentManager *stdcomponents.ColliderSleepStateComponentManager
+	renderList                         []renderEntry
+	instanceData                       []stdcomponents.RLTexturePro
+	camera                             rl.Camera2D
+	SceneManager                       *components.AsteroidSceneManagerComponentManager
 
 	monitorWidth  int
 	monitorHeight int
 
 	Player *components.PlayerTagComponentManager
+	debug  bool
 }
 
 func (s *RenderAssteroddSystem) Init() {
@@ -76,6 +76,10 @@ func (s *RenderAssteroddSystem) Init() {
 func (s *RenderAssteroddSystem) Run(dt time.Duration) bool {
 	if rl.WindowShouldClose() {
 		return false
+	}
+
+	if rl.IsKeyPressed(rl.KeyF12) {
+		s.debug = !s.debug
 	}
 
 	s.prepareRender(dt)
@@ -111,7 +115,7 @@ func (s *RenderAssteroddSystem) render() {
 	// ==========
 	// DEBUG
 	// ==========
-	if debug {
+	if s.debug {
 		rl.BeginMode2D(s.camera)
 		s.BoxColliders.EachEntity(func(e ecs.Entity) bool {
 			col := s.BoxColliders.Get(e)
@@ -135,8 +139,14 @@ func (s *RenderAssteroddSystem) render() {
 			scale := s.Scales.Get(e)
 			pos := s.Positions.Get(e)
 
+			color := rl.DarkGreen
+			isSleeping := s.ColliderSleepStateComponentManager.Get(e)
+			if isSleeping != nil {
+				color = rl.Blue
+			}
+
 			posWithOffset := pos.XY.Add(col.Offset.Mul(scale.XY))
-			rl.DrawCircle(int32(posWithOffset.X), int32(posWithOffset.Y), col.Radius*scale.XY.X, rl.DarkGreen)
+			rl.DrawCircle(int32(posWithOffset.X), int32(posWithOffset.Y), col.Radius*scale.XY.X, color)
 			return true
 		})
 		rl.EndMode2D()
@@ -185,24 +195,29 @@ func (s *RenderAssteroddSystem) render() {
 		entry := &s.renderList[i]
 		if entry.TextureId != currentTex || len(s.instanceData) >= 8192 {
 			if len(s.instanceData) > 0 {
-				s.submitBatch(currentTex, s.instanceData)
+				s.submitBatch(s.instanceData)
 				s.instanceData = s.instanceData[:0]
 			}
 			currentTex = entry.TextureId
 		}
 		s.instanceData = append(s.instanceData, s.getInstanceData(entry.Entity))
 	}
-	s.submitBatch(currentTex, s.instanceData) // Submit last batch
+	s.submitBatch(s.instanceData) // Submit last batch
 	s.renderList = s.renderList[:0]
 
 	// ==========
 	// DEBUG
 	// ==========
-	if debug {
+	if s.debug {
 		rl.BeginMode2D(s.camera)
 		s.AABBs.EachEntity(func(e ecs.Entity) bool {
 			aabb := s.AABBs.Get(e)
-			rl.DrawRectangleLines(int32(aabb.Min.X), int32(aabb.Min.Y), int32(aabb.Max.X-aabb.Min.X), int32(aabb.Max.Y-aabb.Min.Y), rl.Green)
+			color := rl.Green
+			isSleeping := s.ColliderSleepStateComponentManager.Get(e)
+			if isSleeping != nil {
+				color = rl.Blue
+			}
+			rl.DrawRectangleLines(int32(aabb.Min.X), int32(aabb.Min.Y), int32(aabb.Max.X-aabb.Min.X), int32(aabb.Max.Y-aabb.Min.Y), color)
 			return true
 		})
 		s.Collisions.EachEntity(func(entity ecs.Entity) bool {
@@ -210,19 +225,21 @@ func (s *RenderAssteroddSystem) render() {
 			rl.DrawRectangle(int32(pos.XY.X-8), int32(pos.XY.Y-8), 16, 16, rl.Red)
 			return true
 		})
-		s.Renderables.EachEntity(func(e ecs.Entity) bool {
-			position := s.Positions.Get(e)
-			rl.DrawRectangle(int32(position.XY.X-2), int32(position.XY.Y-2), 4, 4, rl.Red)
-			return true
-		})
 		rl.EndMode2D()
 	}
 }
 
-func (s *RenderAssteroddSystem) submitBatch(texID int, data []stdcomponents.RLTexturePro) {
+func (s *RenderAssteroddSystem) submitBatch(data []stdcomponents.RLTexturePro) {
 	rl.BeginMode2D(s.camera)
-	for i := range data {
-		rl.DrawTexturePro(*data[i].Texture, data[i].Frame, data[i].Dest, data[i].Origin, data[i].Rotation, data[i].Tint)
+	if s.debug {
+		for i := range data {
+			rl.DrawTexturePro(*data[i].Texture, data[i].Frame, data[i].Dest, data[i].Origin, data[i].Rotation, data[i].Tint)
+			rl.DrawRectangle(int32(data[i].Dest.X-2), int32(data[i].Dest.Y-2), 4, 4, rl.Red)
+		}
+	} else {
+		for i := range data {
+			rl.DrawTexturePro(*data[i].Texture, data[i].Frame, data[i].Dest, data[i].Origin, data[i].Rotation, data[i].Tint)
+		}
 	}
 	rl.EndMode2D()
 }
