@@ -40,6 +40,7 @@ type CreateSpaceShipManagers struct {
 	Hps              *components.HpComponentManager
 	Weapons          *components.WeaponComponentManager
 	SpaceshipIntents *components.SpaceshipIntentComponentManager
+	SoundEffects     *components.SoundEffectsComponentManager
 }
 
 func CreateSpaceShip(
@@ -48,6 +49,7 @@ func CreateSpaceShip(
 	angle float64,
 ) ecs.Entity {
 	spaceShip := props.EntityManager.Create()
+
 	props.Positions.Create(spaceShip, stdcomponents.Position{
 		XY: vectors.Vec2{
 			X: posX,
@@ -107,6 +109,14 @@ func CreateSpaceShip(
 	})
 
 	props.SpaceshipIntents.Create(spaceShip, components.SpaceshipIntent{})
+	props.SoundEffects.Create(spaceShip, components.SoundEffect{
+		Clip:      assets.Audio.Get("fly_sound.wav"),
+		IsPlaying: false,
+		IsLooping: true,
+		Pitch:     1.0,
+		Volume:    1.0,
+		Pan:       0.5,
+	})
 
 	return spaceShip
 }

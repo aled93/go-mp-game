@@ -44,7 +44,8 @@ func NewSystemList() SystemList {
 		RenderAssterodd: systems.NewRenderAssteroddSystem(),
 		RenderBogdan:    systems.NewRenderBogdanSystem(),
 
-		Audio: systems.NewAudioSystem(),
+		Audio:        systems.NewAudioSystem(),
+		SpatialAudio: systems.NewSpatialAudioSystem(),
 
 		DampingSystem:    systems.NewDampingSystem(),
 		AssteroddSystem:  systems.NewAssteroddSystem(),
@@ -79,7 +80,8 @@ type SystemList struct {
 	RenderAssterodd systems.RenderAssteroddSystem
 	RenderBogdan    systems.RenderBogdanSystem
 
-	Audio systems.AudioSystem
+	Audio        systems.AudioSystem
+	SpatialAudio systems.SpatialAudioSystem
 
 	DampingSystem    systems.DampingSystem
 	AssteroddSystem  systems.AssteroddSystem

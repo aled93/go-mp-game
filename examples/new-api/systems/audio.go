@@ -15,7 +15,6 @@ Thank you for your support!
 package systems
 
 import (
-	"gomp/examples/new-api/assets"
 	"gomp/examples/new-api/components"
 	"gomp/pkg/ecs"
 	"time"
@@ -28,18 +27,59 @@ func NewAudioSystem() AudioSystem {
 }
 
 type AudioSystem struct {
-	EntityManager    *ecs.EntityManager
-	SpaceshipIntents *components.SpaceshipIntentComponentManager
+	EntityManager *ecs.EntityManager
+	SoundEffects  *components.SoundEffectsComponentManager
 }
 
 func (s *AudioSystem) Init() {
 	rl.InitAudioDevice()
-
-	assets.Audio.Load("damage_sound.wav")
-	assets.Audio.Load("fly_sound.wav")
-	assets.Audio.Load("gun_sound.wav")
 }
-func (s *AudioSystem) Run(dt time.Duration) {}
+
+func (s *AudioSystem) Run(dt time.Duration) {
+	s.SoundEffects.EachEntity(func(entity ecs.Entity) bool {
+		soundEffect := s.SoundEffects.Get(entity)
+		clip := soundEffect.Clip
+
+		// check if clip is valid
+		if clip == nil || clip.FrameCount == 0 {
+			return true
+		}
+
+		if !soundEffect.IsPlaying {
+			if rl.IsSoundPlaying(*clip) {
+				rl.StopSound(*clip)
+				return true
+			} else {
+				*clip = rl.LoadSoundAlias(*clip)
+
+				rl.SetSoundVolume(*clip, soundEffect.Volume)
+				rl.SetSoundPitch(*clip, soundEffect.Pitch)
+				rl.SetSoundPan(*clip, soundEffect.Pan)
+
+				rl.PlaySound(*clip)
+				soundEffect.IsPlaying = true
+				return true
+			}
+		}
+
+		rl.SetSoundVolume(*clip, soundEffect.Volume)
+		rl.SetSoundPitch(*clip, soundEffect.Pitch)
+		rl.SetSoundPan(*clip, soundEffect.Pan)
+
+		// check if sound is over
+		if !rl.IsSoundPlaying(*clip) && soundEffect.IsPlaying {
+			if soundEffect.IsLooping {
+				rl.PlaySound(*clip)
+			} else {
+				// sound is over, remove entity
+				s.EntityManager.Delete(entity)
+				// rl.UnloadSoundAlias(*clip) // TODO: this doesn't work https://github.com/gen2brain/raylib-go/issues/494
+			}
+		}
+
+		return true
+	})
+}
 func (s *AudioSystem) Destroy() {
 	rl.CloseAudioDevice()
 }
