@@ -52,6 +52,7 @@ tasks:
     cmds:
       - go build -o ./.dist/sdl3-cgo-game.exe internal/sdl3-cgo/sdl3cgo-game.go
       - go build -o ./.dist/sdl3-purego-game.exe internal/sdl3-pure/sdl-game.go
+      - go build -o ./.dist/sdl3-purego-zukko-game.exe internal/sdl3-pure-zukko/sdl-zukko.go
 
   build-win64:
     env:

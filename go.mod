@@ -24,6 +24,8 @@ require (
 )
 
 require (
+	github.com/Zyko0/go-sdl3 v0.0.0-20250324113244-771f317184f7 // indirect
+	github.com/Zyko0/purego-gen v0.0.0-20250308152853-097c3ba1e28a // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/felixge/fgprof v0.9.5 // indirect
 	github.com/francoispqt/gojay v1.2.13 // indirect
@@ -51,7 +53,7 @@ require (
 require (
 	github.com/ebitengine/gomobile v0.0.0-20240911145611-4856209ac325 // indirect
 	github.com/ebitengine/hideconsole v1.0.0 // indirect
-	github.com/ebitengine/purego v0.8.2 // indirect
+	github.com/ebitengine/purego v0.9.0-alpha.2.0.20250124174847-29f0104e3c2b // indirect
 	github.com/gorilla/sessions v1.4.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/jezek/xgb v1.1.1 // indirect
