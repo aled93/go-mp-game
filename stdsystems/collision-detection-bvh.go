@@ -31,6 +31,8 @@ func NewCollisionDetectionBVHSystem() CollisionDetectionBVHSystem {
 	return CollisionDetectionBVHSystem{
 		activeCollisions: make(map[CollisionPair]ecs.Entity),
 		collisionEvents:  make([]ecs.PagedArray[CollisionEvent], maxNumWorkers),
+		trees:            make([]bvh.Tree, 0, 8),
+		treesLookup:      make(map[stdcomponents.CollisionLayer]int, 8),
 	}
 }
 
@@ -55,6 +57,7 @@ type CollisionDetectionBVHSystem struct {
 
 	activeCollisions  map[CollisionPair]ecs.Entity // Maps collision pairs to proxy entities
 	currentCollisions map[CollisionPair]struct{}
+	entities          []ecs.Entity
 }
 
 func (s *CollisionDetectionBVHSystem) Init() {
@@ -70,10 +73,6 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 	if s.AABB.Len() == 0 {
 		return
 	}
-
-	// Init trees
-	s.trees = make([]bvh.Tree, 0, 8)
-	s.treesLookup = make(map[stdcomponents.CollisionLayer]int, 8)
 
 	// Fill trees
 	s.AABB.EachEntity(func(entity ecs.Entity) bool {
@@ -103,39 +102,19 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 	}
 	wg.Wait()
 
-	entities := s.AABB.RawEntities(make([]ecs.Entity, 0, s.AABB.Len()))
-
-	s.findEntityCollisions(entities)
-}
-
-func (s *CollisionDetectionBVHSystem) Destroy() {}
-
-func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity) {
-	var wg sync.WaitGroup
-	entitiesLength := len(entities)
-	// get minimum 1 worker for small amount of entities, and maximum maxNumWorkers for a lot of entities
-	numWorkers := max(min(entitiesLength/128, maxNumWorkers), 1)
-	chunkSize := entitiesLength / numWorkers
-
-	wg.Add(numWorkers)
-	for workedId := 0; workedId < numWorkers; workedId++ {
-		startIndex := workedId * chunkSize
-		endIndex := startIndex + chunkSize - 1
-		if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
-			endIndex = entitiesLength
-		}
-
-		go func(start int, end int, id int) {
-			defer wg.Done()
-
-			for i := range entities[start:end] {
-				entity := entities[i+startIndex]
-				s.broadPhase(entity, id)
-			}
-		}(startIndex, endIndex, workedId)
+	if len(s.entities) < s.AABB.Len() {
+		s.entities = make([]ecs.Entity, 0, s.AABB.Len())
 	}
-	// Wait for workers and close collision channel
-	wg.Wait()
+	s.entities = s.AABB.RawEntities(s.entities)
+	s.findEntityCollisions(s.entities)
+
+	// could be used, but needs a worker id info
+	//s.AABB.EachEntityParallel(func(entity ecs.Entity) bool {
+	//
+	//	potentialEntities := s.broadPhase(entity, make([]ecs.Entity, 0, 64))
+	//	s.narrowPhase(entity, potentialEntities, id)
+	//	return true
+	//})
 
 	for i := range s.collisionEvents {
 		events := &s.collisionEvents[i]
@@ -176,18 +155,48 @@ func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity
 	}
 }
 
-func (s *CollisionDetectionBVHSystem) broadPhase(entityA ecs.Entity, workerId int) {
+func (s *CollisionDetectionBVHSystem) Destroy() {}
+
+func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity) {
+	var wg sync.WaitGroup
+	entitiesLength := len(entities)
+	// get minimum 1 worker for small amount of entities, and maximum maxNumWorkers for a lot of entities
+	numWorkers := max(min(entitiesLength/128, maxNumWorkers), 1)
+	chunkSize := entitiesLength / numWorkers
+
+	wg.Add(numWorkers)
+	for workedId := 0; workedId < numWorkers; workedId++ {
+		startIndex := workedId * chunkSize
+		endIndex := startIndex + chunkSize - 1
+		if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
+			endIndex = entitiesLength
+		}
+
+		go func(start int, end int, id int) {
+			defer wg.Done()
+
+			for i := range entities[start:end] {
+				entityA := entities[i+startIndex]
+
+				potentialEntities := s.broadPhase(entityA, make([]ecs.Entity, 0, 64))
+				s.narrowPhase(entityA, potentialEntities, id)
+			}
+		}(startIndex, endIndex, workedId)
+	}
+	// Wait for workers and close collision channel
+	wg.Wait()
+}
+
+func (s *CollisionDetectionBVHSystem) broadPhase(entityA ecs.Entity, result []ecs.Entity) []ecs.Entity {
 	colliderA := s.GenericCollider.Get(entityA)
 	if colliderA.AllowSleep {
 		isSleeping := s.ColliderSleepStateComponentManager.Get(entityA)
 		if isSleeping != nil {
-			return
+			return result
 		}
 	}
 
 	aabb := s.AABB.Get(entityA)
-
-	result := make([]ecs.Entity, 0, 64)
 
 	// Iterate through all trees
 	for treeIndex := range s.trees {
@@ -202,72 +211,71 @@ func (s *CollisionDetectionBVHSystem) broadPhase(entityA ecs.Entity, workerId in
 		// Traverse this BVH tree for potential collisions
 		result = tree.Query(aabb, result)
 	}
+	return result
+}
 
-	for _, entityB := range result {
+func (s *CollisionDetectionBVHSystem) narrowPhase(entityA ecs.Entity, potentialEntities []ecs.Entity, workerId int) {
+	for _, entityB := range potentialEntities {
 		if entityA == entityB {
 			continue
 		}
 
+		colliderA := s.GenericCollider.Get(entityA)
 		colliderB := s.GenericCollider.Get(entityB)
-		if collision, ok := s.narrowPhase(colliderA, colliderB, entityA, entityB); ok {
-			s.collisionEvents[workerId].Append(collision)
+		posA := s.Positions.Get(entityA)
+		posB := s.Positions.Get(entityB)
+		scaleA := s.Scales.Get(entityA)
+		scaleB := s.Scales.Get(entityB)
+		rotA := s.Rotations.Get(entityA)
+		rotB := s.Rotations.Get(entityB)
+		transformA := stdcomponents.Transform2d{
+			Position: posA.XY,
+			Rotation: rotA.Angle,
+			Scale:    scaleA.XY,
 		}
-	}
-}
-
-func (s *CollisionDetectionBVHSystem) narrowPhase(colliderA, colliderB *stdcomponents.GenericCollider, entityA, entityB ecs.Entity) (e CollisionEvent, ok bool) {
-	posA := s.Positions.Get(entityA)
-	posB := s.Positions.Get(entityB)
-	scaleA := s.Scales.Get(entityA)
-	scaleB := s.Scales.Get(entityB)
-	rotA := s.Rotations.Get(entityA)
-	rotB := s.Rotations.Get(entityB)
-	transformA := stdcomponents.Transform2d{
-		Position: posA.XY,
-		Rotation: rotA.Angle,
-		Scale:    scaleA.XY,
-	}
-	transformB := stdcomponents.Transform2d{
-		Position: posB.XY,
-		Rotation: rotB.Angle,
-		Scale:    scaleB.XY,
-	}
-
-	circleA := s.CircleColliders.Get(entityA)
-	circleB := s.CircleColliders.Get(entityB)
-	if circleA != nil && circleB != nil {
-		radiusA := circleA.Radius * scaleA.XY.X
-		radiusB := circleB.Radius * scaleB.XY.X
-		if transformA.Position.Distance(transformB.Position) < radiusA+radiusB {
-			return CollisionEvent{
-				entityA:  entityA,
-				entityB:  entityB,
-				position: transformA.Position,
-				normal:   transformB.Position.Sub(transformA.Position).Normalize(),
-				depth:    radiusA + radiusB - transformB.Position.Distance(transformA.Position),
-			}, true
+		transformB := stdcomponents.Transform2d{
+			Position: posB.XY,
+			Rotation: rotB.Angle,
+			Scale:    scaleB.XY,
 		}
-	}
 
-	// GJK strategy
-	colA := s.getGjkCollider(colliderA, entityA)
-	colB := s.getGjkCollider(colliderB, entityB)
-	// First detect collision using GJK
-	simplex, collision := gjk.CheckCollision(colA, colB, &transformA, &transformB)
-	if !collision {
-		return e, false
-	}
+		circleA := s.CircleColliders.Get(entityA)
+		circleB := s.CircleColliders.Get(entityB)
+		if circleA != nil && circleB != nil {
+			radiusA := circleA.Radius * scaleA.XY.X
+			radiusB := circleB.Radius * scaleB.XY.X
+			if transformA.Position.Distance(transformB.Position) < radiusA+radiusB {
+				s.collisionEvents[workerId].Append(CollisionEvent{
+					entityA:  entityA,
+					entityB:  entityB,
+					position: transformA.Position,
+					normal:   transformB.Position.Sub(transformA.Position).Normalize(),
+					depth:    radiusA + radiusB - transformB.Position.Distance(transformA.Position),
+				})
+				continue
+			}
+		}
 
-	// If collision detected, get penetration details using EPA
-	normal, depth := gjk.EPA(colA, colB, &transformA, &transformB, &simplex)
-	position := posA.XY.Add(posB.XY.Sub(posA.XY))
-	return CollisionEvent{
-		entityA:  entityA,
-		entityB:  entityB,
-		position: position,
-		normal:   normal,
-		depth:    depth,
-	}, true
+		// GJK strategy
+		colA := s.getGjkCollider(colliderA, entityA)
+		colB := s.getGjkCollider(colliderB, entityB)
+		// First detect collision using GJK
+		simplex, collision := gjk.CheckCollision(colA, colB, &transformA, &transformB)
+		if !collision {
+			continue
+		}
+
+		// If collision detected, get penetration details using EPA
+		normal, depth := gjk.EPA(colA, colB, &transformA, &transformB, &simplex)
+		position := posA.XY.Add(posB.XY.Sub(posA.XY))
+		s.collisionEvents[workerId].Append(CollisionEvent{
+			entityA:  entityA,
+			entityB:  entityB,
+			position: position,
+			normal:   normal,
+			depth:    depth,
+		})
+	}
 }
 
 func (s *CollisionDetectionBVHSystem) processExitStates() {

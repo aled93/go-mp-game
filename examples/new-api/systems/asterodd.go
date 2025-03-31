@@ -20,6 +20,8 @@ import (
 	"gomp/examples/new-api/entities"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
+	"gomp/vectors"
+	"math/rand"
 	"time"
 )
 
@@ -28,14 +30,15 @@ func NewAssteroddSystem() AssteroddSystem {
 }
 
 type AssteroddSystem struct {
-	EntityManager *ecs.EntityManager
-	Positions     *stdcomponents.PositionComponentManager
-	Rotations     *stdcomponents.RotationComponentManager
-	Scales        *stdcomponents.ScaleComponentManager
-	Velocities    *stdcomponents.VelocityComponentManager
-	Sprites       *stdcomponents.SpriteComponentManager
-	BoxColliders  *stdcomponents.BoxColliderComponentManager
-	RigidBodies   *stdcomponents.RigidBodyComponentManager
+	EntityManager   *ecs.EntityManager
+	Positions       *stdcomponents.PositionComponentManager
+	Rotations       *stdcomponents.RotationComponentManager
+	Scales          *stdcomponents.ScaleComponentManager
+	Velocities      *stdcomponents.VelocityComponentManager
+	Sprites         *stdcomponents.SpriteComponentManager
+	BoxColliders    *stdcomponents.BoxColliderComponentManager
+	CircleColliders *stdcomponents.CircleColliderComponentManager
+	RigidBodies     *stdcomponents.RigidBodyComponentManager
 
 	PlayerTags       *components.PlayerTagComponentManager
 	AsteroidTags     *components.AsteroidComponentManager
@@ -97,6 +100,25 @@ func (s *AssteroddSystem) Init() {
 	entities.CreateWall(&wallManager, 0, 5000, 0, 5000, 1000)
 	entities.CreateWall(&wallManager, -1000, -1000, 0, 1000, 7000)
 	entities.CreateWall(&wallManager, 5000, -1000, 0, 1000, 7000)
+
+	for range 30000 {
+		randPos := vectors.Vec2{
+			X: float32(rand.Intn(5000)),
+			Y: float32(rand.Intn(5000)),
+		}
+		entities.CreateBullet(entities.CreateBulletManagers{
+			EntityManager:   s.EntityManager,
+			Positions:       s.Positions,
+			Rotations:       s.Rotations,
+			Scales:          s.Scales,
+			Velocities:      s.Velocities,
+			CircleColliders: s.CircleColliders,
+			RigidBodies:     s.RigidBodies,
+			Sprites:         s.Sprites,
+			BulletTags:      s.BulletTags,
+			Hps:             s.Hps,
+		}, randPos.X, randPos.Y, 0, 0, 0)
+	}
 
 	manager := s.EntityManager.Create()
 	s.SceneManager.Create(manager, components.AsteroidSceneManager{})

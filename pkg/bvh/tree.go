@@ -57,6 +57,8 @@ type Tree struct {
 	codes      ecs.PagedArray[uint32]
 	components ecs.PagedArray[component]
 	layer      stdcomponents.CollisionLayer
+
+	componentsSlice []component
 }
 
 func (t *Tree) AddComponent(entity ecs.Entity, aabb *stdcomponents.AABB) {
@@ -78,15 +80,19 @@ func (t *Tree) Build() {
 	t.codes.Reset()
 
 	// Extract and sort components by morton code
-	var componentsSlice = t.components.Raw(make([]component, 0, t.components.Len()))
+	if cap(t.componentsSlice) < t.components.Len() {
+		t.componentsSlice = make([]component, 0, t.components.Len())
+	}
 
-	slices.SortFunc(componentsSlice, func(a, b component) int {
+	t.componentsSlice = t.components.Raw(t.componentsSlice)
+
+	slices.SortFunc(t.componentsSlice, func(a, b component) int {
 		return int(a.code - b.code)
 	})
 
 	// Add leaves
-	for i := range componentsSlice {
-		component := &componentsSlice[i]
+	for i := range t.componentsSlice {
+		component := &t.componentsSlice[i]
 		t.leaves.Append(leaf{id: component.entity})
 		t.aabbLeaves.Append(component.aabb)
 		t.codes.Append(component.code)
@@ -129,10 +135,8 @@ func (t *Tree) Build() {
 
 			// Create left and right nodes
 			leftIndex := t.nodes.Len()
-			t.nodes.Append(node{-1})
-			t.nodes.Append(node{-1})
-			t.aabbNodes.Append(stdcomponents.AABB{})
-			t.aabbNodes.Append(stdcomponents.AABB{})
+			t.nodes.Append(node{-1}, node{-1})
+			t.aabbNodes.Append(stdcomponents.AABB{}, stdcomponents.AABB{})
 
 			// Set parent's childIndex to leftIndex
 			t.nodes.Get(task.parentIndex).childIndex = int32(leftIndex)
@@ -172,6 +176,7 @@ func (t *Tree) Build() {
 			t.aabbNodes.Set(task.parentIndex, merged)
 		}
 	}
+	t.components.Reset()
 }
 
 func (t *Tree) Layer() stdcomponents.CollisionLayer {
@@ -185,12 +190,12 @@ func (t *Tree) Query(aabb *stdcomponents.AABB, result []ecs.Entity) []ecs.Entity
 
 	// Use stack-based traversal
 	const stackSize = 32
-	stack := [stackSize]int{0}
+	stack := [stackSize]int32{0}
 	stackLen := 1
 
 	for stackLen > 0 {
 		stackLen--
-		nodeIndex := stack[stackLen]
+		nodeIndex := int(stack[stackLen])
 		a := t.aabbNodes.Get(nodeIndex)
 		b := aabb
 
@@ -208,8 +213,8 @@ func (t *Tree) Query(aabb *stdcomponents.AABB, result []ecs.Entity) []ecs.Entity
 		}
 
 		// Push child indices (right and left) onto the stack.
-		stack[stackLen] = int(node.childIndex + 1)
-		stack[stackLen+1] = int(node.childIndex)
+		stack[stackLen] = node.childIndex + 1
+		stack[stackLen+1] = node.childIndex
 		stackLen += 2
 	}
 

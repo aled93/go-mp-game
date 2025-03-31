@@ -22,7 +22,7 @@ type PagedArray[T any] struct {
 
 func NewPagedArray[T any]() (a PagedArray[T]) {
 	a.book = make([]ArrayPage[T], 2, initialBookSize)
-	a.parallelCount = uint8(runtime.NumCPU()) / 2
+	a.parallelCount = uint8(runtime.NumCPU()) - 2
 
 	return a
 }
@@ -63,26 +63,31 @@ func (a *PagedArray[T]) Set(index int, value T) *T {
 	return &page.data[index]
 }
 
-func (a *PagedArray[T]) Append(value T) *T {
-	if a.currentPageIndex >= len(a.book) {
-		newBooks := make([]ArrayPage[T], len(a.book)*2)
-		a.book = append(a.book, newBooks...)
-	}
-
-	page := &a.book[a.currentPageIndex]
-
-	if page.len == pageSize {
-		a.currentPageIndex++
+func (a *PagedArray[T]) Append(values ...T) *T {
+	var result *T
+	for i := range values {
+		value := values[i]
 		if a.currentPageIndex >= len(a.book) {
 			newBooks := make([]ArrayPage[T], len(a.book)*2)
 			a.book = append(a.book, newBooks...)
 		}
-		page = &a.book[a.currentPageIndex]
+
+		page := &a.book[a.currentPageIndex]
+
+		if page.len == pageSize {
+			a.currentPageIndex++
+			if a.currentPageIndex >= len(a.book) {
+				newBooks := make([]ArrayPage[T], len(a.book)*2)
+				a.book = append(a.book, newBooks...)
+			}
+			page = &a.book[a.currentPageIndex]
+		}
+		page.data[page.len] = value
+		result = &page.data[page.len]
+		page.len++
+		a.len++
 	}
-	page.data[page.len] = value
-	result := &page.data[page.len]
-	page.len++
-	a.len++
+
 	return result
 }
 
