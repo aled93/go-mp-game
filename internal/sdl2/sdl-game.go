@@ -125,21 +125,61 @@ func must(err error) {
 	}
 }
 
-// this is bad approach to draw a text because of creating a texture on each text change on each frame
-// it should be a texture atlas with a rendered chars, and then you copy part of it to the destination char by char
-func drawText(renderer *sdl.Renderer, font *ttf.Font, x, y int, text string) error {
-	surface, err := font.RenderUTF8Blended(text, sdl.Color{R: 255, G: 255, B: 255, A: 255})
-	if err != nil {
-		return err
-	}
-	defer surface.Free()
+// Cache all char textures on the fly
+// TODO: preload all chars initially (maybe +1FPS)
+var letterCache [256]*sdl.Texture
 
-	texture, err := renderer.CreateTextureFromSurface(surface)
-	if err != nil {
-		return err
-	}
-	defer texture.Destroy()
+func drawText(renderer *sdl.Renderer, font *ttf.Font, x, y int32, text string) error {
+	var totalWidth int32
+	var maxHeight int32
 
-	dst := sdl.Rect{X: int32(x), Y: int32(y), W: surface.W, H: surface.H}
-	return renderer.Copy(texture, nil, &dst)
+	for _, char := range text {
+		if char < 256 {
+			if texture := letterCache[char]; texture != nil {
+				_, _, w, h, err := texture.Query()
+				if err != nil {
+					return err
+				}
+				dst := sdl.Rect{X: x + totalWidth, Y: y, W: w, H: h}
+				if err := renderer.Copy(texture, nil, &dst); err != nil {
+					return err
+				}
+				totalWidth += w
+				if h > maxHeight {
+					maxHeight = h
+				}
+				continue
+			}
+		}
+
+		surface, err := font.RenderUTF8Blended(string(char), sdl.Color{R: 255, G: 255, B: 255, A: 255})
+		if err != nil {
+			return err
+		}
+		defer surface.Free()
+
+		texture, err := renderer.CreateTextureFromSurface(surface)
+		if err != nil {
+			return err
+		}
+		if char < 256 {
+			letterCache[char] = texture
+		}
+
+		_, _, w, h, err := texture.Query()
+		if err != nil {
+			return err
+		}
+
+		dst := sdl.Rect{X: x + totalWidth, Y: y, W: w, H: h}
+		if err := renderer.Copy(texture, nil, &dst); err != nil {
+			return err
+		}
+		totalWidth += w
+		if h > maxHeight {
+			maxHeight = h
+		}
+	}
+
+	return nil
 }
