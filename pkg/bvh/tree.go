@@ -78,12 +78,10 @@ func (t *Tree) Build() {
 	t.codes.Reset()
 
 	// Extract and sort components by morton code
-	var componentsSlice = make([]component, 0, t.components.Len())
-	for i := 0; i < t.components.Len(); i++ {
-		componentsSlice = append(componentsSlice, t.components.GetValue(i))
-	}
+	var componentsSlice = t.components.Raw(make([]component, 0, t.components.Len()))
+
 	slices.SortFunc(componentsSlice, func(a, b component) int {
-		return int(a.code) - int(b.code)
+		return int(a.code - b.code)
 	})
 
 	// Add leaves
@@ -187,14 +185,12 @@ func (t *Tree) Query(aabb *stdcomponents.AABB, result []ecs.Entity) []ecs.Entity
 
 	// Use stack-based traversal
 	const stackSize = 32
-	stack := [stackSize]int{}
-	stackPtr := 0
-	stack[stackPtr] = 0
-	stackPtr++
+	stack := [stackSize]int{0}
+	stackLen := 1
 
-	for stackPtr > 0 {
-		stackPtr--
-		nodeIndex := stack[stackPtr]
+	for stackLen > 0 {
+		stackLen--
+		nodeIndex := stack[stackLen]
 		a := t.aabbNodes.Get(nodeIndex)
 		b := aabb
 
@@ -212,9 +208,9 @@ func (t *Tree) Query(aabb *stdcomponents.AABB, result []ecs.Entity) []ecs.Entity
 		}
 
 		// Push child indices (right and left) onto the stack.
-		stack[stackPtr] = int(node.childIndex + 1)
-		stack[stackPtr+1] = int(node.childIndex)
-		stackPtr += 2
+		stack[stackLen] = int(node.childIndex + 1)
+		stack[stackLen+1] = int(node.childIndex)
+		stackLen += 2
 	}
 
 	return result
