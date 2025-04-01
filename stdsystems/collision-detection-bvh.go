@@ -20,7 +20,6 @@ import (
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"gomp/vectors"
-	"image/color"
 	"runtime"
 	"sync"
 	"time"
@@ -104,28 +103,28 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 	}
 	wg.Wait()
 
-	s.BvhTreeComponentManager.EachEntity(func(entity ecs.Entity) bool {
-		s.EntityManager.Delete(entity)
-		return true
-	})
-
-	for i := range s.trees {
-		tree := s.trees[i]
-		treeColor := color.RGBA{
-			R: uint8(i * 255 / len(s.trees)),
-			G: uint8((i + 1) * 255 / len(s.trees)),
-			B: uint8((i + 2) * 255 / len(s.trees)),
-			A: 10,
-		}
-		tree.AabbNodes.AllData(func(aabb *stdcomponents.AABB) bool {
-			e := s.EntityManager.Create()
-			s.BvhTreeComponentManager.Create(e, stdcomponents.BvhTree{
-				Color: treeColor,
-			})
-			s.AABB.Create(e, *aabb)
-			return true
-		})
-	}
+	//s.BvhTreeComponentManager.EachEntity(func(entity ecs.Entity) bool {
+	//	s.EntityManager.Delete(entity)
+	//	return true
+	//})
+	//
+	//for i := range s.trees {
+	//	tree := s.trees[i]
+	//	treeColor := color.RGBA{
+	//		R: uint8(i * 255 / len(s.trees)),
+	//		G: uint8((i + 1) * 255 / len(s.trees)),
+	//		B: uint8((i + 2) * 255 / len(s.trees)),
+	//		A: 10,
+	//	}
+	//	tree.AabbNodes.AllData(func(aabb *stdcomponents.AABB) bool {
+	//		e := s.EntityManager.Create()
+	//		s.BvhTreeComponentManager.Create(e, stdcomponents.BvhTree{
+	//			Color: treeColor,
+	//		})
+	//		s.AABB.Create(e, *aabb)
+	//		return true
+	//	})
+	//}
 
 	if len(s.entities) < s.AABB.Len() {
 		s.entities = make([]ecs.Entity, 0, s.AABB.Len())
@@ -204,6 +203,9 @@ func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity
 				entityA := entities[i+startIndex]
 
 				potentialEntities := s.broadPhase(entityA, make([]ecs.Entity, 0, 64))
+				if len(potentialEntities) == 0 {
+					continue
+				}
 				s.narrowPhase(entityA, potentialEntities, id)
 			}
 		}(startIndex, endIndex, workedId)
@@ -277,8 +279,8 @@ func (s *CollisionDetectionBVHSystem) narrowPhase(entityA ecs.Entity, potentialE
 					normal:   transformB.Position.Sub(transformA.Position).Normalize(),
 					depth:    radiusA + radiusB - transformB.Position.Distance(transformA.Position),
 				})
-				continue
 			}
+			continue
 		}
 
 		// GJK strategy
