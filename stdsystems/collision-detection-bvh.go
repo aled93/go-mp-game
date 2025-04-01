@@ -20,6 +20,7 @@ import (
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"gomp/vectors"
+	"image/color"
 	"runtime"
 	"sync"
 	"time"
@@ -49,6 +50,7 @@ type CollisionDetectionBVHSystem struct {
 	SpatialIndex                       *stdcomponents.SpatialIndexComponentManager
 	AABB                               *stdcomponents.AABBComponentManager
 	ColliderSleepStateComponentManager *stdcomponents.ColliderSleepStateComponentManager
+	BvhTreeComponentManager            *stdcomponents.BvhTreeComponentManager
 
 	trees       []bvh.Tree
 	treesLookup map[stdcomponents.CollisionLayer]int
@@ -70,12 +72,12 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 	s.currentCollisions = make(map[CollisionPair]struct{})
 	defer s.processExitStates()
 
-	if s.AABB.Len() == 0 {
+	if s.GenericCollider.Len() == 0 {
 		return
 	}
 
 	// Fill trees
-	s.AABB.EachEntity(func(entity ecs.Entity) bool {
+	s.GenericCollider.EachEntity(func(entity ecs.Entity) bool {
 		aabb := s.AABB.Get(entity)
 		layer := s.GenericCollider.Get(entity).Layer
 
@@ -102,10 +104,33 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 	}
 	wg.Wait()
 
+	s.BvhTreeComponentManager.EachEntity(func(entity ecs.Entity) bool {
+		s.EntityManager.Delete(entity)
+		return true
+	})
+
+	for i := range s.trees {
+		tree := s.trees[i]
+		treeColor := color.RGBA{
+			R: uint8(i * 255 / len(s.trees)),
+			G: uint8((i + 1) * 255 / len(s.trees)),
+			B: uint8((i + 2) * 255 / len(s.trees)),
+			A: 10,
+		}
+		tree.AabbNodes.AllData(func(aabb *stdcomponents.AABB) bool {
+			e := s.EntityManager.Create()
+			s.BvhTreeComponentManager.Create(e, stdcomponents.BvhTree{
+				Color: treeColor,
+			})
+			s.AABB.Create(e, *aabb)
+			return true
+		})
+	}
+
 	if len(s.entities) < s.AABB.Len() {
 		s.entities = make([]ecs.Entity, 0, s.AABB.Len())
 	}
-	s.entities = s.AABB.RawEntities(s.entities)
+	s.entities = s.GenericCollider.RawEntities(s.entities)
 	s.findEntityCollisions(s.entities)
 
 	// could be used, but needs a worker id info

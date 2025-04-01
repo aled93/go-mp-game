@@ -16,20 +16,15 @@ package stdcomponents
 
 import (
 	"gomp/pkg/ecs"
-	"gomp/vectors"
+	"image/color"
 )
 
-type AABB struct {
-	Min vectors.Vec2
-	Max vectors.Vec2
+type BvhTree struct {
+	Color color.RGBA
 }
 
-func (a *AABB) Center() vectors.Vec2 {
-	return a.Min.Add(a.Max).Scale(0.5)
-}
+type BvhTreeComponentManager = ecs.ComponentManager[BvhTree]
 
-type AABBComponentManager = ecs.ComponentManager[AABB]
-
-func NewAABBComponentManager() AABBComponentManager {
-	return ecs.NewComponentManager[AABB](AABBComponentId)
+func NewBvhTreeComponentManager() BvhTreeComponentManager {
+	return ecs.NewComponentManager[BvhTree](BvhTreeComponentId)
 }

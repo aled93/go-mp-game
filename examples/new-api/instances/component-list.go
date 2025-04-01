@@ -43,6 +43,7 @@ type ComponentList struct {
 	AABB               stdcomponents.AABBComponentManager
 	SpatialIndex       stdcomponents.SpatialIndexComponentManager
 	RigidBody          stdcomponents.RigidBodyComponentManager
+	BvhTree            stdcomponents.BvhTreeComponentManager
 
 	Health               components.HpComponentManager
 	Controller           components.ControllerComponentManager
@@ -82,6 +83,7 @@ func NewComponentList() ComponentList {
 		AABB:               stdcomponents.NewAABBComponentManager(),
 		SpatialIndex:       stdcomponents.NewSpatialIndexComponentManager(),
 		RigidBody:          stdcomponents.NewRigidBodyComponentManager(),
+		BvhTree:            stdcomponents.NewBvhTreeComponentManager(),
 
 		Health:               components.NewHealthComponentManager(),
 		Controller:           components.NewControllerComponentManager(),

@@ -10,6 +10,7 @@ import (
 	"gomp/pkg/ecs"
 )
 
+// StdComponentIds MUST always be the last
 const (
 	InvalidComponentId ecs.ComponentId = iota
 	TransformComponentId
@@ -38,5 +39,6 @@ const (
 	SpatialIndexComponentId
 	AABBComponentId
 	RigidBodyComponentId
+	BvhTreeComponentId
 	StdComponentIds
 )

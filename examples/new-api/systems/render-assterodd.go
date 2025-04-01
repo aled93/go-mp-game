@@ -51,6 +51,7 @@ type RenderAssteroddSystem struct {
 	AABBs                              *stdcomponents.AABBComponentManager
 	Collisions                         *stdcomponents.CollisionComponentManager
 	ColliderSleepStateComponentManager *stdcomponents.ColliderSleepStateComponentManager
+	BvhTrees                           *stdcomponents.BvhTreeComponentManager
 	renderList                         []renderEntry
 	instanceData                       []stdcomponents.RLTexturePro
 	camera                             rl.Camera2D
@@ -212,12 +213,17 @@ func (s *RenderAssteroddSystem) render() {
 		rl.BeginMode2D(s.camera)
 		s.AABBs.EachEntity(func(e ecs.Entity) bool {
 			aabb := s.AABBs.Get(e)
-			color := rl.Green
+			clr := rl.Green
 			isSleeping := s.ColliderSleepStateComponentManager.Get(e)
 			if isSleeping != nil {
-				color = rl.Blue
+				clr = rl.Blue
 			}
-			rl.DrawRectangleLines(int32(aabb.Min.X), int32(aabb.Min.Y), int32(aabb.Max.X-aabb.Min.X), int32(aabb.Max.Y-aabb.Min.Y), color)
+			isTree := s.BvhTrees.Get(e)
+			if isTree != nil {
+				rl.DrawRectangle(int32(aabb.Min.X), int32(aabb.Min.Y), int32(aabb.Max.X-aabb.Min.X), int32(aabb.Max.Y-aabb.Min.Y), isTree.Color)
+				return true
+			}
+			rl.DrawRectangleLines(int32(aabb.Min.X), int32(aabb.Min.Y), int32(aabb.Max.X-aabb.Min.X), int32(aabb.Max.Y-aabb.Min.Y), clr)
 			return true
 		})
 		s.Collisions.EachEntity(func(entity ecs.Entity) bool {
