@@ -206,7 +206,10 @@ func (t *Tree) Query(aabb *stdcomponents.AABB, result []ecs.Entity) []ecs.Entity
 		if node.childIndex <= 0 {
 			// Is a leaf
 			index := -int(node.childIndex)
-			result = append(result, t.leaves.Get(index).id)
+			leafAabb := t.AabbLeaves.GetValue(index)
+			if t.aabbOverlap(leafAabb, aabb) {
+				result = append(result, t.leaves.Get(index).id)
+			}
 			continue
 		}
 
