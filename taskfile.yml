@@ -2,6 +2,8 @@ version: "3"
 
 tasks:
   dev:
+    env:
+      CGO_ENABLED: 1
     cmds:
       - go run ./examples/new-api/game.go
 

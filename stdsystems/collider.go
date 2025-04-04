@@ -14,7 +14,6 @@ Thank you for your support!
 
 package stdsystems
 
-import "C"
 import (
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
