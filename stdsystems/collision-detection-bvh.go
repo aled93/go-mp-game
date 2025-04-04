@@ -20,6 +20,7 @@ import (
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"gomp/vectors"
+	"math"
 	"runtime"
 	"sync"
 	"time"
@@ -59,12 +60,20 @@ type CollisionDetectionBVHSystem struct {
 	activeCollisions  map[CollisionPair]ecs.Entity // Maps collision pairs to proxy entities
 	currentCollisions map[CollisionPair]struct{}
 	entities          []ecs.Entity
+	cells             map[[2]int]struct {
+		Ents map[stdcomponents.CollisionLayer][]ecs.Entity
+	}
 }
+
+const CELL_SIZE = 64.0
 
 func (s *CollisionDetectionBVHSystem) Init() {
 	for i := range maxNumWorkers {
 		s.collisionEvents[i] = ecs.NewPagedArray[CollisionEvent]()
 	}
+	s.cells = map[[2]int]struct {
+		Ents map[stdcomponents.CollisionLayer][]ecs.Entity
+	}{}
 }
 
 func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
@@ -88,6 +97,36 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 		}
 
 		s.trees[treeId].AddComponent(entity, *aabb)
+
+		return true
+	})
+
+	// Fill grid
+	clear(s.cells)
+	s.GenericCollider.EachEntity(func(entity ecs.Entity) bool {
+		aabb := s.AABB.Get(entity)
+		layer := s.GenericCollider.Get(entity).Layer
+
+		xLo := int(math.Floor(float64(aabb.Min.X) / CELL_SIZE))
+		xHi := int(math.Floor(float64(aabb.Max.X) / CELL_SIZE))
+		yLo := int(math.Floor(float64(aabb.Min.Y) / CELL_SIZE))
+		yHi := int(math.Floor(float64(aabb.Max.Y) / CELL_SIZE))
+		for y := yLo; y <= yHi; y++ {
+			for x := xLo; x <= xHi; x++ {
+				key := [2]int{x, y}
+				cell, ok := s.cells[key]
+				if !ok {
+					cell = struct {
+						Ents map[stdcomponents.CollisionLayer][]ecs.Entity
+					}{
+						Ents: map[stdcomponents.CollisionLayer][]ecs.Entity{},
+					}
+					s.cells[key] = cell
+				}
+				cell.Ents[layer] = append(cell.Ents[layer], entity)
+				s.cells[key] = cell
+			}
+		}
 
 		return true
 	})
@@ -199,14 +238,16 @@ func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity
 		go func(start int, end int, id int) {
 			defer wg.Done()
 
+			potentialEntities := make([]ecs.Entity, 0, 64)
 			for i := range entities[start:end] {
 				entityA := entities[i+startIndex]
 
-				potentialEntities := s.broadPhase(entityA, make([]ecs.Entity, 0, 64))
+				potentialEntities := s.broadPhase(entityA, potentialEntities)
 				if len(potentialEntities) == 0 {
 					continue
 				}
 				s.narrowPhase(entityA, potentialEntities, id)
+				clear(potentialEntities)
 			}
 		}(startIndex, endIndex, workedId)
 	}
@@ -224,6 +265,26 @@ func (s *CollisionDetectionBVHSystem) broadPhase(entityA ecs.Entity, result []ec
 	}
 
 	aabb := s.AABB.Get(entityA)
+
+	xLo := int(math.Floor(float64(aabb.Min.X) / CELL_SIZE))
+	xHi := int(math.Floor(float64(aabb.Max.X) / CELL_SIZE))
+	yLo := int(math.Floor(float64(aabb.Min.Y) / CELL_SIZE))
+	yHi := int(math.Floor(float64(aabb.Max.Y) / CELL_SIZE))
+	for y := yLo; y <= yHi; y++ {
+		for x := xLo; x <= xHi; x++ {
+			key := [2]int{x, y}
+			cell, ok := s.cells[key]
+			if !ok {
+				continue
+			}
+			for l, ents := range cell.Ents {
+				if colliderA.Mask.HasLayer(l) {
+					result = append(result, ents...)
+				}
+			}
+		}
+	}
+	return result
 
 	// Iterate through all trees
 	for treeIndex := range s.trees {
