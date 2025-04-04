@@ -36,7 +36,7 @@ type SpriteSystem struct {
 
 func (s *SpriteSystem) Init() {}
 func (s *SpriteSystem) Run() {
-	s.Sprites.EachEntityParallel(func(entity ecs.Entity) bool {
+	s.Sprites.EachEntity(func(entity ecs.Entity) bool {
 		sprite := s.Sprites.Get(entity) //
 		position := s.Positions.Get(entity)
 		scale := s.Scales.Get(entity)

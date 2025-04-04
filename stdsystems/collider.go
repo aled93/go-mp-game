@@ -41,7 +41,7 @@ type ColliderSystem struct {
 
 func (s *ColliderSystem) Init() {}
 func (s *ColliderSystem) Run(dt time.Duration) {
-	s.BoxColliders.EachEntityParallel(func(entity ecs.Entity) bool {
+	s.BoxColliders.EachEntity(func(entity ecs.Entity) bool {
 		boxCollider := s.BoxColliders.Get(entity)
 
 		genCollider := s.GenericColliders.Get(entity)
@@ -82,7 +82,7 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		return true
 	})
 
-	s.CircleColliders.EachEntityParallel(func(entity ecs.Entity) bool {
+	s.CircleColliders.EachEntity(func(entity ecs.Entity) bool {
 		circleCollider := s.CircleColliders.Get(entity)
 
 		genCollider := s.GenericColliders.Get(entity)
@@ -112,7 +112,7 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		return true
 	})
 
-	s.GenericColliders.EachEntityParallel(func(entity ecs.Entity) bool {
+	s.GenericColliders.EachEntity(func(entity ecs.Entity) bool {
 		genCollider := s.GenericColliders.Get(entity)
 
 		if genCollider.AllowSleep {

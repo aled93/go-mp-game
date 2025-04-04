@@ -32,7 +32,7 @@ type leaf struct {
 
 type component struct {
 	entity ecs.Entity
-	aabb   *stdcomponents.AABB
+	aabb   stdcomponents.AABB
 	code   uint64
 }
 
@@ -41,7 +41,7 @@ func NewTree(layer stdcomponents.CollisionLayer) Tree {
 		nodes:      ecs.NewPagedArray[node](),
 		AabbNodes:  ecs.NewPagedArray[stdcomponents.AABB](),
 		leaves:     ecs.NewPagedArray[leaf](),
-		AabbLeaves: ecs.NewPagedArray[*stdcomponents.AABB](),
+		AabbLeaves: ecs.NewPagedArray[stdcomponents.AABB](),
 		codes:      ecs.NewPagedArray[uint64](),
 		components: ecs.NewPagedArray[component](),
 		layer:      layer,
@@ -52,7 +52,7 @@ type Tree struct {
 	nodes      ecs.PagedArray[node]
 	AabbNodes  ecs.PagedArray[stdcomponents.AABB]
 	leaves     ecs.PagedArray[leaf]
-	AabbLeaves ecs.PagedArray[*stdcomponents.AABB]
+	AabbLeaves ecs.PagedArray[stdcomponents.AABB]
 	codes      ecs.PagedArray[uint64]
 	components ecs.PagedArray[component]
 	layer      stdcomponents.CollisionLayer
@@ -60,8 +60,8 @@ type Tree struct {
 	componentsSlice []component
 }
 
-func (t *Tree) AddComponent(entity ecs.Entity, aabb *stdcomponents.AABB) {
-	code := t.morton2D(aabb)
+func (t *Tree) AddComponent(entity ecs.Entity, aabb stdcomponents.AABB) {
+	code := t.morton2D(&aabb)
 	t.components.Append(component{
 		entity: entity,
 		aabb:   aabb,
@@ -125,7 +125,7 @@ func (t *Tree) Build() {
 			if task.start == task.end {
 				// Leaf node
 				t.nodes.Get(task.parentIndex).childIndex = -int32(task.start)
-				t.AabbNodes.Set(task.parentIndex, *t.AabbLeaves.GetValue(task.start))
+				t.AabbNodes.Set(task.parentIndex, t.AabbLeaves.GetValue(task.start))
 				continue
 			}
 
@@ -206,7 +206,7 @@ func (t *Tree) Query(aabb *stdcomponents.AABB, result []ecs.Entity) []ecs.Entity
 		if node.childIndex <= 0 {
 			// Is a leaf
 			index := -int(node.childIndex)
-			leafAabb := t.AabbLeaves.GetValue(index)
+			leafAabb := t.AabbLeaves.Get(index)
 			if t.aabbOverlap(leafAabb, aabb) {
 				result = append(result, t.leaves.Get(index).id)
 			}

@@ -168,7 +168,8 @@ func (c *ComponentManager[T]) Remove(entity Entity) {
 	c.assertBegin()
 	defer c.assertEnd()
 
-	index, _ := c.lookup.Get(entity)
+	index, exists := c.lookup.Get(entity)
+	assert.True(exists, "Entity does not have component")
 
 	lastIndex := c.components.Len() - 1
 	if index < lastIndex {

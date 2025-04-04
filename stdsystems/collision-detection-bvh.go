@@ -87,7 +87,7 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 			s.treesLookup[layer] = treeId
 		}
 
-		s.trees[treeId].AddComponent(entity, aabb)
+		s.trees[treeId].AddComponent(entity, *aabb)
 
 		return true
 	})
@@ -126,8 +126,8 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 	//	})
 	//}
 
-	if len(s.entities) < s.AABB.Len() {
-		s.entities = make([]ecs.Entity, 0, s.AABB.Len())
+	if len(s.entities) < s.GenericCollider.Len() {
+		s.entities = make([]ecs.Entity, 0, s.GenericCollider.Len())
 	}
 	s.entities = s.GenericCollider.RawEntities(s.entities)
 	s.findEntityCollisions(s.entities)
@@ -175,7 +175,7 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 			}
 			return true
 		})
-		s.collisionEvents[i].Reset()
+		events.Reset()
 	}
 }
 
