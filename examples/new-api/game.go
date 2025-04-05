@@ -15,47 +15,184 @@ Thank you for your support!
 package main
 
 import (
-	"github.com/hajimehoshi/go-steamworks"
-	"golang.org/x/text/language"
+	"errors"
 	"gomp"
-	"gomp/examples/new-api/scenes"
-	"os"
+	"gomp/examples/new-api/instances"
+	"gomp/pkg/ecs"
+	"gomp/stdsystems"
+	"time"
 )
 
-const appID = 12 // Rewrite this
-
-func initd() {
-	if steamworks.RestartAppIfNecessary(appID) {
-		os.Exit(1)
+func NewGame(initialScene gomp.AnyScene) Game {
+	game := Game{
+		worlds:       make([]instances.World, 0),
+		scenes:       make([]gomp.AnyScene, 0),
+		lookup:       make(map[gomp.SceneId]int),
+		renderSystem: stdsystems.NewRenderSystem(),
 	}
-	err := steamworks.Init()
+
+	game.LoadScene(initialScene)
+	game.SetActiveScene(initialScene.Id())
+
+	return game
+}
+
+type Game struct {
+	// Scenes
+	worlds         []instances.World
+	scenes         []gomp.AnyScene
+	lookup         map[gomp.SceneId]int
+	currentSceneId gomp.SceneId
+
+	// Systems
+	renderSystem stdsystems.RenderSystem
+
+	// Utils
+	shouldClose bool
+}
+
+func (g *Game) Init() {
+	g.renderSystem.Init()
+
+	for i := range g.scenes {
+		world := &g.worlds[i]
+		world.Init()
+
+		world.Systems.ColliderSystem.Init()
+		world.Systems.Velocity.Init()
+		world.Systems.CollisionDetectionBVH.Init()
+		world.Systems.CollisionResolution.Init()
+		world.Systems.AnimationSpriteMatrix.Init()
+		world.Systems.AnimationPlayer.Init()
+		world.Systems.SpriteMatrix.Init()
+		world.Systems.Sprite.Init()
+		world.Systems.YSort.Init()
+		world.Systems.Debug.Init()
+		world.Systems.AssetLib.Init()
+		world.Systems.Audio.Init()
+		world.Systems.SpatialAudio.Init()
+
+		g.scenes[i].Init(world)
+	}
+}
+
+func (g *Game) Update(dt time.Duration) {
+	for i := range g.scenes {
+		g.scenes[i].Update(dt)
+	}
+}
+
+func (g *Game) FixedUpdate(dt time.Duration) {
+	for i := range g.worlds {
+		world := &g.worlds[i]
+
+		world.Systems.ColliderSystem.Run(dt)
+		world.Systems.Velocity.Run(dt)
+		world.Systems.CollisionDetectionBVH.Run(dt)
+		world.Systems.CollisionResolution.Run(dt)
+
+		g.scenes[i].FixedUpdate(dt)
+	}
+}
+
+func (g *Game) Render(dt time.Duration) {
+	err := g.injectWorldToRender()
 	if err != nil {
-		panic("steamworks.Init failed")
+		panic("jfdk")
 	}
+
+	id := g.lookup[g.currentSceneId]
+	world := &g.worlds[id]
+
+	world.Systems.AnimationSpriteMatrix.Run()
+	world.Systems.AnimationPlayer.Run()
+	world.Systems.SpriteMatrix.Run()
+	world.Systems.Sprite.Run()
+	world.Systems.Debug.Run()
+	world.Systems.AssetLib.Run()
+	world.Systems.YSort.Run()
+	world.Systems.Audio.Run(dt)
+	world.Systems.SpatialAudio.Run(dt)
+
+	scene := g.scenes[g.lookup[g.currentSceneId]]
+	scene.Render(dt)
+
+	g.shouldClose = g.renderSystem.Run(dt)
 }
 
-func SystemLang() language.Tag {
-	switch steamworks.SteamApps().GetCurrentGameLanguage() {
-	case "russian":
-		return language.Russian
-	case "english":
-		return language.English
-	case "japanese":
-		return language.Japanese
+func (g *Game) Destroy() {
+	err := g.injectWorldToRender()
+	if err != nil {
+		panic("jfdk")
 	}
-	return language.Und
+
+	for i := range g.scenes {
+		g.scenes[i].Destroy()
+
+		world := &g.worlds[i]
+		world.Systems.Velocity.Destroy()
+		world.Systems.CollisionDetectionBVH.Destroy()
+		world.Systems.CollisionResolution.Destroy()
+		world.Systems.AnimationSpriteMatrix.Destroy()
+		world.Systems.AnimationPlayer.Destroy()
+		world.Systems.SpriteMatrix.Destroy()
+		world.Systems.Sprite.Destroy()
+		world.Systems.YSort.Destroy()
+		world.Systems.Debug.Destroy()
+		world.Systems.AssetLib.Destroy()
+		world.Systems.Audio.Destroy()
+		world.Systems.SpatialAudio.Destroy()
+
+		world.Destroy()
+	}
+
+	g.renderSystem.Destroy()
 }
 
-func main() {
-	//log.Println(SystemLang())
-	sceneList := scenes.NewSceneList()
+func (g *Game) ShouldDestroy() bool {
+	return g.shouldClose
+}
 
-	game := gomp.NewGame(
-		&sceneList.Main,
-		&sceneList.Assterodd,
-	)
-	game.CurrentSceneId = scenes.AssteroddSceneId
+func (g *Game) LoadScene(scene gomp.AnyScene) {
+	g.scenes = append(g.scenes, scene)
+	g.worlds = append(g.worlds, ecs.NewWorld(instances.NewComponentList(), instances.NewSystemList()))
+	g.lookup[scene.Id()] = len(g.scenes) - 1
+}
 
-	engine := gomp.NewEngine(&game)
-	engine.Run(50, 0)
+func (g *Game) SetActiveScene(id gomp.SceneId) {
+	g.currentSceneId = id
+}
+
+func (g *Game) injectWorldToRender() error {
+	id, exists := g.lookup[g.currentSceneId]
+	if !exists {
+		return errors.New("scene not found")
+	}
+
+	world := &g.worlds[id]
+
+	g.renderSystem.InjectWorld(
+		&stdsystems.RenderInjector{
+			EntityManager:                      &world.Entities,
+			RlTexturePros:                      &world.Components.RLTexturePro,
+			Positions:                          &world.Components.Position,
+			Rotations:                          &world.Components.Rotation,
+			Scales:                             &world.Components.Scale,
+			AnimationPlayers:                   &world.Components.AnimationPlayer,
+			Tints:                              &world.Components.Tint,
+			Flips:                              &world.Components.Flip,
+			Renderables:                        &world.Components.Renderable,
+			AnimationStates:                    &world.Components.AnimationState,
+			Sprites:                            &world.Components.Sprite,
+			SpriteMatrixes:                     &world.Components.SpriteMatrix,
+			RenderOrders:                       &world.Components.RenderOrder,
+			BoxColliders:                       &world.Components.ColliderBox,
+			CircleColliders:                    &world.Components.ColliderCircle,
+			AABBs:                              &world.Components.AABB,
+			Collisions:                         &world.Components.Collision,
+			ColliderSleepStateComponentManager: &world.Components.ColliderSleepState,
+			BvhTrees:                           &world.Components.BvhTree,
+		})
+
+	return nil
 }

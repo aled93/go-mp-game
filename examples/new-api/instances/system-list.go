@@ -41,8 +41,7 @@ func NewSystemList() SystemList {
 		ColliderSystem:           stdsystems.NewColliderSystem(),
 		CollisionResolution:      stdsystems.NewCollisionResolutionSystem(),
 
-		RenderAssterodd: systems.NewRenderAssteroddSystem(),
-		RenderBogdan:    systems.NewRenderBogdanSystem(),
+		RenderBogdan: systems.NewRenderBogdanSystem(),
 
 		Audio:        systems.NewAudioSystem(),
 		SpatialAudio: systems.NewSpatialAudioSystem(),
@@ -77,8 +76,7 @@ type SystemList struct {
 	ColliderSystem           stdsystems.ColliderSystem
 	CollisionResolution      stdsystems.CollisionResolutionSystem
 
-	RenderAssterodd systems.RenderAssteroddSystem
-	RenderBogdan    systems.RenderBogdanSystem
+	RenderBogdan systems.RenderBogdanSystem
 
 	Audio        systems.AudioSystem
 	SpatialAudio systems.SpatialAudioSystem

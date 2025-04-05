@@ -18,6 +18,13 @@ import (
 	"reflect"
 )
 
+type AnyWorld interface {
+	Init()
+	Destroy()
+	injectEntityManagerToComponents()
+	injectComponentsToSystems()
+}
+
 type World[C, S any] struct {
 	Entities   EntityManager
 	Components C

@@ -15,13 +15,14 @@ Thank you for your support!
 package gomp
 
 import (
+	"gomp/pkg/ecs"
 	"time"
 )
 
 type SceneId uint16
 
 type AnyScene interface {
-	Init()
+	Init(world ecs.AnyWorld)
 	Update(dt time.Duration) SceneId
 	FixedUpdate(dt time.Duration)
 	Render(dt time.Duration)

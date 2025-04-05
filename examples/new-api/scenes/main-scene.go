@@ -22,22 +22,20 @@ import (
 )
 
 func NewMainScene() MainScene {
-	return MainScene{
-		World: ecs.NewWorld(instances.NewComponentList(), instances.NewSystemList()),
-	}
+	return MainScene{}
 }
 
 type MainScene struct {
-	Game  *gomp.Game
-	World instances.World
+	Game  gomp.AnyGame
+	World *instances.World
 }
 
 func (s *MainScene) Id() gomp.SceneId {
 	return MainSceneId
 }
 
-func (s *MainScene) Init() {
-	s.World.Init()
+func (s *MainScene) Init(world ecs.AnyWorld) {
+	s.World = world.(*instances.World)
 
 	// Network receive
 	s.World.Systems.Network.Init()
@@ -93,11 +91,6 @@ func (s *MainScene) Render(dt time.Duration) {
 	s.World.Systems.AssetLib.Run()
 	s.World.Systems.YSort.Run()
 
-	shouldContinue := s.World.Systems.RenderBogdan.Run(dt)
-	if !shouldContinue {
-		s.Game.SetShouldDestroy(true)
-		return
-	}
 }
 
 func (s *MainScene) Destroy() {

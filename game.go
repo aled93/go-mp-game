@@ -15,8 +15,6 @@ Thank you for your support!
 package gomp
 
 import (
-	"github.com/negrel/assert"
-	"reflect"
 	"time"
 )
 
@@ -27,96 +25,4 @@ type AnyGame interface {
 	Render(dt time.Duration)
 	Destroy()
 	ShouldDestroy() bool
-}
-
-func NewGame(scenes ...AnyScene) Game {
-	sceneSet := make(map[SceneId]AnyScene, len(scenes))
-
-	for i := range len(scenes) {
-		id := scenes[i].Id()
-
-		_, exists := sceneSet[id]
-		assert.False(exists, "Scene with id %d already exists. Duplicating ids?", id)
-
-		sceneSet[id] = scenes[i]
-	}
-
-	game := Game{
-		Scenes:       sceneSet,
-		RenderSystem: NewRenderSystem(),
-	}
-
-	return game
-}
-
-type Game struct {
-	Scenes         map[SceneId]AnyScene
-	CurrentSceneId SceneId
-
-	shouldDestroy bool
-	RenderSystem  RenderSystem
-}
-
-func (g *Game) Init() {
-	for _, scene := range g.Scenes {
-		g.injectToScene(scene)
-	}
-
-	scene, ok := g.Scenes[g.CurrentSceneId]
-	assert.True(ok, "Scene not found")
-	g.RenderSystem.Init()
-	scene.Init()
-}
-
-func (g *Game) Update(dt time.Duration) {
-	// Scenes
-	scene, ok := g.Scenes[g.CurrentSceneId]
-	assert.True(ok, "Scene not found")
-	g.CurrentSceneId = scene.Update(dt)
-}
-
-func (g *Game) FixedUpdate(dt time.Duration) {
-	// Scenes
-	scene, ok := g.Scenes[g.CurrentSceneId]
-	assert.True(ok, "Scene not found")
-	scene.FixedUpdate(dt)
-}
-
-func (g *Game) Render(dt time.Duration) {
-	scene, ok := g.Scenes[g.CurrentSceneId]
-	assert.True(ok, "Scene not found")
-	scene.Render(dt)
-}
-
-func (g *Game) Destroy() {
-	scene, ok := g.Scenes[g.CurrentSceneId]
-	assert.True(ok, "Scene not found")
-	scene.Destroy()
-	g.RenderSystem.Destroy()
-}
-
-func (g *Game) ShouldDestroy() bool {
-	return g.shouldDestroy
-}
-
-func (g *Game) SetShouldDestroy(value bool) {
-	g.shouldDestroy = value
-}
-
-func (g *Game) injectToScene(scene AnyScene) {
-	reflectedScene := reflect.ValueOf(scene).Elem()
-	sceneLen := reflectedScene.NumField()
-
-	reflectedGame := reflect.ValueOf(g)
-	gameType := reflect.TypeOf(g)
-
-	for i := 0; i < sceneLen; i++ {
-		field := reflectedScene.Field(i)
-		fieldType := field.Type()
-
-		if fieldType == gameType {
-			reflectedScene.Field(i).Set(reflectedGame)
-			continue
-		}
-	}
 }
