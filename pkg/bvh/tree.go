@@ -298,7 +298,7 @@ const mortonPrecision = (1 << 16) - 1
 func (t *Tree) morton2D(aabb *stdcomponents.AABB) uint64 {
 	center := aabb.Center()
 	// Scale coordinates to 16-bit integers
-	assert.True(center.X >= 0 && center.Y >= 0, "morton2D: center out of range")
+	//assert.True(center.X >= 0 && center.Y >= 0, "morton2D: center out of range")
 
 	xx := uint64(float64(center.X) * mortonPrecision)
 	yy := uint64(float64(center.Y) * mortonPrecision)

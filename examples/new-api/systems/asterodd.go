@@ -103,9 +103,10 @@ func (s *AssteroddSystem) Init() {
 
 	for range 30000 {
 		randPos := vectors.Vec2{
-			X: float32(rand.Intn(5000)),
-			Y: float32(rand.Intn(5000)),
+			X: float32(rand.Intn(5000)) + float32(rand.Intn(1000))/10000,
+			Y: float32(rand.Intn(5000)) + float32(rand.Intn(1000))/10000,
 		}
+
 		entities.CreateBullet(entities.CreateBulletManagers{
 			EntityManager:   s.EntityManager,
 			Positions:       s.Positions,
@@ -118,6 +119,32 @@ func (s *AssteroddSystem) Init() {
 			BulletTags:      s.BulletTags,
 			Hps:             s.Hps,
 		}, randPos.X, randPos.Y, 0, 0, 0)
+
+		// bug case
+		//entities.CreateBullet(entities.CreateBulletManagers{
+		//	EntityManager:   s.EntityManager,
+		//	Positions:       s.Positions,
+		//	Rotations:       s.Rotations,
+		//	Scales:          s.Scales,
+		//	Velocities:      s.Velocities,
+		//	CircleColliders: s.CircleColliders,
+		//	RigidBodies:     s.RigidBodies,
+		//	Sprites:         s.Sprites,
+		//	BulletTags:      s.BulletTags,
+		//	Hps:             s.Hps,
+		//}, 4.1, 4.1, 0, 100, 100)
+		//entities.CreateBullet(entities.CreateBulletManagers{
+		//	EntityManager:   s.EntityManager,
+		//	Positions:       s.Positions,
+		//	Rotations:       s.Rotations,
+		//	Scales:          s.Scales,
+		//	Velocities:      s.Velocities,
+		//	CircleColliders: s.CircleColliders,
+		//	RigidBodies:     s.RigidBodies,
+		//	Sprites:         s.Sprites,
+		//	BulletTags:      s.BulletTags,
+		//	Hps:             s.Hps,
+		//}, -4.1, -4.1, 0, -100, -100)
 	}
 
 	manager := s.EntityManager.Create()

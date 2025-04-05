@@ -26,7 +26,7 @@ import (
 	"time"
 )
 
-const debugTree = true
+const debugTree = false
 
 var maxNumWorkers = runtime.NumCPU() - 1
 
