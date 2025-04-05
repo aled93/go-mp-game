@@ -15,9 +15,11 @@ Thank you for your support!
 package bvh
 
 import (
+	"github.com/negrel/assert"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"gomp/vectors"
+	"math"
 	"math/bits"
 	"slices"
 )
@@ -296,9 +298,13 @@ const mortonPrecision = (1 << 16) - 1
 func (t *Tree) morton2D(aabb *stdcomponents.AABB) uint64 {
 	center := aabb.Center()
 	// Scale coordinates to 16-bit integers
+	assert.True(center.X >= 0 && center.Y >= 0, "morton2D: center out of range")
 
-	xx := uint64(center.X * mortonPrecision)
-	yy := uint64(center.Y * mortonPrecision)
+	xx := uint64(float64(center.X) * mortonPrecision)
+	yy := uint64(float64(center.Y) * mortonPrecision)
+
+	assert.True(xx < math.MaxUint64, "morton2D: x out of range")
+	assert.True(yy < math.MaxUint64, "morton2D: y out of range")
 
 	// Spread the bits of x into the even positions
 	xx = (xx | (xx << 16)) & 0x0000FFFF0000FFFF
