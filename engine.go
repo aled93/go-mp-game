@@ -72,6 +72,7 @@ func (e *Engine) Run(tickrate uint, framerate uint) {
 			loops++
 		}
 		if loops >= MaxFrameSkips {
+			nextFixedUpdateAt = time.Now()
 			log.Println("Too many updates detected")
 		}
 
