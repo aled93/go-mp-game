@@ -40,5 +40,7 @@ const (
 	AABBComponentId
 	RigidBodyComponentId
 	BvhTreeComponentId
-	StdComponentIds
+	CollisionGridComponentId
+
+	StdComponentIds // StdComponentIds MUST always be the last
 )
