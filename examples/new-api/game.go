@@ -15,7 +15,6 @@ Thank you for your support!
 package main
 
 import (
-	"errors"
 	"gomp"
 	"gomp/examples/new-api/instances"
 	"gomp/pkg/ecs"
@@ -96,11 +95,6 @@ func (g *Game) FixedUpdate(dt time.Duration) {
 }
 
 func (g *Game) Render(dt time.Duration) {
-	err := g.injectWorldToRender()
-	if err != nil {
-		panic("jfdk")
-	}
-
 	id := g.lookup[g.currentSceneId]
 	world := &g.worlds[id]
 
@@ -121,11 +115,6 @@ func (g *Game) Render(dt time.Duration) {
 }
 
 func (g *Game) Destroy() {
-	err := g.injectWorldToRender()
-	if err != nil {
-		panic("jfdk")
-	}
-
 	for i := range g.scenes {
 		g.scenes[i].Destroy()
 
@@ -161,16 +150,9 @@ func (g *Game) LoadScene(scene gomp.AnyScene) {
 
 func (g *Game) SetActiveScene(id gomp.SceneId) {
 	g.currentSceneId = id
-}
 
-func (g *Game) injectWorldToRender() error {
-	id, exists := g.lookup[g.currentSceneId]
-	if !exists {
-		return errors.New("scene not found")
-	}
-
-	world := &g.worlds[id]
-
+	// Inject active scene world to render system
+	world := &g.worlds[g.lookup[g.currentSceneId]]
 	g.renderSystem.InjectWorld(
 		&stdsystems.RenderInjector{
 			EntityManager:                      &world.Entities,
@@ -193,6 +175,4 @@ func (g *Game) injectWorldToRender() error {
 			ColliderSleepStateComponentManager: &world.Components.ColliderSleepState,
 			BvhTrees:                           &world.Components.BvhTree,
 		})
-
-	return nil
 }
