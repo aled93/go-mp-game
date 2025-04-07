@@ -43,6 +43,13 @@ type CreateSpaceShipManagers struct {
 	SoundEffects     *components.SoundEffectsComponentManager
 }
 
+func createMask(layers ...stdcomponents.CollisionLayer) (mask stdcomponents.CollisionMask) {
+	for _, layer := range layers {
+		mask |= 1 << layer
+	}
+	return mask
+}
+
 func CreateSpaceShip(
 	props CreateSpaceShipManagers,
 	posX, posY float32,
@@ -87,8 +94,9 @@ func CreateSpaceShip(
 			X: 16,
 			Y: 16,
 		},
-		Layer: config.PlayerCollisionLayer,
-		Mask:  1<<config.EnemyCollisionLayer | 1<<config.WallCollisionLayer | 1<<config.BulletCollisionLayer,
+		Layer:      config.PlayerCollisionLayer,
+		Mask:       createMask(config.EnemyCollisionLayer, config.WallCollisionLayer, config.BulletCollisionLayer),
+		AllowSleep: false,
 	})
 
 	props.RigidBodies.Create(spaceShip, stdcomponents.RigidBody{

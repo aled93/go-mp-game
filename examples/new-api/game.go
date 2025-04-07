@@ -62,6 +62,7 @@ func (g *Game) Init() {
 
 		systems.ColliderSystem.Init()
 		systems.Velocity.Init()
+		systems.CollisionDetection.Init()
 		systems.CollisionDetectionBVH.Init()
 		systems.CollisionResolution.Init()
 		systems.AnimationSpriteMatrix.Init()
@@ -92,7 +93,8 @@ func (g *Game) FixedUpdate(dt time.Duration) {
 
 		systems.ColliderSystem.Run(dt)
 		systems.Velocity.Run(dt)
-		systems.CollisionDetectionBVH.Run(dt)
+		systems.CollisionDetection.Run(dt)
+		//systems.CollisionDetectionBVH.Run(dt)
 		systems.CollisionResolution.Run(dt)
 
 		scene.FixedUpdate(dt)
@@ -128,6 +130,7 @@ func (g *Game) Destroy() {
 		scene.Destroy()
 
 		systems.Velocity.Destroy()
+		systems.CollisionDetection.Destroy()
 		systems.CollisionDetectionBVH.Destroy()
 		systems.CollisionResolution.Destroy()
 		systems.AnimationSpriteMatrix.Destroy()
@@ -180,6 +183,7 @@ func (g *Game) SetActiveScene(id gomp.SceneId) {
 			Collisions:                         &components.Collision,
 			ColliderSleepStateComponentManager: &components.ColliderSleepState,
 			BvhTrees:                           &components.BvhTree,
+			CollisionChunks:                    &components.CollisionChunk,
 		})
 }
 

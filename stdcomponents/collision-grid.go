@@ -20,22 +20,28 @@ import (
 )
 
 type CollisionGrid struct {
-	Layer      CollisionLayer              // Layer of the grid
-	Entities   ecs.PagedArray[ecs.Entity]  // List of Entities in the grid
-	CellLookup map[SpatialIndex]ecs.Entity // Pointer to cell
+	Layer       CollisionLayer              // Layer of the grid
+	Entities    ecs.PagedArray[ecs.Entity]  // List of Entities in the grid
+	ChunkLookup map[SpatialIndex]ecs.Entity // Pointer to cell
 
-	MinBounds AABB // Bounds of the smallest entity in the grid
-	CellSize  vectors.Vec2
+	ChunkSize float32
+	MinBounds vectors.Vec2
 }
 
 func (t *CollisionGrid) RegisterEntity(entity ecs.Entity, aabb *AABB) {
 	t.Entities.Append(entity)
 
-	if aabb.Min.X < t.MinBounds.Min.X {
-		t.MinBounds.Min.X = aabb.Min.X
+	l := aabb.Max.Sub(aabb.Min)
+
+	if l.LengthSquared() < t.MinBounds.LengthSquared() {
+		t.MinBounds = l
 	}
-	if aabb.Min.Y < t.MinBounds.Min.Y {
-		t.MinBounds.Min.Y = aabb.Min.Y
+}
+
+func (t *CollisionGrid) GetSpatialIndex(position vectors.Vec2) SpatialIndex {
+	return SpatialIndex{
+		X: int(position.X / t.ChunkSize),
+		Y: int(position.Y / t.ChunkSize),
 	}
 }
 

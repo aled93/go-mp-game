@@ -17,8 +17,10 @@ package stdsystems
 import (
 	"fmt"
 	rl "github.com/gen2brain/raylib-go/raylib"
+	"github.com/negrel/assert"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
+	"image/color"
 	"math"
 	"slices"
 	"sync"
@@ -51,6 +53,7 @@ type RenderSystem struct {
 	Collisions                         *stdcomponents.CollisionComponentManager
 	ColliderSleepStateComponentManager *stdcomponents.ColliderSleepStateComponentManager
 	BvhTrees                           *stdcomponents.BvhTreeComponentManager
+	CollisionChunks                    *stdcomponents.CollisionChunkComponentManager
 
 	renderList   []renderEntry
 	instanceData []stdcomponents.RLTexturePro
@@ -59,7 +62,8 @@ type RenderSystem struct {
 	monitorWidth  int
 	monitorHeight int
 
-	debug bool
+	debug    bool
+	debugLvl int
 }
 
 type renderEntry struct {
@@ -69,7 +73,7 @@ type renderEntry struct {
 }
 
 func (s *RenderSystem) Init() {
-	rl.InitWindow(1280, 720, "GOMP")
+	rl.InitWindow(0, 0, "GOMP")
 	s.monitorWidth = rl.GetScreenWidth()
 	s.monitorHeight = rl.GetScreenHeight()
 	s.camera = rl.Camera2D{
@@ -88,6 +92,33 @@ func (s *RenderSystem) Run(dt time.Duration) bool {
 	if rl.IsKeyPressed(rl.KeyF12) {
 		s.debug = !s.debug
 	}
+	if rl.IsKeyPressed(rl.KeyF11) {
+		s.debugLvl++
+		if s.debugLvl > 63 {
+			s.debugLvl = 0
+		}
+	}
+	if rl.IsKeyPressed(rl.KeyF10) {
+		s.debugLvl--
+		if s.debugLvl < 0 {
+			s.debugLvl = 63
+		}
+	}
+
+	fdt := float32(dt.Seconds())
+
+	if rl.IsKeyDown(rl.KeyLeft) {
+		s.camera.Target.X -= 1000 * fdt
+	}
+	if rl.IsKeyDown(rl.KeyRight) {
+		s.camera.Target.X += 1000 * fdt
+	}
+	if rl.IsKeyDown(rl.KeyUp) {
+		s.camera.Target.Y -= 1000 * fdt
+	}
+	if rl.IsKeyDown(rl.KeyDown) {
+		s.camera.Target.Y += 1000 * fdt
+	}
 
 	s.prepareRender(dt)
 
@@ -97,6 +128,7 @@ func (s *RenderSystem) Run(dt time.Duration) bool {
 
 	rl.DrawFPS(10, 10)
 	rl.DrawText(fmt.Sprintf("%d entities", s.EntityManager.Size()), 10, 30, 20, rl.RayWhite)
+	rl.DrawText(fmt.Sprintf("%d debugLvl", s.debugLvl), 10, 50, 20, rl.RayWhite)
 	rl.EndDrawing()
 
 	return false
@@ -126,6 +158,7 @@ type RenderInjector struct {
 	Collisions                         *stdcomponents.CollisionComponentManager
 	ColliderSleepStateComponentManager *stdcomponents.ColliderSleepStateComponentManager
 	BvhTrees                           *stdcomponents.BvhTreeComponentManager
+	CollisionChunks                    *stdcomponents.CollisionChunkComponentManager
 }
 
 func (s *RenderSystem) InjectWorld(injector *RenderInjector) {
@@ -148,6 +181,7 @@ func (s *RenderSystem) InjectWorld(injector *RenderInjector) {
 	s.Collisions = injector.Collisions
 	s.ColliderSleepStateComponentManager = injector.ColliderSleepStateComponentManager
 	s.BvhTrees = injector.BvhTrees
+	s.CollisionChunks = injector.CollisionChunks
 }
 
 func (s *RenderSystem) render() {
@@ -156,6 +190,38 @@ func (s *RenderSystem) render() {
 	// ==========
 	if s.debug {
 		rl.BeginMode2D(s.camera)
+		s.CollisionChunks.EachEntity(func(e ecs.Entity) bool {
+			chunk := s.CollisionChunks.Get(e)
+			assert.NotNil(chunk)
+
+			if chunk.Layer != stdcomponents.CollisionLayer(s.debugLvl) {
+				return true
+			}
+
+			tint := s.Tints.Get(e)
+			assert.NotNil(tint)
+
+			position := s.Positions.Get(e)
+			assert.NotNil(position)
+
+			tree := s.BvhTrees.Get(e)
+			assert.NotNil(tree)
+
+			tree.AabbNodes.AllData(func(a *stdcomponents.AABB) bool {
+				rl.DrawRectangle(int32(a.Min.X), int32(a.Min.Y), int32(a.Max.X-a.Min.X), int32(a.Max.Y-a.Min.Y), *tint)
+				return true
+			})
+
+			clr := color.RGBA{
+				R: tint.R,
+				G: tint.G,
+				B: tint.B,
+				A: 255,
+			}
+
+			rl.DrawRectangleLines(int32(position.XY.X), int32(position.XY.Y), int32(chunk.Size), int32(chunk.Size), clr)
+			return true
+		})
 		s.BoxColliders.EachEntity(func(e ecs.Entity) bool {
 			col := s.BoxColliders.Get(e)
 			scale := s.Scales.Get(e)
@@ -255,11 +321,6 @@ func (s *RenderSystem) render() {
 			isSleeping := s.ColliderSleepStateComponentManager.Get(e)
 			if isSleeping != nil {
 				clr = rl.Blue
-			}
-			isTree := s.BvhTrees.Get(e)
-			if isTree != nil {
-				rl.DrawRectangle(int32(aabb.Min.X), int32(aabb.Min.Y), int32(aabb.Max.X-aabb.Min.X), int32(aabb.Max.Y-aabb.Min.Y), isTree.Color)
-				return true
 			}
 			rl.DrawRectangleLines(int32(aabb.Min.X), int32(aabb.Min.Y), int32(aabb.Max.X-aabb.Min.X), int32(aabb.Max.Y-aabb.Min.Y), clr)
 			return true

@@ -41,6 +41,7 @@ const (
 	RigidBodyComponentId
 	BvhTreeComponentId
 	CollisionGridComponentId
+	CollisionChunkComponentId
 
 	StdComponentIds // StdComponentIds MUST always be the last
 )

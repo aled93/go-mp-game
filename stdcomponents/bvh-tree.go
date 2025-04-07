@@ -17,7 +17,10 @@ package stdcomponents
 import (
 	"github.com/negrel/assert"
 	"gomp/pkg/ecs"
+	"gomp/vectors"
 	"math"
+	"math/bits"
+	"slices"
 )
 
 const mortonPrecision = (1 << 16) - 1
@@ -139,6 +142,166 @@ func (t *BvhTree) morton2D(aabb *AABB) uint64 {
 
 	// Combine x (even bits) and y (odd bits)
 	return xx | (yy << 1)
+}
+
+func (t *BvhTree) Build() {
+	// Reset tree
+	t.Nodes.Reset()
+	t.AabbNodes.Reset()
+	t.Leaves.Reset()
+	t.AabbLeaves.Reset()
+	t.Codes.Reset()
+
+	// Extract and sort components by morton code
+	if cap(t.ComponentsSlice) < t.Components.Len() {
+		t.ComponentsSlice = make([]BvhComponent, 0, t.Components.Len())
+	}
+
+	t.ComponentsSlice = t.Components.Raw(t.ComponentsSlice)
+
+	slices.SortFunc(t.ComponentsSlice, func(a, b BvhComponent) int {
+		return int(a.Code - b.Code)
+	})
+
+	// Add leaves
+	for i := range t.ComponentsSlice {
+		component := &t.ComponentsSlice[i]
+		t.Leaves.Append(BvhLeaf{Id: component.Entity})
+		t.AabbLeaves.Append(component.Aabb)
+		t.Codes.Append(component.Code)
+	}
+	t.Components.Reset()
+
+	if t.Leaves.Len() == 0 {
+		return
+	}
+
+	// Add root node
+	t.Nodes.Append(BvhNode{-1})
+	t.AabbNodes.Append(AABB{})
+
+	type buildTask struct {
+		parentIndex     int
+		start           int
+		end             int
+		childrenCreated bool
+	}
+
+	stack := []buildTask{
+		{parentIndex: 0, start: 0, end: t.Leaves.Len() - 1, childrenCreated: false},
+	}
+
+	for len(stack) > 0 {
+		// Pop the last task
+		task := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+
+		if !task.childrenCreated {
+			if task.start == task.end {
+				// Leaf node
+				t.Nodes.Get(task.parentIndex).ChildIndex = -int32(task.start)
+				t.AabbNodes.Set(task.parentIndex, t.AabbLeaves.GetValue(task.start))
+				continue
+			}
+
+			split := t.findSplit(task.start, task.end)
+
+			// Create left and right nodes
+			leftIndex := t.Nodes.Len()
+			t.Nodes.Append(BvhNode{-1}, BvhNode{-1})
+			t.AabbNodes.Append(AABB{}, AABB{})
+
+			// Set parent's childIndex to leftIndex
+			t.Nodes.Get(task.parentIndex).ChildIndex = int32(leftIndex)
+
+			// Push parent task back with childrenCreated=true
+			stack = append(stack, buildTask{
+				parentIndex:     task.parentIndex,
+				start:           task.start,
+				end:             task.end,
+				childrenCreated: true,
+			})
+
+			// Push right child task (split+1 to end)
+			stack = append(stack, buildTask{
+				parentIndex:     leftIndex + 1,
+				start:           split + 1,
+				end:             task.end,
+				childrenCreated: false,
+			})
+
+			// Push left child task (start to split)
+			stack = append(stack, buildTask{
+				parentIndex:     leftIndex,
+				start:           task.start,
+				end:             split,
+				childrenCreated: false,
+			})
+		} else {
+			// Merge children's AABBs into parent
+			leftChildIndex := int(t.Nodes.Get(task.parentIndex).ChildIndex)
+			rightChildIndex := leftChildIndex + 1
+
+			leftAABB := t.AabbNodes.Get(leftChildIndex)
+			rightAABB := t.AabbNodes.Get(rightChildIndex)
+
+			merged := t.mergeAABB(leftAABB, rightAABB)
+			t.AabbNodes.Set(task.parentIndex, merged)
+		}
+	}
+	t.Components.Reset()
+}
+
+func (t *BvhTree) findSplit(start, end int) int {
+	// Identical Morton sortedMortonCodes => split the range in the middle.
+	first := t.Codes.GetValue(start)
+	last := t.Codes.GetValue(end)
+
+	if first == last {
+		return (start + end) >> 1
+	}
+
+	// Calculate the number of highest bits that are the same
+	// for all objects, using the count-leading-zeros intrinsic.
+	commonPrefix := bits.LeadingZeros64(first ^ last)
+
+	// Use binary search to find where the next bit differs.
+	// Specifically, we are looking for the highest object that
+	// shares more than commonPrefix bits with the first one.
+	split := start
+	step := end - start
+
+	for {
+		step = (step + 1) >> 1   // exponential decrease
+		newSplit := split + step // proposed new position
+
+		if newSplit < end {
+			splitCode := t.Codes.GetValue(newSplit)
+			splitPrefix := bits.LeadingZeros64(first ^ splitCode)
+			if splitPrefix > commonPrefix {
+				split = newSplit
+			}
+		}
+
+		if step <= 1 {
+			break
+		}
+	}
+
+	return split
+}
+
+func (t *BvhTree) mergeAABB(a, b *AABB) AABB {
+	return AABB{
+		Min: vectors.Vec2{
+			X: min(a.Min.X, b.Min.X),
+			Y: min(a.Min.Y, b.Min.Y),
+		},
+		Max: vectors.Vec2{
+			X: max(a.Max.X, b.Max.X),
+			Y: max(a.Max.Y, b.Max.Y),
+		},
+	}
 }
 
 type BvhTreeComponentManager = ecs.ComponentManager[BvhTree]

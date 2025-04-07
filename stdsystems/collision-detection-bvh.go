@@ -20,7 +20,6 @@ import (
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"gomp/vectors"
-	"image/color"
 	"runtime"
 	"sync"
 	"time"
@@ -100,51 +99,56 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 	wg.Add(len(s.trees))
 	for i := range s.trees {
 		go func(i int, w *sync.WaitGroup) {
+			defer w.Done()
 			s.trees[i].Build()
-			w.Done()
 		}(i, wg)
 	}
 	wg.Wait()
-
-	if debugTree {
-		s.BvhTreeComponentManager.EachEntity(func(entity ecs.Entity) bool {
-			s.EntityManager.Delete(entity)
-			return true
-		})
-
-		for i := range s.trees {
-			tree := s.trees[i]
-			treeColor := color.RGBA{
-				R: uint8(i * 255 / len(s.trees)),
-				G: uint8((i + 1) * 255 / len(s.trees)),
-				B: uint8((i + 2) * 255 / len(s.trees)),
-				A: 30,
-			}
-			tree.AabbNodes.AllData(func(aabb *stdcomponents.AABB) bool {
-				e := s.EntityManager.Create()
-				s.BvhTreeComponentManager.Create(e, stdcomponents.BvhTree{
-					Color: treeColor,
-				})
-				s.AABB.Create(e, *aabb)
-				return true
-			})
-		}
-	}
 
 	if len(s.entities) < s.GenericCollider.Len() {
 		s.entities = make([]ecs.Entity, 0, s.GenericCollider.Len())
 	}
 	s.entities = s.GenericCollider.RawEntities(s.entities)
 	s.findEntityCollisions(s.entities)
+	s.registerCollisionEvents()
+}
 
-	// could be used, but needs a worker id info
-	//s.AABB.EachEntityParallel(func(entity ecs.Entity) bool {
-	//
-	//	potentialEntities := s.broadPhase(entity, make([]ecs.Entity, 0, 64))
-	//	s.narrowPhase(entity, potentialEntities, id)
-	//	return true
-	//})
+func (s *CollisionDetectionBVHSystem) Destroy() {}
 
+func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity) {
+	var wg sync.WaitGroup
+	entitiesLength := len(entities)
+	// get minimum 1 worker for small amount of entities, and maximum maxNumWorkers for a lot of entities
+	numWorkers := max(min(entitiesLength/128, maxNumWorkers), 1)
+	chunkSize := entitiesLength / numWorkers
+
+	wg.Add(numWorkers)
+	for workedId := 0; workedId < numWorkers; workedId++ {
+		startIndex := workedId * chunkSize
+		endIndex := startIndex + chunkSize - 1
+		if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
+			endIndex = entitiesLength
+		}
+
+		go func(start int, end int, id int) {
+			defer wg.Done()
+
+			for i := range entities[start:end] {
+				entityA := entities[i+startIndex]
+
+				potentialEntities := s.broadPhase(entityA, make([]ecs.Entity, 0, 64))
+				if len(potentialEntities) == 0 {
+					continue
+				}
+				s.narrowPhase(entityA, potentialEntities, id)
+			}
+		}(startIndex, endIndex, workedId)
+	}
+	// Wait for workers and close collision channel
+	wg.Wait()
+}
+
+func (s *CollisionDetectionBVHSystem) registerCollisionEvents() {
 	for i := range s.collisionEvents {
 		events := &s.collisionEvents[i]
 		events.AllData(func(event *CollisionEvent) bool {
@@ -182,41 +186,6 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 		})
 		events.Reset()
 	}
-}
-
-func (s *CollisionDetectionBVHSystem) Destroy() {}
-
-func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity) {
-	var wg sync.WaitGroup
-	entitiesLength := len(entities)
-	// get minimum 1 worker for small amount of entities, and maximum maxNumWorkers for a lot of entities
-	numWorkers := max(min(entitiesLength/128, maxNumWorkers), 1)
-	chunkSize := entitiesLength / numWorkers
-
-	wg.Add(numWorkers)
-	for workedId := 0; workedId < numWorkers; workedId++ {
-		startIndex := workedId * chunkSize
-		endIndex := startIndex + chunkSize - 1
-		if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
-			endIndex = entitiesLength
-		}
-
-		go func(start int, end int, id int) {
-			defer wg.Done()
-
-			for i := range entities[start:end] {
-				entityA := entities[i+startIndex]
-
-				potentialEntities := s.broadPhase(entityA, make([]ecs.Entity, 0, 64))
-				if len(potentialEntities) == 0 {
-					continue
-				}
-				s.narrowPhase(entityA, potentialEntities, id)
-			}
-		}(startIndex, endIndex, workedId)
-	}
-	// Wait for workers and close collision channel
-	wg.Wait()
 }
 
 func (s *CollisionDetectionBVHSystem) broadPhase(entityA ecs.Entity, result []ecs.Entity) []ecs.Entity {

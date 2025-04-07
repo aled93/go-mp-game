@@ -16,19 +16,15 @@ package stdcomponents
 
 import (
 	"gomp/pkg/ecs"
-	"gomp/vectors"
 )
 
-type SpatialIndex struct {
-	X, Y int
+type CollisionChunk struct {
+	Size  float32
+	Layer CollisionLayer
 }
 
-func (i SpatialIndex) ToVec2() vectors.Vec2 {
-	return vectors.Vec2{X: float32(i.X), Y: float32(i.Y)}
-}
+type CollisionChunkComponentManager = ecs.ComponentManager[CollisionChunk]
 
-type SpatialIndexComponentManager = ecs.ComponentManager[SpatialIndex]
-
-func NewSpatialIndexComponentManager() SpatialIndexComponentManager {
-	return ecs.NewComponentManager[SpatialIndex](SpatialIndexComponentId)
+func NewCollisionChunkComponentManager() CollisionChunkComponentManager {
+	return ecs.NewComponentManager[CollisionChunk](CollisionChunkComponentId)
 }
