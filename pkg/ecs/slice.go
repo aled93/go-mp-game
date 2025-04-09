@@ -54,31 +54,9 @@ func (a *Slice[T]) Set(index int, value T) *T {
 }
 
 func (a *Slice[T]) Append(values ...T) *T {
-	var result *T
-	for i := range values {
-		value := values[i]
-		if a.currentPageIndex >= len(a.data) {
-			newBooks := make([]ArrayPage[T], len(a.data)*2)
-			a.data = append(a.data, newBooks...)
-		}
-
-		page := &a.data[a.currentPageIndex]
-
-		if page.len == pageSize {
-			a.currentPageIndex++
-			if a.currentPageIndex >= len(a.data) {
-				newBooks := make([]ArrayPage[T], len(a.data)*2)
-				a.data = append(a.data, newBooks...)
-			}
-			page = &a.data[a.currentPageIndex]
-		}
-		page.data[page.len] = value
-		result = &page.data[page.len]
-		page.len++
-		a.len++
-	}
-
-	return result
+	a.data = append(a.data[:a.len-1], values...)
+	a.len += len(values)
+	return &a.data[a.len-1]
 }
 
 func (a *Slice[T]) SoftReduce() {
@@ -124,11 +102,7 @@ func (a *Slice[T]) Last() *T {
 
 func (a *Slice[T]) Raw(result []T) []T {
 	result = result[:0]
-	for i := 0; i <= a.currentPageIndex; i++ {
-		page := &a.data[i]
-		result = append(result[:i*1024], append(result[i*1024:], page.data[:page.len]...)...)
-	}
-
+	copy(result, a.data)
 	return result
 }
 
@@ -143,23 +117,25 @@ func (a *Slice[T]) getPageIdAndIndex(index int) (int, int) {
 }
 
 func (a *Slice[T]) All(yield func(int, *T) bool) {
-	var page *ArrayPage[T]
-	var index_offset int
-
-	book := a.data
-
-	if a.len == 0 {
-		return
+	for j := a.len - 1; j >= 0; j-- {
+		if !yield(j, &a.data[j]) {
+			return
+		}
 	}
+}
 
-	for i := a.currentPageIndex; i >= 0; i-- {
-		page = &book[i]
-		index_offset = i << pageSizeShift
+func (a *Slice[T]) AllData(yield func(*T) bool) {
+	for j := a.len - 1; j >= 0; j-- {
+		if !yield(&a.data[j]) {
+			return
+		}
+	}
+}
 
-		for j := page.len - 1; j >= 0; j-- {
-			if !yield(index_offset+j, &page.data[j]) {
-				return
-			}
+func (a *Slice[T]) AllDataValue(yield func(T) bool) {
+	for j := a.len - 1; j >= 0; j-- {
+		if !yield(a.data[j]) {
+			return
 		}
 	}
 }
@@ -202,46 +178,6 @@ func (a *Slice[T]) AllParallel(yield func(int, *T) bool) {
 	}
 
 	wg.Wait()
-}
-
-func (a *Slice[T]) AllData(yield func(*T) bool) {
-	var page *ArrayPage[T]
-
-	book := a.data
-
-	if a.len == 0 {
-		return
-	}
-
-	for i := a.currentPageIndex; i >= 0; i-- {
-		page = &book[i]
-
-		for j := page.len - 1; j >= 0; j-- {
-			if !yield(&page.data[j]) {
-				return
-			}
-		}
-	}
-}
-
-func (a *Slice[T]) AllDataValue(yield func(T) bool) {
-	var page *ArrayPage[T]
-
-	book := a.data
-
-	if a.len == 0 {
-		return
-	}
-
-	for i := a.currentPageIndex; i >= 0; i-- {
-		page = &book[i]
-
-		for j := page.len - 1; j >= 0; j-- {
-			if !yield(page.data[j]) {
-				return
-			}
-		}
-	}
 }
 
 func (a *Slice[T]) AllDataValueParallel(yield func(T) bool) {
