@@ -16,12 +16,13 @@ import (
 type Slice[T any] struct {
 	data          []T
 	len           int
-	parallelCount uint8
+	wg            sync.WaitGroup
+	maxNumWorkers int
 }
 
 func NewSlice[T any](size int) (a Slice[T]) {
 	a.data = make([]T, 0, size)
-	a.parallelCount = uint8(runtime.NumCPU()) - 2
+	a.maxNumWorkers = max(runtime.NumCPU()-2, 1) // Recover if less than 2 cpu
 
 	return a
 }
@@ -116,7 +117,7 @@ func (a *Slice[T]) getPageIdAndIndex(index int) (int, int) {
 	return pageId, index
 }
 
-func (a *Slice[T]) All(yield func(int, *T) bool) {
+func (a *Slice[T]) Each(yield func(int, *T) bool) {
 	for j := a.len - 1; j >= 0; j-- {
 		if !yield(j, &a.data[j]) {
 			return
@@ -124,7 +125,7 @@ func (a *Slice[T]) All(yield func(int, *T) bool) {
 	}
 }
 
-func (a *Slice[T]) AllData(yield func(*T) bool) {
+func (a *Slice[T]) EachData(yield func(*T) bool) {
 	for j := a.len - 1; j >= 0; j-- {
 		if !yield(&a.data[j]) {
 			return
@@ -132,7 +133,7 @@ func (a *Slice[T]) AllData(yield func(*T) bool) {
 	}
 }
 
-func (a *Slice[T]) AllDataValue(yield func(T) bool) {
+func (a *Slice[T]) EachDataValue(yield func(T) bool) {
 	for j := a.len - 1; j >= 0; j-- {
 		if !yield(a.data[j]) {
 			return
@@ -140,114 +141,74 @@ func (a *Slice[T]) AllDataValue(yield func(T) bool) {
 	}
 }
 
-func (a *Slice[T]) AllParallel(yield func(int, *T) bool) {
-	var page *ArrayPage[T]
-	var data *[pageSize]T
-	var index_offset int
+func (a *Slice[T]) EachParallel(batchSize int, yield func(int, *T, int) bool) {
+	// get minimum 1 worker for small amount of entities, and maximum maxNumWorkers for a lot of entities
+	numWorkers := max(min(a.len/batchSize, a.maxNumWorkers), 1)
+	chunkSize := a.len / numWorkers
 
-	book := a.data
-	wg := new(sync.WaitGroup)
-	gorutineBudget := a.parallelCount
-
-	runner := func(data *[pageSize]T, offset int, startIndex int, wg *sync.WaitGroup) {
-		defer wg.Done()
-		for j := startIndex; j >= 0; j-- {
-			if !yield(offset+j, &(data[j])) {
-				return
+	a.wg.Add(numWorkers)
+	for workedId := 0; workedId < numWorkers; workedId++ {
+		startIndex := workedId * chunkSize
+		endIndex := startIndex + chunkSize - 1
+		if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
+			endIndex = a.len
+		}
+		go func(start int, end int) {
+			defer a.wg.Done()
+			for i := range a.data[start:end] {
+				if !yield(i, &a.data[i+startIndex], workedId) {
+					return
+				}
 			}
-		}
+		}(startIndex, endIndex)
 	}
-
-	if a.len == 0 {
-		return
-	}
-
-	wg.Add(int(a.currentPageIndex) + 1)
-	for i := a.currentPageIndex; i >= 0; i-- {
-		page = &book[i]
-		data = &page.data
-		index_offset = int(i) << pageSizeShift
-
-		if gorutineBudget > 0 {
-			go runner(data, index_offset, page.len-1, wg)
-			gorutineBudget--
-			continue
-		}
-
-		runner(data, index_offset, page.len-1, wg)
-	}
-
-	wg.Wait()
+	a.wg.Wait()
 }
 
-func (a *Slice[T]) AllDataValueParallel(yield func(T) bool) {
-	var page *ArrayPage[T]
-	var data *[pageSize]T
+func (a *Slice[T]) EachDataValueParallel(batchSize int, yield func(T, int) bool) {
+	// get minimum 1 worker for small amount of entities, and maximum maxNumWorkers for a lot of entities
+	numWorkers := max(min(a.len/batchSize, a.maxNumWorkers), 1)
+	chunkSize := a.len / numWorkers
 
-	book := a.data
-	wg := new(sync.WaitGroup)
-	gorutineBudget := a.parallelCount
-	runner := func(data *[pageSize]T, startIndex int, wg *sync.WaitGroup) {
-		defer wg.Done()
-		for j := startIndex; j >= 0; j-- {
-			if !yield((data[j])) {
-				return
+	a.wg.Add(numWorkers)
+	for workedId := 0; workedId < numWorkers; workedId++ {
+		startIndex := workedId * chunkSize
+		endIndex := startIndex + chunkSize - 1
+		if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
+			endIndex = a.len
+		}
+		go func(start int, end int) {
+			defer a.wg.Done()
+			for i := range a.data[start:end] {
+				if !yield(a.data[i+startIndex], workedId) {
+					return
+				}
 			}
-		}
+		}(startIndex, endIndex)
 	}
-
-	if a.len == 0 {
-		return
-	}
-
-	wg.Add(int(a.currentPageIndex) + 1)
-	for i := a.currentPageIndex; i >= 0; i-- {
-		page = &book[i]
-		data = &page.data
-
-		if gorutineBudget > 0 {
-			go runner(data, page.len-1, wg)
-			gorutineBudget--
-			continue
-		}
-
-		runner(data, page.len-1, wg)
-	}
-	wg.Wait()
+	a.wg.Wait()
 }
 
-func (a *Slice[T]) AllDataParallel(yield func(*T) bool) {
-	var page *ArrayPage[T]
-	var data *[pageSize]T
+func (a *Slice[T]) EachDataParallel(batchSize int, yield func(*T, int) bool) {
+	// get minimum 1 worker for small amount of entities, and maximum maxNumWorkers for a lot of entities
+	numWorkers := max(min(a.len/batchSize, a.maxNumWorkers), 1)
+	chunkSize := a.len / numWorkers
 
-	book := a.data
-	wg := new(sync.WaitGroup)
-	gorutineBudget := a.parallelCount
-	runner := func(data *[pageSize]T, startIndex int, wg *sync.WaitGroup) {
-		defer wg.Done()
-		for j := startIndex; j >= 0; j-- {
-			if !yield(&(data[j])) {
-				return
+	a.wg.Add(numWorkers)
+	for workedId := 0; workedId < numWorkers; workedId++ {
+		startIndex := workedId * chunkSize
+		endIndex := startIndex + chunkSize - 1
+		if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
+			endIndex = a.len
+		}
+		go func(start int, end int) {
+			defer a.wg.Done()
+			for i := range a.data[start:end] {
+				if !yield(&a.data[i+startIndex], workedId) {
+					return
+				}
 			}
-		}
+		}(startIndex, endIndex)
 	}
-
-	if a.len == 0 {
-		return
-	}
-
-	wg.Add(int(a.currentPageIndex) + 1)
-	for i := a.currentPageIndex; i >= 0; i-- {
-		page = &book[i]
-		data = &page.data
-
-		if gorutineBudget > 0 {
-			go runner(data, page.len-1, wg)
-			gorutineBudget--
-			continue
-		}
-
-		runner(data, page.len-1, wg)
-	}
-	wg.Wait()
+	a.wg.Wait()
 }
