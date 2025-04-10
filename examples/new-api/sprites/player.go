@@ -23,6 +23,7 @@ import (
 var PlayerSpriteMatrix = stdcomponents.SpriteMatrix{
 	Texture: assets.Textures.Get("milansheet.png"),
 	Origin:  rl.Vector2{X: 0.5, Y: 0.5},
+	Dest:    rl.Rectangle{X: 0, Y: 0, Width: 96, Height: 128},
 	FPS:     12,
 	Animations: []stdcomponents.SpriteMatrixAnimation{
 		{

@@ -24,8 +24,17 @@ type AABB struct {
 	Max vectors.Vec2
 }
 
-func (a *AABB) Center() vectors.Vec2 {
+func (a AABB) Center() vectors.Vec2 {
 	return a.Min.Add(a.Max).Scale(0.5)
+}
+
+func (a AABB) Rect() vectors.Rectangle {
+	return vectors.Rectangle{
+		X:      a.Min.X,
+		Y:      a.Min.Y,
+		Width:  a.Max.X - a.Min.X,
+		Height: a.Max.Y - a.Min.Y,
+	}
 }
 
 type AABBComponentManager = ecs.ComponentManager[AABB]

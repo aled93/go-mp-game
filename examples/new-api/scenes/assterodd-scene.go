@@ -73,6 +73,15 @@ func (s *AssteroddScene) Init(world ecs.AnyWorld) {
 	s.World.Systems.AssteroddSystem.Init()
 	s.World.Systems.CollisionHandler.Init()
 	s.World.Systems.SpaceshipIntents.Init()
+	s.World.Systems.MainCamera.Init()
+	s.World.Systems.Minimap.Init()
+	s.World.Systems.PositionToSprite.Init()
+	s.World.Systems.TexturePositionSmooth.Init()
+	s.World.Systems.TextureRect.Init()
+	s.World.Systems.TextureCircle.Init()
+	s.World.Systems.DebugInfo.Init()
+	s.World.Systems.RenderOverlay.Init()
+
 }
 
 func (s *AssteroddScene) Update(dt time.Duration) gomp.SceneId {
@@ -89,7 +98,25 @@ func (s *AssteroddScene) FixedUpdate(dt time.Duration) {
 	s.World.Systems.Hp.Run(dt)
 }
 
-func (s *AssteroddScene) Render(dt time.Duration) {}
+func (s *AssteroddScene) Render(dt time.Duration) {
+	// Camera game logic flow
+	s.World.Systems.MainCamera.Run(dt)
+	s.World.Systems.Minimap.Run(dt)
+
+	//s.World.Systems.PositionToSprite.Run(dt)
+	//s.World.Systems.TexturePositionSmooth.Run(dt)
+	s.World.Systems.DebugInfo.Run(dt)
+
+	// Optimized primitives
+	s.World.Systems.TextureRect.Run(dt)
+	s.World.Systems.TextureCircle.Run(dt)
+
+	// Render all renderables with cameras
+	s.World.Systems.RenderCameras.Run(dt)
+
+	// Over cameras render example
+	s.World.Systems.RenderOverlay.Run(dt)
+}
 
 func (s *AssteroddScene) Destroy() {
 	s.World.Systems.DampingSystem.Destroy()
@@ -97,6 +124,13 @@ func (s *AssteroddScene) Destroy() {
 	s.World.Systems.AssteroddSystem.Destroy()
 	s.World.Systems.CollisionHandler.Destroy()
 	s.World.Systems.SpaceshipIntents.Destroy()
+	s.World.Systems.MainCamera.Destroy()
+	s.World.Systems.PositionToSprite.Destroy()
+	s.World.Systems.TexturePositionSmooth.Destroy()
+	s.World.Systems.TextureRect.Destroy()
+	s.World.Systems.TextureCircle.Destroy()
+	s.World.Systems.Minimap.Destroy()
+	s.World.Systems.DebugInfo.Destroy()
 }
 
 func (s *AssteroddScene) OnEnter() {

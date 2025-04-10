@@ -20,17 +20,19 @@ import (
 	"image/color"
 )
 
-type Sprite struct {
-	Texture  *rl.Texture2D
-	Frame    rl.Rectangle
-	Origin   rl.Vector2
-	Tint     color.RGBA
-	Dest     rl.Rectangle
-	Rotation float32
+type FrameBuffer2D struct {
+	Position  rl.Vector2
+	Frame     rl.Rectangle
+	Texture   rl.RenderTexture2D
+	Layer     CameraLayer
+	BlendMode rl.BlendMode
+	Rotation  float32
+	Tint      color.RGBA
+	Dst       rl.Rectangle
 }
 
-type SpriteComponentManager = ecs.ComponentManager[Sprite]
+type FrameBuffer2DComponentManager = ecs.ComponentManager[FrameBuffer2D]
 
-func NewSpriteComponentManager() SpriteComponentManager {
-	return ecs.NewComponentManager[Sprite](SpriteComponentId)
+func NewFrameBuffer2DComponentManager() FrameBuffer2DComponentManager {
+	return ecs.NewComponentManager[FrameBuffer2D](FrameBuffer2DComponentId)
 }

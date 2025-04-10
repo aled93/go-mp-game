@@ -12,7 +12,7 @@ none :)
 Thank you for your support!
 */
 
-package stdcomponents
+package components
 
 import (
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -20,17 +20,17 @@ import (
 	"image/color"
 )
 
-type Sprite struct {
-	Texture  *rl.Texture2D
-	Frame    rl.Rectangle
-	Origin   rl.Vector2
-	Tint     color.RGBA
-	Dest     rl.Rectangle
+type TextureCircle struct {
+	CenterX  float32
+	CenterY  float32
+	Radius   float32
 	Rotation float32
+	Origin   rl.Vector2
+	Color    color.RGBA
 }
 
-type SpriteComponentManager = ecs.ComponentManager[Sprite]
+type PrimitiveCircleComponentManager = ecs.ComponentManager[TextureCircle]
 
-func NewSpriteComponentManager() SpriteComponentManager {
-	return ecs.NewComponentManager[Sprite](SpriteComponentId)
+func NewTextureCircleComponentManager() PrimitiveCircleComponentManager {
+	return ecs.NewComponentManager[TextureCircle](TextureCircleComponentId)
 }

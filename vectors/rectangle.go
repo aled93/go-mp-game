@@ -12,19 +12,8 @@ none :)
 Thank you for your support!
 */
 
-package config
+package vectors
 
-import "gomp/stdcomponents"
-
-const (
-	DefaultCollisionLayer stdcomponents.CollisionLayer = iota
-	PlayerCollisionLayer
-	BulletCollisionLayer
-	EnemyCollisionLayer
-	WallCollisionLayer
-)
-
-const (
-	MainCameraLayer stdcomponents.CameraLayer = 1 << iota
-	MinimapCameraLayer
-)
+type Rectangle struct {
+	X, Y, Width, Height float32
+}

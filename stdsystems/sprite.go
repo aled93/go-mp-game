@@ -26,7 +26,6 @@ func NewSpriteSystem() SpriteSystem {
 
 // SpriteSystem is a system that prepares Sprite to be rendered
 type SpriteSystem struct {
-	Positions     *stdcomponents.PositionComponentManager
 	Scales        *stdcomponents.ScaleComponentManager
 	Sprites       *stdcomponents.SpriteComponentManager
 	RLTexturePros *stdcomponents.RLTextureProComponentManager
@@ -36,38 +35,21 @@ type SpriteSystem struct {
 
 func (s *SpriteSystem) Init() {}
 func (s *SpriteSystem) Run() {
-	s.Sprites.EachEntity(func(entity ecs.Entity) bool {
-		sprite := s.Sprites.Get(entity) //
-		position := s.Positions.Get(entity)
+	s.Sprites.EachEntityParallel(func(entity ecs.Entity) bool {
+		sprite := s.Sprites.Get(entity)
 		scale := s.Scales.Get(entity)
-
-		renderable := s.Renderables.Get(entity)
-		if renderable == nil {
-			renderable = s.Renderables.Create(entity, stdcomponents.SpriteRenderableType)
-		}
-
-		renderOrder := s.RenderOrder.Get(entity)
-		if renderOrder == nil {
-			renderOrder = s.RenderOrder.Create(entity, stdcomponents.RenderOrder{})
-		}
-
 		tr := s.RLTexturePros.Get(entity)
-		if tr == nil {
-			s.RLTexturePros.Create(entity, stdcomponents.RLTexturePro{
-				Texture: sprite.Texture, //
-				Frame:   sprite.Frame,   //
-				Origin: rl.Vector2{
-					X: sprite.Origin.X * scale.XY.X,
-					Y: sprite.Origin.Y * scale.XY.Y,
-				},
-				Dest: rl.Rectangle{X: position.XY.X, Y: position.XY.Y, Width: sprite.Frame.Width, Height: sprite.Frame.Height}, //
-				Tint: sprite.Tint,
-			})
-		} else {
-			tr.Dest.Width = sprite.Frame.Width
-			tr.Dest.Height = sprite.Frame.Height
-			tr.Tint = sprite.Tint
+
+		tr.Texture = sprite.Texture
+		tr.Frame = sprite.Frame
+		tr.Dest = sprite.Dest
+		tr.Origin = rl.Vector2{
+			X: sprite.Origin.X * scale.XY.X,
+			Y: sprite.Origin.Y * scale.XY.Y,
 		}
+		tr.Rotation = sprite.Rotation
+		tr.Tint = sprite.Tint
+
 		return true
 	})
 }

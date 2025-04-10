@@ -33,8 +33,11 @@ type CreateWallManagers struct {
 	Scales        *stdcomponents.ScaleComponentManager
 	BoxColliders  *stdcomponents.BoxColliderComponentManager
 	Sprites       *stdcomponents.SpriteComponentManager
-	WallTags      *components.WallTagComponentManager
 	RigidBodies   *stdcomponents.RigidBodyComponentManager
+	Renderables   *stdcomponents.RenderableComponentManager
+	WallTags      *components.WallTagComponentManager
+	RenderOrders  *stdcomponents.RenderOrderComponentManager
+	Textures      *stdcomponents.RLTextureProComponentManager
 }
 
 func CreateWall(
@@ -81,6 +84,12 @@ func CreateWall(
 			Width:  width,
 			Height: height,
 		},
+		Dest: rl.Rectangle{
+			X:      posX,
+			Y:      posY,
+			Width:  width,
+			Height: height,
+		},
 		Origin: rl.Vector2{
 			X: 0,
 			Y: 0,
@@ -92,7 +101,13 @@ func CreateWall(
 			A: 255,
 		},
 	})
+	props.Textures.Create(entity, stdcomponents.RLTexturePro{})
 	props.WallTags.Create(entity, components.Wall{})
+	props.Renderables.Create(entity, stdcomponents.Renderable{
+		Type:       stdcomponents.SpriteRenderableType,
+		CameraMask: config.MainCameraLayer,
+	})
+	props.RenderOrders.Create(entity, stdcomponents.RenderOrder{})
 
 	return entity
 }

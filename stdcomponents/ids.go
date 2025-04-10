@@ -10,7 +10,7 @@ import (
 	"gomp/pkg/ecs"
 )
 
-// StdComponentIds MUST always be the last
+// StdLastComponentId MUST always be the last
 const (
 	InvalidComponentId ecs.ComponentId = iota
 	TransformComponentId
@@ -40,5 +40,9 @@ const (
 	AABBComponentId
 	RigidBodyComponentId
 	BvhTreeComponentId
-	StdComponentIds
+	FrameBuffer2DComponentId
+	CameraComponentId
+	TexturePositionSmoothComponentId
+
+	StdLastComponentId
 )

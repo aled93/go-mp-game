@@ -36,6 +36,10 @@ type CreateBulletManagers struct {
 	Sprites         *stdcomponents.SpriteComponentManager
 	BulletTags      *components.BulletTagComponentManager
 	Hps             *components.HpComponentManager
+	Smooth          *stdcomponents.TexturePositionSmoothComponentManager
+	Renderables     *stdcomponents.RenderableComponentManager
+	RenderOrders    *stdcomponents.RenderOrderComponentManager
+	Textures        *stdcomponents.RLTextureProComponentManager
 }
 
 func CreateBullet(
@@ -44,25 +48,25 @@ func CreateBullet(
 	angle float64,
 	velocityX, velocityY float32,
 ) ecs.Entity {
-	bullet := props.EntityManager.Create()
-	props.Positions.Create(bullet, stdcomponents.Position{
+	entity := props.EntityManager.Create()
+	props.Positions.Create(entity, stdcomponents.Position{
 		XY: vectors.Vec2{
 			X: posX,
 			Y: posY,
 		},
 	})
-	props.Rotations.Create(bullet, stdcomponents.Rotation{}.SetFromDegrees(angle))
-	props.Scales.Create(bullet, stdcomponents.Scale{
+	props.Rotations.Create(entity, stdcomponents.Rotation{}.SetFromDegrees(angle))
+	props.Scales.Create(entity, stdcomponents.Scale{
 		XY: vectors.Vec2{
 			X: 1,
 			Y: 1,
 		},
 	})
-	props.Velocities.Create(bullet, stdcomponents.Velocity{
+	props.Velocities.Create(entity, stdcomponents.Velocity{
 		X: velocityX,
 		Y: velocityY,
 	})
-	props.CircleColliders.Create(bullet, stdcomponents.CircleCollider{
+	props.CircleColliders.Create(entity, stdcomponents.CircleCollider{
 		Radius: 6,
 		Offset: vectors.Vec2{
 			X: 0,
@@ -72,11 +76,17 @@ func CreateBullet(
 		Mask:       1<<config.EnemyCollisionLayer | 1<<config.WallCollisionLayer | 1<<config.BulletCollisionLayer,
 		AllowSleep: true,
 	})
-	props.Sprites.Create(bullet, stdcomponents.Sprite{
+	te := stdcomponents.Sprite{
 		Texture: assets.Textures.Get("bullet.png"),
 		Frame: rl.Rectangle{
 			X:      0,
 			Y:      0,
+			Width:  64,
+			Height: 64,
+		},
+		Dest: rl.Rectangle{
+			X:      posX,
+			Y:      posY,
 			Width:  64,
 			Height: 64,
 		},
@@ -90,16 +100,24 @@ func CreateBullet(
 			B: 255,
 			A: 255,
 		},
-	})
-	props.BulletTags.Create(bullet, components.BulletTag{})
-	props.Hps.Create(bullet, components.Hp{
+	}
+	props.Sprites.Create(entity, te)
+	props.Textures.Create(entity, stdcomponents.RLTexturePro{})
+	props.BulletTags.Create(entity, components.BulletTag{})
+	props.Hps.Create(entity, components.Hp{
 		Hp:    1,
 		MaxHp: 1,
 	})
-	props.RigidBodies.Create(bullet, stdcomponents.RigidBody{
+	props.RigidBodies.Create(entity, stdcomponents.RigidBody{
 		IsStatic: false,
 		Mass:     1,
 	})
+	props.Smooth.Create(entity, stdcomponents.TexturePositionSmoothLerp)
+	props.Renderables.Create(entity, stdcomponents.Renderable{
+		Type:       stdcomponents.SpriteRenderableType,
+		CameraMask: config.MainCameraLayer,
+	})
+	props.RenderOrders.Create(entity, stdcomponents.RenderOrder{})
 
-	return bullet
+	return entity
 }

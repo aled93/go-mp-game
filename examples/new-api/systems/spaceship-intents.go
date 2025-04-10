@@ -30,21 +30,25 @@ func NewSpaceshipIntentsSystem() SpaceshipIntentsSystem {
 }
 
 type SpaceshipIntentsSystem struct {
-	EntityManager    *ecs.EntityManager
-	SpaceshipIntents *components.SpaceshipIntentComponentManager
-	Positions        *stdcomponents.PositionComponentManager
-	Velocities       *stdcomponents.VelocityComponentManager
-	Rotations        *stdcomponents.RotationComponentManager
-	Scales           *stdcomponents.ScaleComponentManager
-	BoxColliders     *stdcomponents.BoxColliderComponentManager
-	CircleColliders  *stdcomponents.CircleColliderComponentManager
-	BulletTags       *components.BulletTagComponentManager
-	Sprites          *stdcomponents.SpriteComponentManager
-	RigidBodies      *stdcomponents.RigidBodyComponentManager
-	Weapons          *components.WeaponComponentManager
-	Hps              *components.HpComponentManager
-	SoundEffects     *components.SoundEffectsComponentManager
-	moveSpeed        float32
+	EntityManager         *ecs.EntityManager
+	SpaceshipIntents      *components.SpaceshipIntentComponentManager
+	Positions             *stdcomponents.PositionComponentManager
+	Velocities            *stdcomponents.VelocityComponentManager
+	Rotations             *stdcomponents.RotationComponentManager
+	Scales                *stdcomponents.ScaleComponentManager
+	BoxColliders          *stdcomponents.BoxColliderComponentManager
+	CircleColliders       *stdcomponents.CircleColliderComponentManager
+	BulletTags            *components.BulletTagComponentManager
+	Sprites               *stdcomponents.SpriteComponentManager
+	Textures              *stdcomponents.RLTextureProComponentManager
+	RigidBodies           *stdcomponents.RigidBodyComponentManager
+	Weapons               *components.WeaponComponentManager
+	Hps                   *components.HpComponentManager
+	SoundEffects          *components.SoundEffectsComponentManager
+	TexturePositionSmooth *stdcomponents.TexturePositionSmoothComponentManager
+	Renderables           *stdcomponents.RenderableComponentManager
+	RenderOrders          *stdcomponents.RenderOrderComponentManager
+	moveSpeed             float32
 }
 
 func (s *SpaceshipIntentsSystem) Init() {}
@@ -123,8 +127,12 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 						CircleColliders: s.CircleColliders,
 						RigidBodies:     s.RigidBodies,
 						Sprites:         s.Sprites,
+						Textures:        s.Textures,
 						BulletTags:      s.BulletTags,
 						Hps:             s.Hps,
+						Smooth:          s.TexturePositionSmooth,
+						Renderables:     s.Renderables,
+						RenderOrders:    s.RenderOrders,
 					}, pos.XY.X, pos.XY.Y, angle, bulletVelocityX, bulletVelocityY)
 				}
 				weapon.CooldownLeft = weapon.Cooldown
