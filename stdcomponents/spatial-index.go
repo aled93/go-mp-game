@@ -14,10 +14,17 @@ Thank you for your support!
 
 package stdcomponents
 
-import "gomp/pkg/ecs"
+import (
+	"gomp/pkg/ecs"
+	"gomp/vectors"
+)
 
 type SpatialIndex struct {
 	X, Y int
+}
+
+func (i SpatialIndex) ToVec2() vectors.Vec2 {
+	return vectors.Vec2{X: float32(i.X), Y: float32(i.Y)}
 }
 
 type SpatialIndexComponentManager = ecs.ComponentManager[SpatialIndex]

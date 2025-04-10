@@ -40,9 +40,11 @@ const (
 	AABBComponentId
 	RigidBodyComponentId
 	BvhTreeComponentId
+	CollisionGridComponentId
+	CollisionChunkComponentId
 	FrameBuffer2DComponentId
 	CameraComponentId
 	TexturePositionSmoothComponentId
 
-	StdLastComponentId
+	StdLastComponentId // StdLastComponentId MUST always be the last
 )

@@ -162,7 +162,7 @@ func (s *RenderBogdanSystem) prepareRender(dt time.Duration) {
 
 func (s *RenderBogdanSystem) prepareAnimations(wg *sync.WaitGroup) {
 	defer wg.Done()
-	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
+	s.RlTexturePros.EachEntity(func(entity ecs.Entity) bool {
 		texturePro := s.RlTexturePros.Get(entity)
 		animation := s.AnimationPlayers.Get(entity)
 		if animation == nil {
@@ -180,7 +180,7 @@ func (s *RenderBogdanSystem) prepareAnimations(wg *sync.WaitGroup) {
 
 func (s *RenderBogdanSystem) prepareFlips(wg *sync.WaitGroup) {
 	defer wg.Done()
-	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
+	s.RlTexturePros.EachEntity(func(entity ecs.Entity) bool {
 		texturePro := s.RlTexturePros.Get(entity)
 		mirrored := s.Flips.Get(entity)
 		if mirrored == nil {
@@ -199,7 +199,7 @@ func (s *RenderBogdanSystem) prepareFlips(wg *sync.WaitGroup) {
 func (s *RenderBogdanSystem) preparePositions(wg *sync.WaitGroup, dt time.Duration) {
 	defer wg.Done()
 	//dts := dt.Seconds()
-	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
+	s.RlTexturePros.EachEntity(func(entity ecs.Entity) bool {
 		texturePro := s.RlTexturePros.Get(entity)
 		position := s.Positions.Get(entity)
 		if position == nil {
@@ -217,7 +217,7 @@ func (s *RenderBogdanSystem) preparePositions(wg *sync.WaitGroup, dt time.Durati
 
 func (s *RenderBogdanSystem) prepareRotations(wg *sync.WaitGroup) {
 	defer wg.Done()
-	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
+	s.RlTexturePros.EachEntity(func(entity ecs.Entity) bool {
 		texturePro := s.RlTexturePros.Get(entity)
 		rotation := s.Rotations.Get(entity)
 		if rotation == nil {
@@ -230,7 +230,7 @@ func (s *RenderBogdanSystem) prepareRotations(wg *sync.WaitGroup) {
 
 func (s *RenderBogdanSystem) prepareScales(wg *sync.WaitGroup) {
 	defer wg.Done()
-	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
+	s.RlTexturePros.EachEntity(func(entity ecs.Entity) bool {
 		texturePro := s.RlTexturePros.Get(entity)
 		scale := s.Scales.Get(entity)
 		if scale == nil {
@@ -244,7 +244,7 @@ func (s *RenderBogdanSystem) prepareScales(wg *sync.WaitGroup) {
 
 func (s *RenderBogdanSystem) prepareTints(wg *sync.WaitGroup) {
 	defer wg.Done()
-	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
+	s.RlTexturePros.EachEntity(func(entity ecs.Entity) bool {
 		tr := s.RlTexturePros.Get(entity)
 		tint := s.Tints.Get(entity)
 		if tint == nil {

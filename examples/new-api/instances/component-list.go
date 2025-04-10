@@ -47,6 +47,8 @@ type ComponentList struct {
 	Cameras               stdcomponents.CameraComponentManager
 	TexturePositionSmooth stdcomponents.TexturePositionSmoothComponentManager
 	FrameBuffer2D         stdcomponents.FrameBuffer2DComponentManager
+	CollisionGrid         stdcomponents.CollisionGridComponentManager
+	CollisionChunk        stdcomponents.CollisionChunkComponentManager
 
 	Health               components.HpComponentManager
 	Controller           components.ControllerComponentManager
@@ -92,6 +94,8 @@ func NewComponentList() ComponentList {
 		Cameras:               stdcomponents.NewCameraComponentManager(),
 		FrameBuffer2D:         stdcomponents.NewFrameBuffer2DComponentManager(),
 		TexturePositionSmooth: stdcomponents.NewTexturePositionSmoothComponentManager(),
+		CollisionGrid:         stdcomponents.NewCollisionGridComponentManager(),
+		CollisionChunk:        stdcomponents.NewCollisionChunkComponentManager(),
 
 		Health:               components.NewHealthComponentManager(),
 		Controller:           components.NewControllerComponentManager(),

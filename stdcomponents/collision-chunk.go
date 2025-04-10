@@ -16,15 +16,15 @@ package stdcomponents
 
 import (
 	"gomp/pkg/ecs"
-	"image/color"
 )
 
-type BvhTree struct {
-	Color color.RGBA
+type CollisionChunk struct {
+	Size  float32
+	Layer CollisionLayer
 }
 
-type BvhTreeComponentManager = ecs.ComponentManager[BvhTree]
+type CollisionChunkComponentManager = ecs.ComponentManager[CollisionChunk]
 
-func NewBvhTreeComponentManager() BvhTreeComponentManager {
-	return ecs.NewComponentManager[BvhTree](BvhTreeComponentId)
+func NewCollisionChunkComponentManager() CollisionChunkComponentManager {
+	return ecs.NewComponentManager[CollisionChunk](CollisionChunkComponentId)
 }

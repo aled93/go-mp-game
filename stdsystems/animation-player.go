@@ -28,7 +28,7 @@ func (s *AnimationPlayerSystem) Init() {
 }
 func (s *AnimationPlayerSystem) Run() {
 	dt := time.Since(s.lastRunAt)
-	s.AnimationPlayers.EachComponentParallel(func(animation *stdcomponents.AnimationPlayer) bool {
+	s.AnimationPlayers.EachComponent(func(animation *stdcomponents.AnimationPlayer) bool {
 		animation.ElapsedTime += time.Duration(float32(dt.Microseconds())*animation.Speed) * time.Microsecond
 
 		assert.True(animation.FrameDuration > 0, "frame duration must be greater than 0")
