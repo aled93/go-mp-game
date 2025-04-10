@@ -125,6 +125,7 @@ type RenderInjector struct {
 	BvhTrees                           *stdcomponents.BvhTreeComponentManager
 	Camera                             *stdcomponents.CameraComponentManager
 	RenderTexture2D                    *stdcomponents.FrameBuffer2DComponentManager
+	CollisionChunks                    *stdcomponents.CollisionChunkComponentManager
 }
 
 func (s *RenderSystem) InjectWorld(injector *RenderInjector) {

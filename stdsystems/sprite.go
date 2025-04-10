@@ -35,7 +35,7 @@ type SpriteSystem struct {
 
 func (s *SpriteSystem) Init() {}
 func (s *SpriteSystem) Run() {
-	s.Sprites.EachEntityParallel(func(entity ecs.Entity) bool {
+	s.Sprites.EachEntityParallel(1, func(entity ecs.Entity, i int) bool {
 		sprite := s.Sprites.Get(entity)
 		scale := s.Scales.Get(entity)
 		tr := s.RLTexturePros.Get(entity)

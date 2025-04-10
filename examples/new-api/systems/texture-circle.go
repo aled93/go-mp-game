@@ -12,6 +12,7 @@ import (
 	"gomp/examples/new-api/components"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
+	"math"
 	"time"
 )
 
@@ -35,7 +36,7 @@ func (s *TextureCircleSystem) Init() {
 }
 
 func (s *TextureCircleSystem) Run(dt time.Duration) {
-	s.Circles.EachEntityParallel(func(entity ecs.Entity) bool {
+	s.Circles.EachEntityParallel(math.MaxInt, func(entity ecs.Entity, i int) bool {
 		circle := s.Circles.Get(entity)
 		texture := s.Textures.Get(entity)
 		assert.Nil(texture, "texture is nil; entity: %d", entity)
