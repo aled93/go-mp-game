@@ -16,8 +16,8 @@ import (
 type Slice[T any] struct {
 	data          []T
 	len           int
-	wg            sync.WaitGroup
 	maxNumWorkers int
+	wg            sync.WaitGroup
 }
 
 func NewSlice[T any](size int) (a Slice[T]) {
@@ -55,7 +55,7 @@ func (a *Slice[T]) Set(index int, value T) *T {
 }
 
 func (a *Slice[T]) Append(values ...T) *T {
-	a.data = append(a.data[:a.len-1], values...)
+	a.data = append(a.data[:a.len], values...)
 	a.len += len(values)
 	return &a.data[a.len-1]
 }
@@ -101,10 +101,8 @@ func (a *Slice[T]) Last() *T {
 	return a.Get(index)
 }
 
-func (a *Slice[T]) Raw(result []T) []T {
-	result = result[:0]
-	copy(result, a.data)
-	return result
+func (a *Slice[T]) Raw() []T {
+	return a.data
 }
 
 func (a *Slice[T]) getPageIdAndIndex(index int) (int, int) {

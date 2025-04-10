@@ -22,12 +22,8 @@ import (
 	"image/color"
 	"math"
 	"math/rand"
-	"sync"
+	"runtime"
 	"time"
-)
-
-const (
-	chunkScaleFactor = 32
 )
 
 func NewCollisionDetectionSystem() CollisionDetectionSystem {
@@ -64,31 +60,44 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 }
 func (s *CollisionDetectionSystem) Destroy() {}
 func (s *CollisionDetectionSystem) setup() {
+	const batchSize = 1 << 14
+
 	// Reset grids
-	s.CollisionGridComponentManager.EachEntity(func(entity ecs.Entity) bool {
+	s.CollisionGridComponentManager.EachEntityParallel(batchSize, func(entity ecs.Entity, workerId int) bool {
 		grid := s.CollisionGridComponentManager.Get(entity)
 		assert.NotNil(grid)
-
 		grid.Entities.Reset()
 		grid.MinBounds = vectors.Vec2{
 			X: math.MaxFloat32,
 			Y: math.MaxFloat32,
 		}
-
 		return true
 	})
 
-	// Register all entities in grids
-	s.GenericCollider.EachEntity(func(entity ecs.Entity) bool {
+	// Accumulate used CollisionLayers
+	var collisionLayerAccumulators = make([]stdcomponents.CollisionLayer, runtime.NumCPU()-2)
+	s.GenericCollider.EachEntityParallel(batchSize*4, func(entity ecs.Entity, workerId int) bool {
 		collider := s.GenericCollider.Get(entity)
 		assert.NotNil(collider)
+		collisionLayerAccumulators[workerId] |= 1 << collider.Layer
+		return true
+	})
+	collisionLayerAccumulator := stdcomponents.CollisionLayer(0)
+	for _, mask := range collisionLayerAccumulators {
+		collisionLayerAccumulator |= mask
+	}
 
-		gridEntity, exists := s.gridLookup[collider.Layer]
+	// For each bit in collisionLayerAccumulators, create a grid if it doesn't exist
+	for i := uint(0); i < 32; i++ {
+		if collisionLayerAccumulator&(1<<i) == 0 {
+			continue
+		}
+		gridEntity, exists := s.gridLookup[stdcomponents.CollisionLayer(i)]
 		if !exists {
 			gridEntity = s.EntityManager.Create()
-			s.gridLookup[collider.Layer] = gridEntity
+			s.gridLookup[stdcomponents.CollisionLayer(i)] = gridEntity
 			s.CollisionGridComponentManager.Create(gridEntity, stdcomponents.CollisionGrid{
-				Layer:       collider.Layer,
+				Layer:       stdcomponents.CollisionLayer(i),
 				Entities:    ecs.NewPagedArray[ecs.Entity](),
 				ChunkLookup: make(map[stdcomponents.SpatialIndex]ecs.Entity),
 				ChunkSize:   0,
@@ -98,6 +107,14 @@ func (s *CollisionDetectionSystem) setup() {
 				},
 			})
 		}
+	}
+
+	// Register all entities in grids
+	s.GenericCollider.EachEntity(func(entity ecs.Entity) bool {
+		collider := s.GenericCollider.Get(entity)
+		assert.NotNil(collider)
+
+		gridEntity := s.gridLookup[collider.Layer]
 
 		grid := s.CollisionGridComponentManager.Get(gridEntity)
 		assert.NotNil(grid)
@@ -118,6 +135,7 @@ func (s *CollisionDetectionSystem) setup() {
 		grid := s.CollisionGridComponentManager.Get(gridEntity)
 		assert.NotNil(grid)
 
+		const chunkScaleFactor = 32
 		newChunkSize := grid.MinBounds.Length() * chunkScaleFactor
 		newChunkSize = float32(min(int(1)<<(ecs.FastIntLog2(int(newChunkSize))+1), 65535))
 		if newChunkSize != grid.ChunkSize {
@@ -147,13 +165,12 @@ func (s *CollisionDetectionSystem) setup() {
 				})
 				assert.NotNil(chunkPos)
 				s.BvhTreeComponentManager.Create(chunkEntity, stdcomponents.BvhTree{
-					Nodes:           ecs.NewPagedArray[stdcomponents.BvhNode](),
-					AabbNodes:       ecs.NewPagedArray[stdcomponents.AABB](),
-					Leaves:          ecs.NewPagedArray[stdcomponents.BvhLeaf](),
-					AabbLeaves:      ecs.NewPagedArray[stdcomponents.AABB](),
-					Codes:           ecs.NewPagedArray[uint64](),
-					Components:      ecs.NewPagedArray[stdcomponents.BvhComponent](),
-					ComponentsSlice: make([]stdcomponents.BvhComponent, 0, grid.Entities.Len()),
+					Nodes:      ecs.NewSlice[stdcomponents.BvhNode](64),
+					AabbNodes:  ecs.NewSlice[stdcomponents.AABB](64),
+					Leaves:     ecs.NewSlice[stdcomponents.BvhLeaf](64),
+					AabbLeaves: ecs.NewSlice[stdcomponents.AABB](64),
+					Codes:      ecs.NewSlice[uint64](64),
+					Components: ecs.NewSlice[stdcomponents.BvhComponent](64),
 				})
 				s.Tints.Create(chunkEntity, color.RGBA{
 					R: uint8(rand.Intn(255)),
@@ -176,19 +193,10 @@ func (s *CollisionDetectionSystem) setup() {
 		return true
 	})
 
-	// Build BVH trees
-	wg := &sync.WaitGroup{}
-	s.CollisionChunkComponentManager.EachEntity(func(gridEntity ecs.Entity) bool {
-		tree := s.BvhTreeComponentManager.Get(gridEntity)
+	s.CollisionChunkComponentManager.EachEntityParallel(batchSize, func(chunkEntity ecs.Entity, workerId int) bool {
+		tree := s.BvhTreeComponentManager.Get(chunkEntity)
 		assert.NotNil(tree)
-
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			tree.Build()
-		}()
-
+		tree.Build()
 		return true
 	})
-	wg.Wait()
 }

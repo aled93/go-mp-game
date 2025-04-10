@@ -242,16 +242,16 @@ func (c *SharedComponentManager[T]) Each(yield func(Entity, *T) bool) {
 // Iterators Parallel
 // ========================================================
 
-func (c *SharedComponentManager[T]) EachComponentParallel(yield func(*T) bool) {
+func (c *SharedComponentManager[T]) EachComponentParallel(batchSize int, yield func(*T, int) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.components.AllDataParallel(yield)
+	c.components.AllDataParallel(batchSize, yield)
 }
 
-func (c *SharedComponentManager[T]) EachEntityParallel(yield func(Entity) bool) {
+func (c *SharedComponentManager[T]) EachEntityParallel(batchSize int, yield func(Entity, int) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.entities.AllDataValueParallel(yield)
+	c.entities.AllDataValueParallel(batchSize, yield)
 }
 
 func (c *SharedComponentManager[T]) EachParallel(yield func(Entity, *T) bool) {

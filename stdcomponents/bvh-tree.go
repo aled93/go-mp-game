@@ -40,14 +40,12 @@ type BvhComponent struct {
 }
 
 type BvhTree struct {
-	Nodes      ecs.PagedArray[BvhNode]
-	AabbNodes  ecs.PagedArray[AABB]
-	Leaves     ecs.PagedArray[BvhLeaf]
-	AabbLeaves ecs.PagedArray[AABB]
-	Codes      ecs.PagedArray[uint64]
-	Components ecs.PagedArray[BvhComponent]
-
-	ComponentsSlice []BvhComponent
+	Nodes      ecs.Slice[BvhNode]
+	AabbNodes  ecs.Slice[AABB]
+	Leaves     ecs.Slice[BvhLeaf]
+	AabbLeaves ecs.Slice[AABB]
+	Codes      ecs.Slice[uint64]
+	Components ecs.Slice[BvhComponent]
 }
 
 func (t *BvhTree) AddComponent(entity ecs.Entity, aabb AABB) {
@@ -152,20 +150,15 @@ func (t *BvhTree) Build() {
 	t.AabbLeaves.Reset()
 	t.Codes.Reset()
 
-	// Extract and sort components by morton code
-	if cap(t.ComponentsSlice) < t.Components.Len() {
-		t.ComponentsSlice = make([]BvhComponent, 0, t.Components.Len())
-	}
+	var sorted = t.Components.Raw()
 
-	t.ComponentsSlice = t.Components.Raw(t.ComponentsSlice)
-
-	slices.SortFunc(t.ComponentsSlice, func(a, b BvhComponent) int {
+	slices.SortFunc(sorted, func(a, b BvhComponent) int {
 		return int(a.Code - b.Code)
 	})
 
 	// Add leaves
-	for i := range t.ComponentsSlice {
-		component := &t.ComponentsSlice[i]
+	for i := range sorted {
+		component := sorted[i]
 		t.Leaves.Append(BvhLeaf{Id: component.Entity})
 		t.AabbLeaves.Append(component.Aabb)
 		t.Codes.Append(component.Code)
@@ -187,14 +180,15 @@ func (t *BvhTree) Build() {
 		childrenCreated bool
 	}
 
-	stack := []buildTask{
+	stack := [32]buildTask{
 		{parentIndex: 0, start: 0, end: t.Leaves.Len() - 1, childrenCreated: false},
 	}
+	stackLen := 1
 
-	for len(stack) > 0 {
+	for stackLen > 0 {
+		stackLen--
 		// Pop the last task
-		task := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
+		task := stack[stackLen]
 
 		if !task.childrenCreated {
 			if task.start == task.end {
@@ -215,28 +209,31 @@ func (t *BvhTree) Build() {
 			t.Nodes.Get(task.parentIndex).ChildIndex = int32(leftIndex)
 
 			// Push parent task back with childrenCreated=true
-			stack = append(stack, buildTask{
+			stack[stackLen] = buildTask{
 				parentIndex:     task.parentIndex,
 				start:           task.start,
 				end:             task.end,
 				childrenCreated: true,
-			})
+			}
+			stackLen++
 
 			// Push right child task (split+1 to end)
-			stack = append(stack, buildTask{
+			stack[stackLen] = buildTask{
 				parentIndex:     leftIndex + 1,
 				start:           split + 1,
 				end:             task.end,
 				childrenCreated: false,
-			})
+			}
+			stackLen++
 
 			// Push left child task (start to split)
-			stack = append(stack, buildTask{
+			stack[stackLen] = buildTask{
 				parentIndex:     leftIndex,
 				start:           task.start,
 				end:             split,
 				childrenCreated: false,
-			})
+			}
+			stackLen++
 		} else {
 			// Merge children's AABBs into parent
 			leftChildIndex := int(t.Nodes.Get(task.parentIndex).ChildIndex)

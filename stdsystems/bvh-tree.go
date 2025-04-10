@@ -43,20 +43,15 @@ func (s *BvhTreeSystem) build(t *stdcomponents.BvhTree) {
 	t.AabbLeaves.Reset()
 	t.Codes.Reset()
 
-	// Extract and sort components by morton code
-	if cap(t.ComponentsSlice) < t.Components.Len() {
-		t.ComponentsSlice = make([]stdcomponents.BvhComponent, 0, t.Components.Len())
-	}
+	var sorted = t.Components.Raw()
 
-	t.ComponentsSlice = t.Components.Raw(t.ComponentsSlice)
-
-	slices.SortFunc(t.ComponentsSlice, func(a, b stdcomponents.BvhComponent) int {
+	slices.SortFunc(sorted, func(a, b stdcomponents.BvhComponent) int {
 		return int(a.Code - b.Code)
 	})
 
 	// Add leaves
-	for i := range t.ComponentsSlice {
-		component := &t.ComponentsSlice[i]
+	for i := range sorted {
+		component := sorted[i]
 		t.Leaves.Append(stdcomponents.BvhLeaf{Id: component.Entity})
 		t.AabbLeaves.Append(component.Aabb)
 		t.Codes.Append(component.Code)

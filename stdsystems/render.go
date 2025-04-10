@@ -207,7 +207,7 @@ func (s *RenderSystem) render() {
 			tree := s.BvhTrees.Get(e)
 			assert.NotNil(tree)
 
-			tree.AabbNodes.AllData(func(a *stdcomponents.AABB) bool {
+			tree.AabbNodes.EachData(func(a *stdcomponents.AABB) bool {
 				rl.DrawRectangle(int32(a.Min.X), int32(a.Min.Y), int32(a.Max.X-a.Min.X), int32(a.Max.Y-a.Min.Y), *tint)
 				return true
 			})
@@ -367,7 +367,7 @@ func (s *RenderSystem) prepareRender(dt time.Duration) {
 
 func (s *RenderSystem) prepareAnimations(wg *sync.WaitGroup) {
 	defer wg.Done()
-	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
+	s.RlTexturePros.EachEntityParallel(128, func(entity ecs.Entity, workerId int) bool {
 		texturePro := s.RlTexturePros.Get(entity)
 		animation := s.AnimationPlayers.Get(entity)
 		if animation == nil {
@@ -385,7 +385,7 @@ func (s *RenderSystem) prepareAnimations(wg *sync.WaitGroup) {
 
 func (s *RenderSystem) prepareFlips(wg *sync.WaitGroup) {
 	defer wg.Done()
-	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
+	s.RlTexturePros.EachEntityParallel(128, func(entity ecs.Entity, workerId int) bool {
 		texturePro := s.RlTexturePros.Get(entity)
 		flipped := s.Flips.Get(entity)
 		if flipped == nil {
@@ -404,7 +404,7 @@ func (s *RenderSystem) prepareFlips(wg *sync.WaitGroup) {
 func (s *RenderSystem) preparePositions(wg *sync.WaitGroup, dt time.Duration) {
 	defer wg.Done()
 	dts := dt.Seconds()
-	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
+	s.RlTexturePros.EachEntityParallel(128, func(entity ecs.Entity, workerId int) bool {
 		texturePro := s.RlTexturePros.Get(entity)
 		position := s.Positions.Get(entity)
 		if position == nil {
@@ -427,7 +427,7 @@ func (s *RenderSystem) preparePositions(wg *sync.WaitGroup, dt time.Duration) {
 
 func (s *RenderSystem) prepareRotations(wg *sync.WaitGroup) {
 	defer wg.Done()
-	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
+	s.RlTexturePros.EachEntityParallel(128, func(entity ecs.Entity, workerId int) bool {
 		texturePro := s.RlTexturePros.Get(entity)
 		rotation := s.Rotations.Get(entity)
 		if rotation == nil {
@@ -440,7 +440,7 @@ func (s *RenderSystem) prepareRotations(wg *sync.WaitGroup) {
 
 func (s *RenderSystem) prepareScales(wg *sync.WaitGroup) {
 	defer wg.Done()
-	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
+	s.RlTexturePros.EachEntityParallel(128, func(entity ecs.Entity, workerId int) bool {
 		texturePro := s.RlTexturePros.Get(entity)
 		scale := s.Scales.Get(entity)
 		if scale == nil {
@@ -454,7 +454,7 @@ func (s *RenderSystem) prepareScales(wg *sync.WaitGroup) {
 
 func (s *RenderSystem) prepareTints(wg *sync.WaitGroup) {
 	defer wg.Done()
-	s.RlTexturePros.EachEntityParallel(func(entity ecs.Entity) bool {
+	s.RlTexturePros.EachEntityParallel(128, func(entity ecs.Entity, workerId int) bool {
 		tr := s.RlTexturePros.Get(entity)
 		tint := s.Tints.Get(entity)
 		if tint == nil {
