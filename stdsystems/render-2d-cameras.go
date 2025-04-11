@@ -45,6 +45,7 @@ func (s *Render2DCamerasSystem) Init() {
 func (s *Render2DCamerasSystem) Run(dt time.Duration) {
 	s.Cameras.EachEntity(func(entity ecs.Entity) bool {
 		camera := s.Cameras.Get(entity)
+		cameraRect := camera.Rect()
 		renderTexture := s.RenderTexture2D.Get(entity)
 
 		// Collect and sort render objects
@@ -53,14 +54,29 @@ func (s *Render2DCamerasSystem) Run(dt time.Duration) {
 			t := s.Textures.Get(entity)
 			o := s.RenderOrders.Get(entity)
 			aabb := s.AABBs.Get(entity)
-			s.renderObjects = append(s.renderObjects, renderObject{
-				texture:    t,
-				renderable: r,
-				order:      o.CalculatedZ,
-				aabb:       aabb,
-			})
+
+			switch camera.Culling {
+			case stdcomponents.Culling2DFullscreenBB:
+				if aabb != nil && intersects(cameraRect, aabb.Rect()) {
+					s.renderObjects = append(s.renderObjects, renderObject{
+						texture:    t,
+						renderable: r,
+						order:      o.CalculatedZ,
+						aabb:       aabb,
+					})
+				}
+			default:
+				s.renderObjects = append(s.renderObjects, renderObject{
+					texture:    t,
+					renderable: r,
+					order:      o.CalculatedZ,
+					aabb:       aabb,
+				})
+			}
+
 			return true
 		})
+
 		slices.SortFunc(s.renderObjects, func(a, b renderObject) int {
 			return cmp.Compare(a.order, b.order)
 		})
@@ -70,19 +86,10 @@ func (s *Render2DCamerasSystem) Run(dt time.Duration) {
 		rl.BeginMode2D(camera.Camera2D)
 		rl.ClearBackground(camera.BGColor)
 
-		cameraRect := camera.Rect()
 		for _, obj := range s.renderObjects {
 			if camera.Layer&obj.renderable.CameraMask != 0 {
 				assert.Nil(obj.texture, "EntityTexturePro is nil")
-				switch camera.Culling {
-				case stdcomponents.Culling2DFullscreenBB:
-					if obj.aabb != nil && intersects(cameraRect, obj.aabb.Rect()) {
-						rl.DrawTexturePro(*obj.texture.Texture, obj.texture.Frame, obj.texture.Dest, obj.texture.Origin, obj.texture.Rotation, obj.texture.Tint)
-					}
-				default:
-					rl.DrawTexturePro(*obj.texture.Texture, obj.texture.Frame, obj.texture.Dest, obj.texture.Origin, obj.texture.Rotation, obj.texture.Tint)
-				}
-
+				rl.DrawTexturePro(*obj.texture.Texture, obj.texture.Frame, obj.texture.Dest, obj.texture.Origin, obj.texture.Rotation, obj.texture.Tint)
 			}
 		}
 

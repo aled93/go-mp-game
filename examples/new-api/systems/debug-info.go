@@ -37,7 +37,9 @@ type DebugInfoSystem struct {
 	RenderOrders                       *stdcomponents.RenderOrderComponentManager
 	AABBs                              *stdcomponents.AABBComponentManager
 	Circle                             *components.PrimitiveCircleComponentManager
-	camera                             ecs.Entity
+	CollisionChunks                    *stdcomponents.CollisionChunkComponentManager
+	Tints                              *stdcomponents.TintComponentManager
+	BvhTrees                           *stdcomponents.BvhTreeComponentManager
 
 	debug       bool
 	children    children
@@ -56,15 +58,22 @@ func (s *DebugInfoSystem) Init() {
 }
 
 func (s *DebugInfoSystem) Run(dt time.Duration) bool {
-	if rl.IsKeyPressed(rl.KeyF2) {
+	if rl.IsKeyPressed(rl.KeyF6) {
 		if !s.debug {
 			s.BoxColliders.EachEntity(func(e ecs.Entity) bool {
 				col := s.BoxColliders.Get(e)
 				scale := s.Scales.Get(e)
-				pos := s.Positions.Get(e)
-				rot := s.Rotations.Get(e)
+				position := s.Positions.Get(e)
+				rotation := s.Rotations.Get(e)
 
-				s.spawnRect(col, scale, pos, rot, e)
+				x := position.XY.X
+				y := position.XY.Y
+				width := col.WH.X * scale.XY.X
+				height := col.WH.Y * scale.XY.Y
+				s.spawnRect(x, y, width, height, rl.Vector2{
+					X: col.Offset.X * scale.XY.X,
+					Y: col.Offset.Y * scale.XY.Y,
+				}, float32(rotation.Degrees()), rl.DarkGreen, e)
 				return true
 			})
 			s.CircleColliders.EachEntity(func(e ecs.Entity) bool {
@@ -122,7 +131,14 @@ func (s *DebugInfoSystem) Run(dt time.Duration) bool {
 
 			} else {
 				//TODO: defer spawning to non parallel function
-				s.spawnRect(col, scale, parentPosition, rotation, e)
+				x := parentPosition.XY.X
+				y := parentPosition.XY.Y
+				width := col.WH.X * scale.XY.X
+				height := col.WH.Y * scale.XY.Y
+				s.spawnRect(x, y, width, height, rl.Vector2{
+					X: col.Offset.X * scale.XY.X,
+					Y: col.Offset.Y * scale.XY.Y,
+				}, float32(rotation.Degrees()), rl.DarkGreen, e)
 			}
 
 			return true
@@ -183,22 +199,19 @@ func (s *DebugInfoSystem) Run(dt time.Duration) bool {
 	return false
 }
 
-func (s *DebugInfoSystem) spawnRect(col *stdcomponents.BoxCollider, scale *stdcomponents.Scale, pos *stdcomponents.Position, rot *stdcomponents.Rotation, e ecs.Entity) {
-	if _, ok := s.children[e]; !ok {
+func (s *DebugInfoSystem) spawnRect(x float32, y float32, width float32, height float32, origin rl.Vector2, rotation float32, tint color.RGBA, parent ecs.Entity) {
+	if _, ok := s.children[parent]; !ok {
 		childEntity := s.EntityManager.Create()
 		s.TextureRect.Create(childEntity, components.TextureRect{
 			Dest: rl.Rectangle{
-				X:      pos.XY.X,
-				Y:      pos.XY.Y,
-				Width:  col.WH.X * scale.XY.X,
-				Height: col.WH.Y * scale.XY.Y,
+				X:      x,
+				Y:      y,
+				Width:  width,
+				Height: height,
 			},
-			Origin: rl.Vector2{
-				X: col.Offset.X * scale.XY.X,
-				Y: col.Offset.Y * scale.XY.Y,
-			},
-			Rotation: float32(rot.Degrees()),
-			Color:    rl.DarkGreen,
+			Origin:   origin,
+			Rotation: rotation,
+			Color:    tint,
 		})
 		s.AABBs.Create(childEntity, stdcomponents.AABB{})
 		s.Texture.Create(childEntity, stdcomponents.RLTexturePro{})
@@ -209,7 +222,7 @@ func (s *DebugInfoSystem) spawnRect(col *stdcomponents.BoxCollider, scale *stdco
 		s.RenderOrders.Create(childEntity, stdcomponents.RenderOrder{
 			CalculatedZ: math.MaxInt,
 		})
-		s.children[e] = childType{
+		s.children[parent] = childType{
 			id:      childEntity,
 			isAlive: false,
 		}

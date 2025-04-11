@@ -49,7 +49,7 @@ func (s *MinimapSystem) Init() {
 	})
 	s.FrameBuffer2D.Create(s.minimapCamera, stdcomponents.FrameBuffer2D{
 		Position:  rl.Vector2{},
-		Frame:     rl.NewRectangle(0, 0, float32(width/6), float32(height/6)),
+		Frame:     rl.NewRectangle(0, 0, float32(width), float32(height)),
 		Texture:   rl.LoadRenderTexture(int32(width), int32(height)),
 		Layer:     config.MinimapCameraLayer,
 		BlendMode: rl.BlendAlpha,

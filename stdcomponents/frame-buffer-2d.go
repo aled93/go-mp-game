@@ -17,6 +17,7 @@ package stdcomponents
 import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/pkg/ecs"
+	"gomp/vectors"
 	"image/color"
 )
 
@@ -29,6 +30,15 @@ type FrameBuffer2D struct {
 	Rotation  float32
 	Tint      color.RGBA
 	Dst       rl.Rectangle
+}
+
+func (d FrameBuffer2D) FrameRect() vectors.Rectangle {
+	return vectors.Rectangle{
+		X:      d.Frame.X,
+		Y:      d.Frame.Y,
+		Width:  d.Frame.Width,
+		Height: d.Frame.Height,
+	}
 }
 
 type FrameBuffer2DComponentManager = ecs.ComponentManager[FrameBuffer2D]
