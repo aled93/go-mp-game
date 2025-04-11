@@ -180,7 +180,7 @@ func (t *BvhTree) Build() {
 		childrenCreated bool
 	}
 
-	stack := [32]buildTask{
+	stack := [64]buildTask{
 		{parentIndex: 0, start: 0, end: t.Leaves.Len() - 1, childrenCreated: false},
 	}
 	stackLen := 1
