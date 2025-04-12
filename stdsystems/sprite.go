@@ -30,7 +30,6 @@ type SpriteSystem struct {
 	Scales        *stdcomponents.ScaleComponentManager
 	Sprites       *stdcomponents.SpriteComponentManager
 	RLTexturePros *stdcomponents.RLTextureProComponentManager
-	Renderables   *stdcomponents.RenderableComponentManager
 	RenderOrder   *stdcomponents.RenderOrderComponentManager
 }
 
@@ -40,11 +39,6 @@ func (s *SpriteSystem) Run() {
 		sprite := s.Sprites.Get(entity) //
 		position := s.Positions.Get(entity)
 		scale := s.Scales.Get(entity)
-
-		renderable := s.Renderables.Get(entity)
-		if renderable == nil {
-			renderable = s.Renderables.Create(entity, stdcomponents.SpriteRenderableType)
-		}
 
 		renderOrder := s.RenderOrder.Get(entity)
 		if renderOrder == nil {

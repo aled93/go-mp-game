@@ -12,20 +12,14 @@ none :)
 Thank you for your support!
 */
 
-package config
+package stdcomponents
 
-import "gomp/stdcomponents"
+import "gomp/pkg/ecs"
 
-const (
-	DefaultCollisionLayer stdcomponents.CollisionLayer = iota
-	PlayerCollisionLayer
-	BulletCollisionLayer
-	EnemyCollisionLayer
-	WallCollisionLayer
-)
+type RenderVisible struct{}
 
-const (
-	MainCameraLayer stdcomponents.CameraLayer = 1 << iota
-	DebugLayer
-	MinimapCameraLayer
-)
+type RenderVisibleComponentManager = ecs.ComponentManager[RenderVisible]
+
+func NewRenderVisibleComponentManager() RenderVisibleComponentManager {
+	return ecs.NewComponentManager[RenderVisible](RenderVisibleComponentId)
+}

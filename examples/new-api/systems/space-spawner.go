@@ -39,6 +39,10 @@ type SpaceSpawnerSystem struct {
 	Rotations       *stdcomponents.RotationComponentManager
 	Scales          *stdcomponents.ScaleComponentManager
 	RigidBodies     *stdcomponents.RigidBodyComponentManager
+	Renderables     *stdcomponents.RenderableComponentManager
+	RenderOrders    *stdcomponents.RenderOrderComponentManager
+	Textures        *stdcomponents.RLTextureProComponentManager
+	YSorts          *stdcomponents.YSortComponentManager
 }
 
 func (s *SpaceSpawnerSystem) Init() {}
@@ -69,6 +73,8 @@ func (s *SpaceSpawnerSystem) Run(dt time.Duration) {
 			AsteroidTags:    s.Asteroids,
 			Hp:              s.Hp,
 			RigidBodies:     s.RigidBodies,
+			Renderables:     s.Renderables,
+			YSorts:          s.YSorts,
 		}, pos.XY.X, pos.XY.Y, 0, 1+rand.Float32()*2, 0, 50+rand.Float32()*100)
 		spawner.CooldownLeft = spawner.Cooldown
 		return true

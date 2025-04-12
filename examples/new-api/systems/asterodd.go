@@ -30,15 +30,19 @@ func NewAssteroddSystem() AssteroddSystem {
 }
 
 type AssteroddSystem struct {
-	EntityManager   *ecs.EntityManager
-	Positions       *stdcomponents.PositionComponentManager
-	Rotations       *stdcomponents.RotationComponentManager
-	Scales          *stdcomponents.ScaleComponentManager
-	Velocities      *stdcomponents.VelocityComponentManager
-	Sprites         *stdcomponents.SpriteComponentManager
-	BoxColliders    *stdcomponents.BoxColliderComponentManager
-	CircleColliders *stdcomponents.CircleColliderComponentManager
-	RigidBodies     *stdcomponents.RigidBodyComponentManager
+	EntityManager         *ecs.EntityManager
+	Positions             *stdcomponents.PositionComponentManager
+	Rotations             *stdcomponents.RotationComponentManager
+	Scales                *stdcomponents.ScaleComponentManager
+	Velocities            *stdcomponents.VelocityComponentManager
+	Sprites               *stdcomponents.SpriteComponentManager
+	BoxColliders          *stdcomponents.BoxColliderComponentManager
+	CircleColliders       *stdcomponents.CircleColliderComponentManager
+	RigidBodies           *stdcomponents.RigidBodyComponentManager
+	Renderables           *stdcomponents.RenderableComponentManager
+	TexturePositionSmooth *stdcomponents.TexturePositionSmoothComponentManager
+	RenderOrders          *stdcomponents.RenderOrderComponentManager
+	Textures              *stdcomponents.RLTextureProComponentManager
 
 	PlayerTags       *components.PlayerTagComponentManager
 	AsteroidTags     *components.AsteroidComponentManager
@@ -68,7 +72,9 @@ func (s *AssteroddSystem) Init() {
 		Weapons:          s.Weapons,
 		SpaceshipIntents: s.SpaceshipIntents,
 		SoundEffects:     s.SoundEffects,
+		Renderables:      s.Renderables,
 	}, 300, 300, -44.9)
+
 	entities.CreateSatellite(entities.CreateSatelliteManagers{
 		EntityManager: s.EntityManager,
 		Positions:     s.Positions,
@@ -78,7 +84,9 @@ func (s *AssteroddSystem) Init() {
 		Sprites:       s.Sprites,
 		BoxColliders:  s.BoxColliders,
 		RigidBodies:   s.RigidBodies,
+		Renderables:   s.Renderables,
 	}, 500, 500, 0)
+
 	entities.CreateSpaceSpawner(entities.CreateSpaceSpawnerManagers{
 		EntityManager: s.EntityManager,
 		Positions:     s.Positions,
@@ -95,6 +103,7 @@ func (s *AssteroddSystem) Init() {
 		Sprites:       s.Sprites,
 		WallTags:      s.WallTags,
 		RigidBodies:   s.RigidBodies,
+		Renderables:   s.Renderables,
 	}
 	entities.CreateWall(&wallManager, 0, -1000, 0, 5000, 1000)
 	entities.CreateWall(&wallManager, 0, 5000, 0, 5000, 1000)
@@ -118,6 +127,7 @@ func (s *AssteroddSystem) Init() {
 			Sprites:         s.Sprites,
 			BulletTags:      s.BulletTags,
 			Hps:             s.Hps,
+			Renderables:     s.Renderables,
 		}, randPos.X, randPos.Y, 0, 0, 0)
 
 		// bug case

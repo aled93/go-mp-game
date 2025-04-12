@@ -33,8 +33,9 @@ type CreateWallManagers struct {
 	Scales        *stdcomponents.ScaleComponentManager
 	BoxColliders  *stdcomponents.BoxColliderComponentManager
 	Sprites       *stdcomponents.SpriteComponentManager
-	WallTags      *components.WallTagComponentManager
 	RigidBodies   *stdcomponents.RigidBodyComponentManager
+	Renderables   *stdcomponents.RenderableComponentManager
+	WallTags      *components.WallTagComponentManager
 }
 
 func CreateWall(
@@ -93,6 +94,10 @@ func CreateWall(
 		},
 	})
 	props.WallTags.Create(entity, components.Wall{})
+	props.Renderables.Create(entity, stdcomponents.Renderable{
+		Type:       stdcomponents.SpriteRenderableType,
+		CameraMask: config.MainCameraLayer | config.MinimapCameraLayer,
+	})
 
 	return entity
 }

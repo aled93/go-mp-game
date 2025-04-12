@@ -23,7 +23,6 @@ import (
 
 func NewSystemList() SystemList {
 	newSystemList := SystemList{
-		Player:                   systems.NewPlayerSystem(),
 		Debug:                    stdsystems.NewDebugSystem(),
 		Velocity:                 stdsystems.NewVelocitySystem(),
 		Network:                  stdsystems.NewNetworkSystem(),
@@ -41,25 +40,31 @@ func NewSystemList() SystemList {
 		CollisionDetectionBVH:    stdsystems.NewCollisionDetectionBVHSystem(),
 		ColliderSystem:           stdsystems.NewColliderSystem(),
 		CollisionResolution:      stdsystems.NewCollisionResolutionSystem(),
-
-		RenderBogdan: systems.NewRenderBogdanSystem(),
-
-		Audio:        systems.NewAudioSystem(),
-		SpatialAudio: systems.NewSpatialAudioSystem(),
-
-		DampingSystem:    systems.NewDampingSystem(),
-		AssteroddSystem:  systems.NewAssteroddSystem(),
-		CollisionHandler: systems.NewCollisionHandlerSystem(),
-		SpaceshipIntents: systems.NewSpaceshipIntentsSystem(),
-		SpaceSpawner:     systems.NewSpaceSpawnerSystem(),
-		Hp:               systems.NewHpSystem(),
+		TexturePositionSmooth:    stdsystems.NewTexturePositionSmoothSystem(),
+		RenderCameras:            stdsystems.NewRender2DCamerasSystem(),
+		Culling:                  stdsystems.NewCullingSystem(),
+		Player:                   systems.NewPlayerSystem(),
+		RenderBogdan:             systems.NewRenderBogdanSystem(),
+		Audio:                    systems.NewAudioSystem(),
+		SpatialAudio:             systems.NewSpatialAudioSystem(),
+		DampingSystem:            systems.NewDampingSystem(),
+		AssteroddSystem:          systems.NewAssteroddSystem(),
+		CollisionHandler:         systems.NewCollisionHandlerSystem(),
+		SpaceshipIntents:         systems.NewSpaceshipIntentsSystem(),
+		SpaceSpawner:             systems.NewSpaceSpawnerSystem(),
+		Hp:                       systems.NewHpSystem(),
+		MainCamera:               systems.NewMainCameraSystem(),
+		TextureRect:              systems.NewTextureRectSystem(),
+		TextureCircle:            systems.NewTextureCircleSystem(),
+		Minimap:                  systems.NewMinimapSystem(),
+		DebugInfo:                systems.NewDebugInfoSystem(),
+		RenderOverlay:            systems.NewRenderOverlaySystem(),
 	}
 
 	return newSystemList
 }
 
 type SystemList struct {
-	Player                   systems.PlayerSystem
 	Debug                    stdsystems.DebugSystem
 	Velocity                 stdsystems.VelocitySystem
 	Network                  stdsystems.NetworkSystem
@@ -77,16 +82,23 @@ type SystemList struct {
 	CollisionDetectionBVH    stdsystems.CollisionDetectionBVHSystem
 	ColliderSystem           stdsystems.ColliderSystem
 	CollisionResolution      stdsystems.CollisionResolutionSystem
-
-	RenderBogdan systems.RenderBogdanSystem
-
-	Audio        systems.AudioSystem
-	SpatialAudio systems.SpatialAudioSystem
-
-	DampingSystem    systems.DampingSystem
-	AssteroddSystem  systems.AssteroddSystem
-	CollisionHandler systems.CollisionHandlerSystem
-	SpaceshipIntents systems.SpaceshipIntentsSystem
-	SpaceSpawner     systems.SpaceSpawnerSystem
-	Hp               systems.HpSystem
+	TexturePositionSmooth    stdsystems.TexturePositionSmoothSystem
+	RenderCameras            stdsystems.Render2DCamerasSystem
+	Culling                  stdsystems.CullingSystem
+	RenderBogdan             systems.RenderBogdanSystem
+	Player                   systems.PlayerSystem
+	Audio                    systems.AudioSystem
+	SpatialAudio             systems.SpatialAudioSystem
+	DampingSystem            systems.DampingSystem
+	AssteroddSystem          systems.AssteroddSystem
+	CollisionHandler         systems.CollisionHandlerSystem
+	SpaceshipIntents         systems.SpaceshipIntentsSystem
+	SpaceSpawner             systems.SpaceSpawnerSystem
+	Hp                       systems.HpSystem
+	MainCamera               systems.MainCameraSystem
+	Minimap                  systems.MinimapSystem
+	DebugInfo                systems.DebugInfoSystem
+	TextureRect              systems.TextureRectSystem
+	TextureCircle            systems.TextureCircleSystem
+	RenderOverlay            systems.RenderOverlaySystem
 }

@@ -20,32 +20,35 @@ import (
 )
 
 type ComponentList struct {
-	Position           stdcomponents.PositionComponentManager
-	Rotation           stdcomponents.RotationComponentManager
-	Scale              stdcomponents.ScaleComponentManager
-	Velocity           stdcomponents.VelocityComponentManager
-	Flip               stdcomponents.FlipComponentManager
-	Sprite             stdcomponents.SpriteComponentManager
-	SpriteMatrix       stdcomponents.SpriteMatrixComponentManager
-	Tint               stdcomponents.TintComponentManager
-	AnimationPlayer    stdcomponents.AnimationPlayerComponentManager
-	AnimationState     stdcomponents.AnimationStateComponentManager
-	RLTexturePro       stdcomponents.RLTextureProComponentManager
-	Network            stdcomponents.NetworkComponentManager
-	Renderable         stdcomponents.RenderableComponentManager
-	YSort              stdcomponents.YSortComponentManager
-	RenderOrder        stdcomponents.RenderOrderComponentManager
-	GenericCollider    stdcomponents.GenericColliderComponentManager
-	ColliderBox        stdcomponents.BoxColliderComponentManager
-	ColliderCircle     stdcomponents.CircleColliderComponentManager
-	ColliderSleepState stdcomponents.ColliderSleepStateComponentManager
-	Collision          stdcomponents.CollisionComponentManager
-	AABB               stdcomponents.AABBComponentManager
-	SpatialIndex       stdcomponents.SpatialIndexComponentManager
-	RigidBody          stdcomponents.RigidBodyComponentManager
-	BvhTree            stdcomponents.BvhTreeComponentManager
-	CollisionGrid      stdcomponents.CollisionGridComponentManager
-	CollisionChunk     stdcomponents.CollisionChunkComponentManager
+	Position              stdcomponents.PositionComponentManager
+	Rotation              stdcomponents.RotationComponentManager
+	Scale                 stdcomponents.ScaleComponentManager
+	Velocity              stdcomponents.VelocityComponentManager
+	Flip                  stdcomponents.FlipComponentManager
+	Sprite                stdcomponents.SpriteComponentManager
+	SpriteMatrix          stdcomponents.SpriteMatrixComponentManager
+	Tint                  stdcomponents.TintComponentManager
+	AnimationPlayer       stdcomponents.AnimationPlayerComponentManager
+	AnimationState        stdcomponents.AnimationStateComponentManager
+	RLTexturePro          stdcomponents.RLTextureProComponentManager
+	Network               stdcomponents.NetworkComponentManager
+	Renderable            stdcomponents.RenderableComponentManager
+	YSort                 stdcomponents.YSortComponentManager
+	RenderOrder           stdcomponents.RenderOrderComponentManager
+	GenericCollider       stdcomponents.GenericColliderComponentManager
+	ColliderBox           stdcomponents.BoxColliderComponentManager
+	ColliderCircle        stdcomponents.CircleColliderComponentManager
+	ColliderSleepState    stdcomponents.ColliderSleepStateComponentManager
+	Collision             stdcomponents.CollisionComponentManager
+	AABB                  stdcomponents.AABBComponentManager
+	SpatialIndex          stdcomponents.SpatialIndexComponentManager
+	RigidBody             stdcomponents.RigidBodyComponentManager
+	BvhTree               stdcomponents.BvhTreeComponentManager
+	Cameras               stdcomponents.CameraComponentManager
+	TexturePositionSmooth stdcomponents.TexturePositionSmoothComponentManager
+	FrameBuffer2D         stdcomponents.FrameBuffer2DComponentManager
+	CollisionGrid         stdcomponents.CollisionGridComponentManager
+	CollisionChunk        stdcomponents.CollisionChunkComponentManager
 
 	Health               components.HpComponentManager
 	Controller           components.ControllerComponentManager
@@ -58,36 +61,43 @@ type ComponentList struct {
 	SpaceshipIntent      components.SpaceshipIntentComponentManager
 	AsteroidSceneManager components.AsteroidSceneManagerComponentManager
 	SoundEffects         components.SoundEffectsComponentManager
+	TextureRect          components.TextureRectComponentManager
+	PrimitiveCircle      components.PrimitiveCircleComponentManager
+	RenderVisible        stdcomponents.RenderVisibleComponentManager
 }
 
 func NewComponentList() ComponentList {
 	return ComponentList{
-		Position:           stdcomponents.NewPositionComponentManager(),
-		Rotation:           stdcomponents.NewRotationComponentManager(),
-		Scale:              stdcomponents.NewScaleComponentManager(),
-		Velocity:           stdcomponents.NewVelocityComponentManager(),
-		Flip:               stdcomponents.NewFlipComponentManager(),
-		Sprite:             stdcomponents.NewSpriteComponentManager(),
-		SpriteMatrix:       stdcomponents.NewSpriteMatrixComponentManager(),
-		Tint:               stdcomponents.NewTintComponentManager(),
-		AnimationPlayer:    stdcomponents.NewAnimationPlayerComponentManager(),
-		AnimationState:     stdcomponents.NewAnimationStateComponentManager(),
-		RLTexturePro:       stdcomponents.NewRlTextureProComponentManager(),
-		Network:            stdcomponents.NewNetworkComponentManager(),
-		Renderable:         stdcomponents.NewRenderableComponentManager(),
-		YSort:              stdcomponents.NewYSortComponentManager(),
-		RenderOrder:        stdcomponents.NewRenderOrderComponentManager(),
-		GenericCollider:    stdcomponents.NewGenericColliderComponentManager(),
-		ColliderBox:        stdcomponents.NewBoxColliderComponentManager(),
-		ColliderCircle:     stdcomponents.NewCircleColliderComponentManager(),
-		ColliderSleepState: stdcomponents.NewColliderSleepStateComponentManager(),
-		Collision:          stdcomponents.NewCollisionComponentManager(),
-		AABB:               stdcomponents.NewAABBComponentManager(),
-		SpatialIndex:       stdcomponents.NewSpatialIndexComponentManager(),
-		RigidBody:          stdcomponents.NewRigidBodyComponentManager(),
-		BvhTree:            stdcomponents.NewBvhTreeComponentManager(),
-		CollisionGrid:      stdcomponents.NewCollisionGridComponentManager(),
-		CollisionChunk:     stdcomponents.NewCollisionChunkComponentManager(),
+		Position:              stdcomponents.NewPositionComponentManager(),
+		Rotation:              stdcomponents.NewRotationComponentManager(),
+		Scale:                 stdcomponents.NewScaleComponentManager(),
+		Velocity:              stdcomponents.NewVelocityComponentManager(),
+		Flip:                  stdcomponents.NewFlipComponentManager(),
+		Sprite:                stdcomponents.NewSpriteComponentManager(),
+		SpriteMatrix:          stdcomponents.NewSpriteMatrixComponentManager(),
+		Tint:                  stdcomponents.NewTintComponentManager(),
+		AnimationPlayer:       stdcomponents.NewAnimationPlayerComponentManager(),
+		AnimationState:        stdcomponents.NewAnimationStateComponentManager(),
+		RLTexturePro:          stdcomponents.NewRlTextureProComponentManager(),
+		Network:               stdcomponents.NewNetworkComponentManager(),
+		Renderable:            stdcomponents.NewRenderableComponentManager(),
+		RenderVisible:         stdcomponents.NewRenderVisibleComponentManager(),
+		YSort:                 stdcomponents.NewYSortComponentManager(),
+		RenderOrder:           stdcomponents.NewRenderOrderComponentManager(),
+		GenericCollider:       stdcomponents.NewGenericColliderComponentManager(),
+		ColliderBox:           stdcomponents.NewBoxColliderComponentManager(),
+		ColliderCircle:        stdcomponents.NewCircleColliderComponentManager(),
+		ColliderSleepState:    stdcomponents.NewColliderSleepStateComponentManager(),
+		Collision:             stdcomponents.NewCollisionComponentManager(),
+		AABB:                  stdcomponents.NewAABBComponentManager(),
+		SpatialIndex:          stdcomponents.NewSpatialIndexComponentManager(),
+		RigidBody:             stdcomponents.NewRigidBodyComponentManager(),
+		BvhTree:               stdcomponents.NewBvhTreeComponentManager(),
+		Cameras:               stdcomponents.NewCameraComponentManager(),
+		FrameBuffer2D:         stdcomponents.NewFrameBuffer2DComponentManager(),
+		TexturePositionSmooth: stdcomponents.NewTexturePositionSmoothComponentManager(),
+		CollisionGrid:         stdcomponents.NewCollisionGridComponentManager(),
+		CollisionChunk:        stdcomponents.NewCollisionChunkComponentManager(),
 
 		Health:               components.NewHealthComponentManager(),
 		Controller:           components.NewControllerComponentManager(),
@@ -100,5 +110,7 @@ func NewComponentList() ComponentList {
 		SpaceshipIntent:      components.NewSpaceshipIntentComponentManager(),
 		AsteroidSceneManager: components.NewAsteroidSceneManagerComponentManager(),
 		SoundEffects:         components.NewSoundEffectsComponentManager(),
+		TextureRect:          components.NewTextureRectComponentManager(),
+		PrimitiveCircle:      components.NewTextureCircleComponentManager(),
 	}
 }

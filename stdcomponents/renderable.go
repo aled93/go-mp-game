@@ -17,12 +17,18 @@ package stdcomponents
 import "gomp/pkg/ecs"
 
 const (
-	InvalidRenderableType Renderable = iota
+	InvalidRenderableType RenderableType = iota
 	SpriteRenderableType
 	SpriteMatrixRenderableType
 )
 
-type Renderable uint8
+type Renderable struct {
+	CameraMask CameraLayer
+	Type       RenderableType
+	Observed   bool
+}
+
+type RenderableType uint8
 
 type RenderableComponentManager = ecs.ComponentManager[Renderable]
 

@@ -37,6 +37,8 @@ type CreateAsteroidManagers struct {
 	AsteroidTags    *components.AsteroidComponentManager
 	Hp              *components.HpComponentManager
 	RigidBodies     *stdcomponents.RigidBodyComponentManager
+	Renderables     *stdcomponents.RenderableComponentManager
+	YSorts          *stdcomponents.YSortComponentManager
 }
 
 func CreateAsteroid(
@@ -102,6 +104,11 @@ func CreateAsteroid(
 		IsStatic: false,
 		Mass:     1,
 	})
+	props.Renderables.Create(e, stdcomponents.Renderable{
+		Type:       stdcomponents.SpriteRenderableType,
+		CameraMask: config.MainCameraLayer | config.MinimapCameraLayer,
+	})
+	props.YSorts.Create(e, stdcomponents.YSort{})
 
 	return e
 }

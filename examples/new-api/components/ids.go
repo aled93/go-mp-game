@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	HealthComponentId = iota + stdcomponents.StdComponentIds
+	HealthComponentId = iota + stdcomponents.StdLastComponentId
 	ControllerComponentId
 	PlayerTagComponentId
 	BulletTagComponentId
@@ -30,4 +30,6 @@ const (
 	SpaceshipIntentComponentId
 	AsteroidSceneManagerComponentId
 	SoundEffectManagerComponentId
+	TextureRectComponentId
+	TextureCircleComponentId
 )

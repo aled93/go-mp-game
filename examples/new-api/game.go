@@ -24,10 +24,11 @@ import (
 
 func NewGame(initialScene gomp.AnyScene) Game {
 	var game = Game{
-		worlds:       make([]instances.World, 0),
-		scenes:       make([]gomp.AnyScene, 0),
-		lookup:       make(map[gomp.SceneId]int),
-		renderSystem: stdsystems.NewRenderSystem(),
+		worlds:          make([]instances.World, 0),
+		scenes:          make([]gomp.AnyScene, 0),
+		lookup:          make(map[gomp.SceneId]int),
+		renderSystem:    stdsystems.NewRenderSystem(),
+		osHandlerSystem: stdsystems.NewOSHandlerSystem(),
 	}
 
 	game.LoadScene(initialScene)
@@ -43,7 +44,8 @@ type Game struct {
 	lookup map[gomp.SceneId]int
 
 	// Systems
-	renderSystem stdsystems.RenderSystem
+	renderSystem    stdsystems.RenderSystem
+	osHandlerSystem stdsystems.OSHandlerSystem
 
 	// Utils
 	shouldClose    bool
@@ -51,6 +53,7 @@ type Game struct {
 }
 
 func (g *Game) Init() {
+	g.osHandlerSystem.Init()
 	g.renderSystem.Init()
 
 	for i := range g.scenes {
@@ -74,12 +77,17 @@ func (g *Game) Init() {
 		systems.AssetLib.Init()
 		systems.Audio.Init()
 		systems.SpatialAudio.Init()
+		systems.TexturePositionSmooth.Init()
 
 		scene.Init(world)
 	}
 }
 
 func (g *Game) Update(dt time.Duration) {
+	if g.osHandlerSystem.Run(dt) {
+		g.shouldClose = true
+		return
+	}
 	for i := range g.scenes {
 		g.scenes[i].Update(dt)
 	}
@@ -91,8 +99,8 @@ func (g *Game) FixedUpdate(dt time.Duration) {
 		var scene = g.scenes[i]
 		var systems = &world.Systems
 
-		systems.ColliderSystem.Run(dt)
 		systems.Velocity.Run(dt)
+		systems.ColliderSystem.Run(dt)
 		systems.CollisionDetection.Run(dt)
 		//systems.CollisionDetectionBVH.Run(dt)
 		systems.CollisionResolution.Run(dt)
@@ -116,9 +124,13 @@ func (g *Game) Render(dt time.Duration) {
 	systems.Audio.Run(dt)
 	systems.SpatialAudio.Run(dt)
 
-	g.shouldClose = g.renderSystem.Run(dt)
-
 	scene.Render(dt)
+
+	// Render all renderables with cameras
+	systems.Culling.Run(dt)
+	systems.RenderCameras.Run(dt)
+
+	g.renderSystem.Run(dt)
 }
 
 func (g *Game) Destroy() {
@@ -142,11 +154,14 @@ func (g *Game) Destroy() {
 		systems.AssetLib.Destroy()
 		systems.Audio.Destroy()
 		systems.SpatialAudio.Destroy()
+		systems.TexturePositionSmooth.Destroy()
+		systems.Culling.Destroy()
 
 		world.Destroy()
 	}
 
 	g.renderSystem.Destroy()
+	g.osHandlerSystem.Destroy()
 }
 
 func (g *Game) LoadScene(scene gomp.AnyScene) {
@@ -164,26 +179,8 @@ func (g *Game) SetActiveScene(id gomp.SceneId) {
 
 	g.renderSystem.InjectWorld(
 		&stdsystems.RenderInjector{
-			EntityManager:                      &world.Entities,
-			RlTexturePros:                      &components.RLTexturePro,
-			Positions:                          &components.Position,
-			Rotations:                          &components.Rotation,
-			Scales:                             &components.Scale,
-			AnimationPlayers:                   &components.AnimationPlayer,
-			Tints:                              &components.Tint,
-			Flips:                              &components.Flip,
-			Renderables:                        &components.Renderable,
-			AnimationStates:                    &components.AnimationState,
-			Sprites:                            &components.Sprite,
-			SpriteMatrixes:                     &components.SpriteMatrix,
-			RenderOrders:                       &components.RenderOrder,
-			BoxColliders:                       &components.ColliderBox,
-			CircleColliders:                    &components.ColliderCircle,
-			AABBs:                              &components.AABB,
-			Collisions:                         &components.Collision,
-			ColliderSleepStateComponentManager: &components.ColliderSleepState,
-			BvhTrees:                           &components.BvhTree,
-			CollisionChunks:                    &components.CollisionChunk,
+			EntityManager: &world.Entities,
+			FrameBuffer2D: &components.FrameBuffer2D,
 		})
 }
 
