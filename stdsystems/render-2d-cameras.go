@@ -23,26 +23,32 @@ func NewRender2DCamerasSystem() Render2DCamerasSystem {
 }
 
 type Render2DCamerasSystem struct {
-	Renderables      *stdcomponents.RenderableComponentManager
-	RenderVisibles   *stdcomponents.RenderVisibleComponentManager
-	RenderOrders     *stdcomponents.RenderOrderComponentManager
-	Textures         *stdcomponents.RLTextureProComponentManager
-	Tints            *stdcomponents.TintComponentManager
-	AABBs            *stdcomponents.AABBComponentManager
-	Cameras          *stdcomponents.CameraComponentManager
-	RenderTexture2D  *stdcomponents.FrameBuffer2DComponentManager
-	AnimationPlayers *stdcomponents.AnimationPlayerComponentManager
-	Flips            *stdcomponents.FlipComponentManager
-	Positions        *stdcomponents.PositionComponentManager
-	Scales           *stdcomponents.ScaleComponentManager
-	Rotations        *stdcomponents.RotationComponentManager
-	renderObjects    []renderObject
+	Renderables         *stdcomponents.RenderableComponentManager
+	RenderVisibles      *stdcomponents.RenderVisibleComponentManager
+	RenderOrders        *stdcomponents.RenderOrderComponentManager
+	Textures            *stdcomponents.RLTextureProComponentManager
+	Tints               *stdcomponents.TintComponentManager
+	AABBs               *stdcomponents.AABBComponentManager
+	Cameras             *stdcomponents.CameraComponentManager
+	RenderTexture2D     *stdcomponents.FrameBuffer2DComponentManager
+	AnimationPlayers    *stdcomponents.AnimationPlayerComponentManager
+	Flips               *stdcomponents.FlipComponentManager
+	Positions           *stdcomponents.PositionComponentManager
+	Scales              *stdcomponents.ScaleComponentManager
+	Rotations           *stdcomponents.RotationComponentManager
+	renderObjects       []renderObject
+	renderObjectsSorted []renderObjectSorted
 }
 
 type renderObject struct {
 	texture stdcomponents.RLTexturePro
 	mask    stdcomponents.CameraLayer
 	order   float32
+}
+
+type renderObjectSorted struct {
+	entity ecs.Entity
+	order  float32
 }
 
 func (s *Render2DCamerasSystem) Init() {
@@ -52,50 +58,79 @@ func (s *Render2DCamerasSystem) Init() {
 func (s *Render2DCamerasSystem) Run(dt time.Duration) {
 	s.prepareRender(dt)
 
-	s.Cameras.EachEntity(func(entity ecs.Entity) bool {
-		camera := s.Cameras.Get(entity)
-		renderTexture := s.RenderTexture2D.Get(entity)
+	// Collect and sort render objects
+	if cap(s.renderObjects) < s.RenderVisibles.Len() {
+		s.renderObjects = make([]renderObject, 0, s.RenderVisibles.Len())
+	}
 
-		// Collect and sort render objects
-		s.RenderVisibles.EachEntity(func(entity ecs.Entity) bool {
-			r := s.Renderables.Get(entity)
-			t := s.Textures.Get(entity)
-			o := s.RenderOrders.Get(entity)
+	if cap(s.renderObjectsSorted) < s.RenderVisibles.Len() {
+		s.renderObjectsSorted = make([]renderObjectSorted, 0, s.RenderVisibles.Len())
+	}
 
-			//TODO: rework this with future new assets manager
-			if t != nil && t.Texture != nil {
-				s.renderObjects = append(s.renderObjects, renderObject{
-					texture: *t,
-					mask:    r.CameraMask,
-					order:   o.CalculatedZ,
-				})
-			}
+	s.RenderVisibles.EachEntity(func(entity ecs.Entity) bool {
+		o := s.RenderOrders.Get(entity)
+		assert.NotNil(o)
 
-			return true
+		s.renderObjectsSorted = append(s.renderObjectsSorted, renderObjectSorted{
+			entity: entity,
+			order:  o.CalculatedZ,
 		})
 
-		slices.SortFunc(s.renderObjects, func(a, b renderObject) int {
-			return cmp.Compare(a.order, b.order)
+		return true
+	})
+
+	slices.SortFunc(s.renderObjectsSorted, func(a, b renderObjectSorted) int {
+		return cmp.Compare(a.order, b.order)
+	})
+
+	for i := range s.renderObjectsSorted {
+		obj := &s.renderObjectsSorted[i]
+
+		t := s.Textures.Get(obj.entity)
+		assert.NotNil(t)
+
+		//TODO: rework this with future new assets manager
+		if t.Texture == nil {
+			continue
+		}
+
+		r := s.Renderables.Get(obj.entity)
+		assert.NotNil(r)
+
+		s.renderObjects = append(s.renderObjects, renderObject{
+			texture: *t,
+			mask:    r.CameraMask,
+			order:   obj.order,
 		})
+	}
+
+	s.Cameras.EachEntity(func(cameraEntity ecs.Entity) bool {
+		camera := s.Cameras.Get(cameraEntity)
+		assert.NotNil(camera)
+		renderTexture := s.RenderTexture2D.Get(cameraEntity)
+		assert.NotNil(renderTexture)
 
 		// Draw render objects
 		rl.BeginTextureMode(renderTexture.Texture)
 		rl.BeginMode2D(camera.Camera2D)
 		rl.ClearBackground(camera.BGColor)
 
-		for _, obj := range s.renderObjects {
-			if camera.Layer&obj.mask != 0 {
-				assert.Nil(obj.texture, "EntityTexturePro is nil")
-				rl.DrawTexturePro(*obj.texture.Texture, obj.texture.Frame, obj.texture.Dest, obj.texture.Origin, obj.texture.Rotation, obj.texture.Tint)
+		for i := range s.renderObjects {
+			obj := &s.renderObjects[i]
+			if camera.Layer&obj.mask == 0 {
+				continue
 			}
+			rl.DrawTexturePro(*obj.texture.Texture, obj.texture.Frame, obj.texture.Dest, obj.texture.Origin, obj.texture.Rotation, obj.texture.Tint)
 		}
 
 		rl.EndMode2D()
 		rl.EndTextureMode()
 
-		s.renderObjects = s.renderObjects[:0]
 		return true
 	})
+
+	s.renderObjects = s.renderObjects[:0]
+	s.renderObjectsSorted = s.renderObjectsSorted[:0]
 }
 
 func (s *Render2DCamerasSystem) Destroy() {
