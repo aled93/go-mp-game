@@ -26,5 +26,6 @@ const (
 
 const (
 	MainCameraLayer stdcomponents.CameraLayer = 1 << iota
+	DebugLayer
 	MinimapCameraLayer
 )

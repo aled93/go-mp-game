@@ -151,18 +151,18 @@ func (s *Render2DCamerasSystem) prepareFlips(wg *sync.WaitGroup) {
 
 func (s *Render2DCamerasSystem) preparePositions(wg *sync.WaitGroup, dt time.Duration) {
 	defer wg.Done()
-	dts := dt.Seconds()
+	//dts := dt.Seconds()
 	s.Textures.EachEntityParallel(128, func(entity ecs.Entity, workerId int) bool {
 		texturePro := s.Textures.Get(entity)
 		position := s.Positions.Get(entity)
 		if position == nil {
 			return true
 		}
-		decay := 40.0 // DECAY IS TICKRATE DEPENDENT
-		x := float32(s.expDecay(float64(texturePro.Dest.X), float64(position.XY.X), decay, dts))
-		y := float32(s.expDecay(float64(texturePro.Dest.Y), float64(position.XY.Y), decay, dts))
-		texturePro.Dest.X = x
-		texturePro.Dest.Y = y
+		//decay := 40.0 // DECAY IS TICKRATE DEPENDENT
+		//x := float32(s.expDecay(float64(texturePro.Dest.X), float64(position.XY.X), decay, dts))
+		//y := float32(s.expDecay(float64(texturePro.Dest.Y), float64(position.XY.Y), decay, dts))
+		texturePro.Dest.X = position.XY.X
+		texturePro.Dest.Y = position.XY.Y
 
 		return true
 	})

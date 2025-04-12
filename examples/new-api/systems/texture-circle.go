@@ -41,8 +41,8 @@ func (s *TextureCircleSystem) Run(dt time.Duration) {
 		assert.Nil(texture, "texture is nil; entity: %d", entity)
 
 		texture.Texture = &s.texture.Texture
-		texture.Dest.X = circle.CenterX - circle.Radius
-		texture.Dest.Y = circle.CenterY - circle.Radius
+		texture.Dest.X = circle.CenterX
+		texture.Dest.Y = circle.CenterY
 		texture.Dest.Width = circle.Radius * 2
 		texture.Dest.Height = circle.Radius * 2
 		texture.Frame = rl.Rectangle{
@@ -52,7 +52,8 @@ func (s *TextureCircleSystem) Run(dt time.Duration) {
 			Height: float32(s.texture.Texture.Height),
 		}
 		texture.Rotation = circle.Rotation
-		texture.Origin = circle.Origin
+		texture.Origin.X = circle.Origin.X + circle.Radius
+		texture.Origin.Y = circle.Origin.Y + circle.Radius
 		texture.Tint = circle.Color
 		return true
 	})

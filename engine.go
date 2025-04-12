@@ -16,6 +16,7 @@ Thank you for your support!
 package gomp
 
 import (
+	"log"
 	"time"
 )
 
@@ -72,7 +73,7 @@ func (e *Engine) Run(tickrate uint, framerate uint) {
 		}
 		if loops >= MaxFrameSkips {
 			nextFixedUpdateAt = time.Now()
-			//log.Println("Too many updates detected")
+			log.Println("Too many updates detected")
 		}
 
 		// RenderAssterodd

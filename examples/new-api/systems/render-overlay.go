@@ -59,7 +59,7 @@ func (s *RenderOverlaySystem) Init() {
 	s.FrameBuffer2D.Create(s.frameBuffer, stdcomponents.FrameBuffer2D{
 		Frame:     rl.Rectangle{X: 0, Y: 0, Width: float32(s.monitorWidth), Height: float32(s.monitorHeight)},
 		Texture:   rl.LoadRenderTexture(int32(s.monitorWidth), int32(s.monitorHeight)),
-		Layer:     config.MainCameraLayer + 100,
+		Layer:     config.DebugLayer,
 		BlendMode: rl.BlendAlpha,
 		Tint:      rl.White,
 		Dst:       rl.Rectangle{Width: float32(s.monitorWidth), Height: float32(s.monitorHeight)},

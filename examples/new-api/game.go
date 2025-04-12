@@ -99,8 +99,8 @@ func (g *Game) FixedUpdate(dt time.Duration) {
 		var scene = g.scenes[i]
 		var systems = &world.Systems
 
-		systems.ColliderSystem.Run(dt)
 		systems.Velocity.Run(dt)
+		systems.ColliderSystem.Run(dt)
 		systems.CollisionDetection.Run(dt)
 		//systems.CollisionDetectionBVH.Run(dt)
 		systems.CollisionResolution.Run(dt)

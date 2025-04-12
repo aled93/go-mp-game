@@ -89,13 +89,13 @@ func (s *MainCameraSystem) Run(dt time.Duration) {
 	s.Player.EachEntity(func(entity ecs.Entity) bool {
 		playerPosition := s.Position.Get(entity)
 		c := s.Cameras.Get(s.mainCamera)
-		decay := 40.0 // DECAY IS TICKRATE DEPENDENT
-		c.Camera2D.Target.X = float32(s.expDecay(float64(c.Camera2D.Target.X), float64(playerPosition.XY.X), decay, float64(dt)))
-		c.Camera2D.Target.Y = float32(s.expDecay(float64(c.Camera2D.Target.Y), float64(playerPosition.XY.Y), decay, float64(dt)))
-		//c.Camera2D.Target = playerPosition.XY
+		//decay := 40.0 // DECAY IS TICKRATE DEPENDENT
+		//c.Camera2D.Target.X = float32(s.expDecay(float64(c.Camera2D.Target.X), float64(playerPosition.XY.X), decay, float64(dt)))
+		//c.Camera2D.Target.Y = float32(s.expDecay(float64(c.Camera2D.Target.Y), float64(playerPosition.XY.Y), decay, float64(dt)))
+		c.Camera2D.Target = rl.Vector2(playerPosition.XY)
 		if s.shouldRotate {
 			rotation := s.Rotation.Get(entity)
-			c.Camera2D.Rotation = float32(s.expDecay(float64(c.Camera2D.Rotation), -rotation.Degrees(), decay, float64(dt)))
+			c.Camera2D.Rotation = -float32(rotation.Degrees())
 		} else {
 			c.Camera2D.Rotation = 0
 		}
