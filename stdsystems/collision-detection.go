@@ -172,11 +172,12 @@ func (s *CollisionDetectionSystem) setup() {
 					Codes:      ecs.NewSlice[uint64](64),
 					Components: ecs.NewSlice[stdcomponents.BvhComponent](64),
 				})
+				const colorbase int = 70
 				s.Tints.Create(chunkEntity, color.RGBA{
-					R: uint8(rand.Intn(255)),
-					G: uint8(rand.Intn(255)),
-					B: uint8(rand.Intn(255)),
-					A: 170,
+					R: uint8(colorbase + rand.Intn(255-colorbase)),
+					G: uint8(colorbase + rand.Intn(255-colorbase)),
+					B: uint8(colorbase + rand.Intn(255-colorbase)),
+					A: 50,
 				})
 			}
 
