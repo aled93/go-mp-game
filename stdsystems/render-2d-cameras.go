@@ -55,9 +55,18 @@ func (s *Render2DCamerasSystem) Run(dt time.Duration) {
 			o := s.RenderOrders.Get(entity)
 			aabb := s.AABBs.Get(entity)
 
-			switch camera.Culling {
-			case stdcomponents.Culling2DFullscreenBB:
-				if aabb != nil && intersects(cameraRect, aabb.Rect()) {
+			if t != nil {
+				switch camera.Culling {
+				case stdcomponents.Culling2DFullscreenBB:
+					if aabb != nil && intersects(cameraRect, aabb.Rect()) {
+						s.renderObjects = append(s.renderObjects, renderObject{
+							texture:    t,
+							renderable: r,
+							order:      o.CalculatedZ,
+							aabb:       aabb,
+						})
+					}
+				default:
 					s.renderObjects = append(s.renderObjects, renderObject{
 						texture:    t,
 						renderable: r,
@@ -65,13 +74,6 @@ func (s *Render2DCamerasSystem) Run(dt time.Duration) {
 						aabb:       aabb,
 					})
 				}
-			default:
-				s.renderObjects = append(s.renderObjects, renderObject{
-					texture:    t,
-					renderable: r,
-					order:      o.CalculatedZ,
-					aabb:       aabb,
-				})
 			}
 
 			return true
