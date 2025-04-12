@@ -175,28 +175,8 @@ func (g *Game) SetActiveScene(id gomp.SceneId) {
 
 	g.renderSystem.InjectWorld(
 		&stdsystems.RenderInjector{
-			EntityManager:                      &world.Entities,
-			RlTexturePros:                      &components.RLTexturePro,
-			Positions:                          &components.Position,
-			Rotations:                          &components.Rotation,
-			Scales:                             &components.Scale,
-			AnimationPlayers:                   &components.AnimationPlayer,
-			Tints:                              &components.Tint,
-			Flips:                              &components.Flip,
-			Renderables:                        &components.Renderable,
-			AnimationStates:                    &components.AnimationState,
-			Sprites:                            &components.Sprite,
-			SpriteMatrixes:                     &components.SpriteMatrix,
-			RenderOrders:                       &components.RenderOrder,
-			BoxColliders:                       &components.ColliderBox,
-			CircleColliders:                    &components.ColliderCircle,
-			AABBs:                              &components.AABB,
-			Collisions:                         &components.Collision,
-			ColliderSleepStateComponentManager: &components.ColliderSleepState,
-			BvhTrees:                           &components.BvhTree,
-			Camera:                             &components.Cameras,
-			RenderTexture2D:                    &components.FrameBuffer2D,
-			CollisionChunks:                    &components.CollisionChunk,
+			EntityManager: &world.Entities,
+			FrameBuffer2D: &components.FrameBuffer2D,
 		})
 }
 

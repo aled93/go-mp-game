@@ -25,7 +25,10 @@ type MinimapSystem struct {
 	FrameBuffer2D *stdcomponents.FrameBuffer2DComponentManager
 	Player        *components.PlayerTagComponentManager
 
-	minimapCamera ecs.Entity
+	minimapCamera        ecs.Entity
+	frameBufferComponent stdcomponents.FrameBuffer2D
+	cameraComponent      stdcomponents.Camera
+	disabled             bool
 }
 
 func (s *MinimapSystem) Init() {
@@ -60,9 +63,26 @@ func (s *MinimapSystem) Init() {
 }
 
 func (s *MinimapSystem) Run(dt time.Duration) bool {
+	c := s.Cameras.Get(s.minimapCamera)
+
+	if rl.IsKeyPressed(rl.KeyM) {
+		if s.disabled {
+			s.disabled = false
+			c = s.Cameras.Create(s.minimapCamera, s.cameraComponent)
+			s.FrameBuffer2D.Create(s.minimapCamera, s.frameBufferComponent)
+		} else {
+			s.disabled = true
+			s.cameraComponent = *c
+			s.frameBufferComponent = *s.FrameBuffer2D.Get(s.minimapCamera)
+			s.Cameras.Remove(s.minimapCamera)
+			s.FrameBuffer2D.Remove(s.minimapCamera)
+		}
+	}
+	if s.disabled {
+		return false
+	}
 	s.Player.EachEntity(func(entity ecs.Entity) bool {
 		playerPosition := s.Position.Get(entity)
-		c := s.Cameras.Get(s.minimapCamera)
 		c.Camera2D.Target.X = playerPosition.XY.X
 		c.Camera2D.Target.Y = playerPosition.XY.Y
 		rotation := s.Rotation.Get(entity)

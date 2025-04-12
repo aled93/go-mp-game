@@ -105,7 +105,7 @@ func CreateWall(
 	props.WallTags.Create(entity, components.Wall{})
 	props.Renderables.Create(entity, stdcomponents.Renderable{
 		Type:       stdcomponents.SpriteRenderableType,
-		CameraMask: config.MainCameraLayer,
+		CameraMask: config.MainCameraLayer | config.MinimapCameraLayer,
 	})
 	props.RenderOrders.Create(entity, stdcomponents.RenderOrder{})
 
