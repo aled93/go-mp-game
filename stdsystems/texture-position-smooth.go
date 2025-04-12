@@ -32,26 +32,26 @@ func (s *TexturePositionSmoothSystem) Init() {
 func (s *TexturePositionSmoothSystem) Run(dt time.Duration) {
 	//DEBUG Temporary, TODO: remove
 	if rl.IsKeyPressed(rl.KeyI) {
-		s.TexturePositionSmooth.EachComponentParallel(math.MaxInt, func(t *stdcomponents.TexturePositionSmooth, i int) bool {
+		s.TexturePositionSmooth.EachComponentParallel(128, func(t *stdcomponents.TexturePositionSmooth, i int) bool {
 			*t = stdcomponents.TexturePositionSmoothOff
 			return true
 		})
 	}
 	if rl.IsKeyPressed(rl.KeyO) {
-		s.TexturePositionSmooth.EachComponentParallel(math.MaxInt, func(t *stdcomponents.TexturePositionSmooth, i int) bool {
+		s.TexturePositionSmooth.EachComponentParallel(128, func(t *stdcomponents.TexturePositionSmooth, i int) bool {
 			*t = stdcomponents.TexturePositionSmoothLerp
 			return true
 		})
 	}
 	if rl.IsKeyPressed(rl.KeyP) {
-		s.TexturePositionSmooth.EachComponentParallel(math.MaxInt, func(t *stdcomponents.TexturePositionSmooth, i int) bool {
+		s.TexturePositionSmooth.EachComponentParallel(128, func(t *stdcomponents.TexturePositionSmooth, i int) bool {
 			*t = stdcomponents.TexturePositionSmoothExpDecay
 			return true
 		})
 	}
 	//END DEBUG
 
-	s.TexturePositionSmooth.EachEntityParallel(math.MaxInt, func(entity ecs.Entity, i int) bool {
+	s.TexturePositionSmooth.EachEntityParallel(128, func(entity ecs.Entity, i int) bool {
 		position := s.Position.Get(entity)
 		texture := s.RLTexture.Get(entity)
 		smooth := s.TexturePositionSmooth.Get(entity)

@@ -90,7 +90,6 @@ func (s *MainScene) Render(dt time.Duration) {
 	s.World.Systems.Debug.Run()
 	s.World.Systems.AssetLib.Run()
 	s.World.Systems.YSort.Run()
-
 }
 
 func (s *MainScene) Destroy() {

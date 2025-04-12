@@ -83,9 +83,10 @@ func (s *MinimapSystem) Run(dt time.Duration) bool {
 	}
 	s.Player.EachEntity(func(entity ecs.Entity) bool {
 		playerPosition := s.Position.Get(entity)
+		rotation := s.Rotation.Get(entity)
+
 		c.Camera2D.Target.X = playerPosition.XY.X
 		c.Camera2D.Target.Y = playerPosition.XY.Y
-		rotation := s.Rotation.Get(entity)
 		c.Camera2D.Rotation = -float32(rotation.Degrees())
 		return false
 	})

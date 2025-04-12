@@ -86,6 +86,16 @@ func (s *AssteroddScene) Init(world ecs.AnyWorld) {
 func (s *AssteroddScene) Update(dt time.Duration) gomp.SceneId {
 	s.World.Systems.AssteroddSystem.Run(dt)
 
+	// Camera game logic flow
+	s.World.Systems.MainCamera.Run(dt)
+	s.World.Systems.Minimap.Run(dt)
+
+	s.World.Systems.DebugInfo.Run(dt)
+
+	// Optimized primitives
+	s.World.Systems.TextureRect.Run(dt)
+	s.World.Systems.TextureCircle.Run(dt)
+
 	return AssteroddSceneId
 }
 
@@ -98,18 +108,6 @@ func (s *AssteroddScene) FixedUpdate(dt time.Duration) {
 }
 
 func (s *AssteroddScene) Render(dt time.Duration) {
-	// Camera game logic flow
-	s.World.Systems.MainCamera.Run(dt)
-	s.World.Systems.Minimap.Run(dt)
-
-	//s.World.Systems.PositionToSprite.Run(dt)
-	//s.World.Systems.TexturePositionSmooth.Run(dt)
-	s.World.Systems.DebugInfo.Run(dt)
-
-	// Optimized primitives
-	s.World.Systems.TextureRect.Run(dt)
-	s.World.Systems.TextureCircle.Run(dt)
-
 	// Over cameras render example
 	s.World.Systems.RenderOverlay.Run(dt)
 }

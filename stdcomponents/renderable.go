@@ -25,6 +25,7 @@ const (
 type Renderable struct {
 	CameraMask CameraLayer
 	Type       RenderableType
+	Observed   bool
 }
 
 type RenderableType uint8

@@ -31,39 +31,49 @@ func (s *CullingSystem) Init() {
 }
 
 func (s *CullingSystem) Run(dt time.Duration) {
+	s.Renderables.EachComponentParallel(2048, func(r *stdcomponents.Renderable, i int) bool {
+		r.Observed = false
+		return true
+	})
 	s.Cameras.EachEntity(func(entity ecs.Entity) bool {
 		camera := s.Cameras.Get(entity)
 		cameraRect := camera.Rect()
-
-		// Collect and sort render objects
 		s.Renderables.EachEntity(func(entity ecs.Entity) bool {
-			t := s.Textures.Get(entity)
-			renderVisible := s.RenderVisible.Get(entity)
+			renderable := s.Renderables.Get(entity)
+			//renderVisible := s.RenderVisible.Get(entity)
 			aabb := s.AABBs.Get(entity)
 
-			//TODO: rework this with future new assets manager
-			if t != nil && t.Texture != nil {
-				switch camera.Culling {
-				case stdcomponents.Culling2DFullscreenBB:
-					//TODO: textureAABB
-					if renderVisible == nil {
-						if aabb != nil && s.intersects(cameraRect, aabb.Rect()) {
-							s.RenderVisible.Create(entity, stdcomponents.RenderVisible{})
-						}
-					} else {
-						if !s.intersects(cameraRect, aabb.Rect()) {
-							s.RenderVisible.Remove(entity)
-						}
-					}
-				default:
-					if renderVisible == nil {
-						s.RenderVisible.Create(entity, stdcomponents.RenderVisible{})
-					}
+			switch camera.Culling {
+			case stdcomponents.Culling2DFullscreenBB:
+				//TODO: textureAABB
+				if aabb == nil {
+					renderable.Observed = true
+					return true
 				}
+				if s.intersects(cameraRect, aabb.Rect()) {
+					renderable.Observed = true
+				}
+
+			default:
+				renderable.Observed = true
 			}
 
 			return true
 		})
+		return true
+	})
+	s.Renderables.EachEntity(func(entity ecs.Entity) bool {
+		renderable := s.Renderables.Get(entity)
+		visible := s.RenderVisible.Get(entity)
+		if visible == nil {
+			if renderable.Observed {
+				s.RenderVisible.Create(entity, stdcomponents.RenderVisible{})
+			}
+		} else {
+			if !renderable.Observed {
+				s.RenderVisible.Remove(entity)
+			}
+		}
 		return true
 	})
 }
