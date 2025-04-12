@@ -124,11 +124,11 @@ func (g *Game) Render(dt time.Duration) {
 	systems.Audio.Run(dt)
 	systems.SpatialAudio.Run(dt)
 
+	scene.Render(dt)
+
 	// Render all renderables with cameras
 	systems.Culling.Run(dt)
 	systems.RenderCameras.Run(dt)
-
-	scene.Render(dt)
 
 	g.renderSystem.Run(dt)
 }

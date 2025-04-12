@@ -16,9 +16,7 @@ package stdcomponents
 
 import "gomp/pkg/ecs"
 
-type RenderVisible struct {
-	Counter uint8
-}
+type RenderVisible struct{}
 
 type RenderVisibleComponentManager = ecs.ComponentManager[RenderVisible]
 
