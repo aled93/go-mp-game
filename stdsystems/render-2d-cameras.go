@@ -55,7 +55,8 @@ func (s *Render2DCamerasSystem) Run(dt time.Duration) {
 			o := s.RenderOrders.Get(entity)
 			aabb := s.AABBs.Get(entity)
 
-			if t != nil {
+			//TODO: rework this with future new assets manager
+			if t != nil && t.Texture != nil {
 				switch camera.Culling {
 				case stdcomponents.Culling2DFullscreenBB:
 					if aabb != nil && intersects(cameraRect, aabb.Rect()) {
