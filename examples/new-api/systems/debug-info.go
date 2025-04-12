@@ -165,10 +165,8 @@ func (s *DebugInfoSystem) Run(dt time.Duration) bool {
 					childAABB.Min = parentAABB.Min
 					childAABB.Max = parentAABB.Max
 					posWithOffset := pos.XY.Add(col.Offset.Mul(scale.XY))
-					childCircle.CenterX = 0
-					childCircle.CenterY = 0
-					childCircle.Origin.X = posWithOffset.X
-					childCircle.Origin.Y = posWithOffset.Y
+					childCircle.CenterX = posWithOffset.X
+					childCircle.CenterY = posWithOffset.Y
 					childCircle.Radius = col.Radius * scale.XY.X
 					childCircle.Color = circleColor
 				}
@@ -235,15 +233,12 @@ func (s *DebugInfoSystem) spawnCircle(x float32, y float32, radius float32, circ
 	if _, ok := s.children[e]; !ok {
 		childEntity := s.EntityManager.Create()
 		s.Circle.Create(childEntity, components.TextureCircle{
-			CenterX:  0,
-			CenterY:  0,
+			CenterX:  x,
+			CenterY:  y,
 			Radius:   radius,
 			Rotation: 0,
-			Origin: rl.Vector2{
-				X: x,
-				Y: y,
-			},
-			Color: circleColor,
+			Origin:   rl.Vector2{},
+			Color:    circleColor,
 		})
 		s.AABBs.Create(childEntity, stdcomponents.AABB{})
 		s.Texture.Create(childEntity, stdcomponents.RLTexturePro{})
