@@ -36,10 +36,7 @@ type CreateBulletManagers struct {
 	Sprites         *stdcomponents.SpriteComponentManager
 	BulletTags      *components.BulletTagComponentManager
 	Hps             *components.HpComponentManager
-	Smooth          *stdcomponents.TexturePositionSmoothComponentManager
 	Renderables     *stdcomponents.RenderableComponentManager
-	RenderOrders    *stdcomponents.RenderOrderComponentManager
-	Textures        *stdcomponents.RLTextureProComponentManager
 }
 
 func CreateBullet(
@@ -84,12 +81,6 @@ func CreateBullet(
 			Width:  64,
 			Height: 64,
 		},
-		Dest: rl.Rectangle{
-			X:      posX,
-			Y:      posY,
-			Width:  64,
-			Height: 64,
-		},
 		Origin: rl.Vector2{
 			X: 32,
 			Y: 32,
@@ -102,7 +93,6 @@ func CreateBullet(
 		},
 	}
 	props.Sprites.Create(entity, te)
-	props.Textures.Create(entity, stdcomponents.RLTexturePro{})
 	props.BulletTags.Create(entity, components.BulletTag{})
 	props.Hps.Create(entity, components.Hp{
 		Hp:    1,
@@ -112,12 +102,10 @@ func CreateBullet(
 		IsStatic: false,
 		Mass:     1,
 	})
-	props.Smooth.Create(entity, stdcomponents.TexturePositionSmoothLerp)
 	props.Renderables.Create(entity, stdcomponents.Renderable{
 		Type:       stdcomponents.SpriteRenderableType,
 		CameraMask: config.MainCameraLayer,
 	})
-	props.RenderOrders.Create(entity, stdcomponents.RenderOrder{})
 
 	return entity
 }

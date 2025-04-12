@@ -27,24 +27,21 @@ import (
 )
 
 type CreateSpaceShipManagers struct {
-	EntityManager   *ecs.EntityManager
-	Positions       *stdcomponents.PositionComponentManager
-	Rotations       *stdcomponents.RotationComponentManager
-	Scales          *stdcomponents.ScaleComponentManager
-	Velocities      *stdcomponents.VelocityComponentManager
-	Sprites         *stdcomponents.SpriteComponentManager
-	BoxColliders    *stdcomponents.BoxColliderComponentManager
-	RigidBodies     *stdcomponents.RigidBodyComponentManager
-	SmoothPositions *stdcomponents.TexturePositionSmoothComponentManager
-	Renderables     *stdcomponents.RenderableComponentManager
+	EntityManager *ecs.EntityManager
+	Positions     *stdcomponents.PositionComponentManager
+	Rotations     *stdcomponents.RotationComponentManager
+	Scales        *stdcomponents.ScaleComponentManager
+	Velocities    *stdcomponents.VelocityComponentManager
+	Sprites       *stdcomponents.SpriteComponentManager
+	BoxColliders  *stdcomponents.BoxColliderComponentManager
+	RigidBodies   *stdcomponents.RigidBodyComponentManager
+	Renderables   *stdcomponents.RenderableComponentManager
 
 	PlayerTags       *components.PlayerTagComponentManager
 	Hps              *components.HpComponentManager
 	Weapons          *components.WeaponComponentManager
 	SpaceshipIntents *components.SpaceshipIntentComponentManager
 	SoundEffects     *components.SoundEffectsComponentManager
-	RenderOrders     *stdcomponents.RenderOrderComponentManager
-	Textures         *stdcomponents.RLTextureProComponentManager
 }
 
 func createMask(layers ...stdcomponents.CollisionLayer) (mask stdcomponents.CollisionMask) {
@@ -85,11 +82,9 @@ func CreateSpaceShip(
 	props.Sprites.Create(entity, stdcomponents.Sprite{
 		Texture: assets.Textures.Get("ship_E.png"),
 		Origin:  rl.Vector2{X: 32, Y: 40},
-		Dest:    rl.Rectangle{0, 0, 64, 64},
 		Frame:   rl.Rectangle{0, 0, 64, 64},
 		Tint:    color.RGBA{255, 255, 255, 255},
 	})
-	props.Textures.Create(entity, stdcomponents.RLTexturePro{})
 
 	props.BoxColliders.Create(entity, stdcomponents.BoxCollider{
 		WH: vectors.Vec2{
@@ -132,12 +127,10 @@ func CreateSpaceShip(
 		Pan:       0.5,
 	})
 
-	props.SmoothPositions.Create(entity, stdcomponents.TexturePositionSmoothExpDecay)
 	props.Renderables.Create(entity, stdcomponents.Renderable{
 		Type:       stdcomponents.SpriteRenderableType,
 		CameraMask: config.MainCameraLayer | config.MinimapCameraLayer,
 	})
-	props.RenderOrders.Create(entity, stdcomponents.RenderOrder{})
 
 	return entity
 }

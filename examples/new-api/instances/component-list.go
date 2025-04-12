@@ -63,6 +63,7 @@ type ComponentList struct {
 	SoundEffects         components.SoundEffectsComponentManager
 	TextureRect          components.TextureRectComponentManager
 	PrimitiveCircle      components.PrimitiveCircleComponentManager
+	RenderVisible        stdcomponents.RenderVisibleComponentManager
 }
 
 func NewComponentList() ComponentList {
@@ -80,6 +81,7 @@ func NewComponentList() ComponentList {
 		RLTexturePro:          stdcomponents.NewRlTextureProComponentManager(),
 		Network:               stdcomponents.NewNetworkComponentManager(),
 		Renderable:            stdcomponents.NewRenderableComponentManager(),
+		RenderVisible:         stdcomponents.NewRenderVisibleComponentManager(),
 		YSort:                 stdcomponents.NewYSortComponentManager(),
 		RenderOrder:           stdcomponents.NewRenderOrderComponentManager(),
 		GenericCollider:       stdcomponents.NewGenericColliderComponentManager(),

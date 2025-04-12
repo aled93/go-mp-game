@@ -7,6 +7,7 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package stdsystems
 
 import (
+	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 )
@@ -20,12 +21,14 @@ type SpriteMatrixSystem struct {
 	SpriteMatrixes  *stdcomponents.SpriteMatrixComponentManager
 	RLTexturePros   *stdcomponents.RLTextureProComponentManager
 	AnimationStates *stdcomponents.AnimationStateComponentManager
+	Positions       *stdcomponents.PositionComponentManager
 }
 
 func (s *SpriteMatrixSystem) Init() {}
 func (s *SpriteMatrixSystem) Run() {
 	s.SpriteMatrixes.EachEntity(func(entity ecs.Entity) bool {
-		spriteMatrix := s.SpriteMatrixes.Get(entity)    //
+		spriteMatrix := s.SpriteMatrixes.Get(entity) //
+		position := s.Positions.Get(entity)
 		animationState := s.AnimationStates.Get(entity) //
 
 		frame := spriteMatrix.Animations[*animationState].Frame
@@ -36,11 +39,11 @@ func (s *SpriteMatrixSystem) Run() {
 				Texture: spriteMatrix.Texture, //
 				Frame:   frame,                //
 				Origin:  spriteMatrix.Origin,
-				Dest:    spriteMatrix.Dest, //
+				Dest:    rl.Rectangle{X: position.XY.X, Y: position.XY.Y, Width: frame.Width, Height: frame.Height}, //
 			})
 		} else {
 			// Run spriteRender
-			tr.Dest = spriteMatrix.Dest
+
 			tr.Frame = frame
 		}
 		return true

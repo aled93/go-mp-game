@@ -176,7 +176,7 @@ func (s *CollisionDetectionSystem) setup() {
 					R: uint8(rand.Intn(255)),
 					G: uint8(rand.Intn(255)),
 					B: uint8(rand.Intn(255)),
-					A: 20,
+					A: 170,
 				})
 			}
 

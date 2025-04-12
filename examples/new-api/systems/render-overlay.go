@@ -44,6 +44,7 @@ type RenderOverlaySystem struct {
 	Collisions                         *stdcomponents.CollisionComponentManager
 	ColliderSleepStateComponentManager *stdcomponents.ColliderSleepStateComponentManager
 	Textures                           *stdcomponents.RLTextureProComponentManager
+	frameBuffer                        ecs.Entity
 	monitorWidth                       int
 	monitorHeight                      int
 	debugLvl                           int
@@ -53,6 +54,16 @@ type RenderOverlaySystem struct {
 func (s *RenderOverlaySystem) Init() {
 	s.monitorWidth = rl.GetScreenWidth()
 	s.monitorHeight = rl.GetScreenHeight()
+
+	s.frameBuffer = s.EntityManager.Create()
+	s.FrameBuffer2D.Create(s.frameBuffer, stdcomponents.FrameBuffer2D{
+		Frame:     rl.Rectangle{X: 0, Y: 0, Width: float32(s.monitorWidth), Height: float32(s.monitorHeight)},
+		Texture:   rl.LoadRenderTexture(int32(s.monitorWidth), int32(s.monitorHeight)),
+		Layer:     config.MainCameraLayer + 100,
+		BlendMode: rl.BlendAlpha,
+		Tint:      rl.White,
+		Dst:       rl.Rectangle{Width: float32(s.monitorWidth), Height: float32(s.monitorHeight)},
+	})
 }
 
 func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
@@ -76,16 +87,19 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 		}
 	}
 
-	s.FrameBuffer2D.EachEntity(func(entity ecs.Entity) bool {
-		frame := s.FrameBuffer2D.Get(entity)
+	s.Cameras.EachEntity(func(entity ecs.Entity) bool {
 		camera := s.Cameras.Get(entity)
+		frame := s.FrameBuffer2D.Get(entity)
 		switch frame.Layer {
 		case config.MainCameraLayer:
-			rl.BeginTextureMode(frame.Texture)
+			overlayFrame := s.FrameBuffer2D.Get(s.frameBuffer)
+			rl.BeginTextureMode(overlayFrame.Texture)
+			rl.ClearBackground(rl.Blank)
 
 			// Debug mode: BVH tree and dots
 			if s.debug {
 				rl.BeginMode2D(camera.Camera2D)
+
 				cameraRect := camera.Rect()
 				s.CollisionChunks.EachEntity(func(e ecs.Entity) bool {
 					chunk := s.CollisionChunks.Get(e)
@@ -107,7 +121,12 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 					tree.AabbNodes.EachData(func(a *stdcomponents.AABB) bool {
 						// Simple AABB culling
 						if s.intersects(cameraRect, a.Rect()) {
-							rl.DrawRectangle(int32(a.Min.X), int32(a.Min.Y), int32(a.Max.X-a.Min.X), int32(a.Max.Y-a.Min.Y), *tint)
+							rl.DrawRectangleRec(rl.Rectangle{
+								X:      a.Min.X,
+								Y:      a.Min.Y,
+								Width:  a.Max.X - a.Min.X,
+								Height: a.Max.Y - a.Min.Y,
+							}, *tint)
 						}
 						return true
 					})
@@ -190,9 +209,9 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 			rl.DrawRectangleLines(1, 1, frame.Texture.Texture.Width-1, frame.Texture.Texture.Height-1, rl.Green)
 			rl.EndTextureMode()
 		}
+
 		return true
 	})
-
 	return true
 }
 

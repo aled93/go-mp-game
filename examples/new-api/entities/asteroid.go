@@ -38,8 +38,6 @@ type CreateAsteroidManagers struct {
 	Hp              *components.HpComponentManager
 	RigidBodies     *stdcomponents.RigidBodyComponentManager
 	Renderables     *stdcomponents.RenderableComponentManager
-	RenderOrders    *stdcomponents.RenderOrderComponentManager
-	Textures        *stdcomponents.RLTextureProComponentManager
 }
 
 func CreateAsteroid(
@@ -88,12 +86,6 @@ func CreateAsteroid(
 			X: 32,
 			Y: 32,
 		},
-		Dest: rl.Rectangle{
-			X:      posX,
-			Y:      posY,
-			Width:  64 * scaleFactor,
-			Height: 64 * scaleFactor,
-		},
 		Tint: color.RGBA{
 			R: 255,
 			G: 255,
@@ -101,8 +93,6 @@ func CreateAsteroid(
 			A: 255,
 		},
 	})
-	props.Textures.Create(e, stdcomponents.RLTexturePro{})
-	props.RenderOrders.Create(e, stdcomponents.RenderOrder{})
 	props.AsteroidTags.Create(e, components.AsteroidTag{})
 	hp := int32(3 + rand.Intn(6))
 	props.Hp.Create(e, components.Hp{

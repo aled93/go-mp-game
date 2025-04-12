@@ -45,6 +45,7 @@ const (
 	FrameBuffer2DComponentId
 	CameraComponentId
 	TexturePositionSmoothComponentId
+	RenderVisibleComponentId
 
 	StdLastComponentId // StdLastComponentId MUST always be the last
 )

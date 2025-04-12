@@ -8,6 +8,7 @@ Donations during this file development:
 -===-===-===-===-===-===-===-===-===-===
 
 <- HromRu Donated 1 500 RUB
+<- MuTaToR Donated 500 RUB
 
 Thank you for your support!
 */

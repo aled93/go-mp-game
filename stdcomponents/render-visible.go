@@ -14,21 +14,12 @@ Thank you for your support!
 
 package stdcomponents
 
-import (
-	rl "github.com/gen2brain/raylib-go/raylib"
-	"gomp/pkg/ecs"
-	"image/color"
-)
+import "gomp/pkg/ecs"
 
-type Sprite struct {
-	Texture *rl.Texture2D
-	Frame   rl.Rectangle
-	Origin  rl.Vector2
-	Tint    color.RGBA
-}
+type RenderVisible struct{}
 
-type SpriteComponentManager = ecs.ComponentManager[Sprite]
+type RenderVisibleComponentManager = ecs.ComponentManager[RenderVisible]
 
-func NewSpriteComponentManager() SpriteComponentManager {
-	return ecs.NewComponentManager[Sprite](SpriteComponentId)
+func NewRenderVisibleComponentManager() RenderVisibleComponentManager {
+	return ecs.NewComponentManager[RenderVisible](RenderVisibleComponentId)
 }

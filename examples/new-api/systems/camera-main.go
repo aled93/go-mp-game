@@ -95,7 +95,7 @@ func (s *MainCameraSystem) Run(dt time.Duration) {
 		//c.Camera2D.Target = playerPosition.XY
 		if s.shouldRotate {
 			rotation := s.Rotation.Get(entity)
-			c.Camera2D.Rotation = -float32(s.expDecay(float64(c.Camera2D.Rotation), rotation.Degrees(), decay, float64(dt)))
+			c.Camera2D.Rotation = float32(s.expDecay(float64(c.Camera2D.Rotation), -rotation.Degrees(), decay, float64(dt)))
 		} else {
 			c.Camera2D.Rotation = 0
 		}

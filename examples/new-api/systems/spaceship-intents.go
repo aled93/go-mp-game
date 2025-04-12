@@ -127,12 +127,9 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 						CircleColliders: s.CircleColliders,
 						RigidBodies:     s.RigidBodies,
 						Sprites:         s.Sprites,
-						Textures:        s.Textures,
 						BulletTags:      s.BulletTags,
 						Hps:             s.Hps,
-						Smooth:          s.TexturePositionSmooth,
 						Renderables:     s.Renderables,
-						RenderOrders:    s.RenderOrders,
 					}, pos.XY.X, pos.XY.Y, angle, bulletVelocityX, bulletVelocityY)
 				}
 				weapon.CooldownLeft = weapon.Cooldown

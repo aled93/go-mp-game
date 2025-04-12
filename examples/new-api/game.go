@@ -116,7 +116,6 @@ func (g *Game) Render(dt time.Duration) {
 
 	systems.AnimationSpriteMatrix.Run()
 	systems.AnimationPlayer.Run()
-	systems.PositionToSprite.Run(dt)
 	systems.SpriteMatrix.Run()
 	systems.Sprite.Run()
 	systems.Debug.Run()
@@ -124,6 +123,10 @@ func (g *Game) Render(dt time.Duration) {
 	systems.YSort.Run()
 	systems.Audio.Run(dt)
 	systems.SpatialAudio.Run(dt)
+
+	systems.Culling.Run(dt)
+	// Render all renderables with cameras
+	systems.RenderCameras.Run(dt)
 
 	scene.Render(dt)
 
@@ -152,6 +155,7 @@ func (g *Game) Destroy() {
 		systems.Audio.Destroy()
 		systems.SpatialAudio.Destroy()
 		systems.TexturePositionSmooth.Destroy()
+		systems.Culling.Destroy()
 
 		world.Destroy()
 	}

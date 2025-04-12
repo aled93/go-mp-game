@@ -73,8 +73,6 @@ func (s *SpaceSpawnerSystem) Run(dt time.Duration) {
 			Hp:              s.Hp,
 			RigidBodies:     s.RigidBodies,
 			Renderables:     s.Renderables,
-			RenderOrders:    s.RenderOrders,
-			Textures:        s.Textures,
 		}, pos.XY.X, pos.XY.Y, 0, 1+rand.Float32()*2, 0, 50+rand.Float32()*100)
 		spawner.CooldownLeft = spawner.Cooldown
 		return true

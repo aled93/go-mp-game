@@ -34,8 +34,6 @@ type CreateSatelliteManagers struct {
 	RigidBodies   *stdcomponents.RigidBodyComponentManager
 	Velocities    *stdcomponents.VelocityComponentManager
 	Renderables   *stdcomponents.RenderableComponentManager
-	RenderOrders  *stdcomponents.RenderOrderComponentManager
-	Textures      *stdcomponents.RLTextureProComponentManager
 }
 
 func CreateSatellite(
@@ -68,11 +66,9 @@ func CreateSatellite(
 	props.Sprites.Create(entity, stdcomponents.Sprite{
 		Texture: assets.Textures.Get("satellite_B.png"),
 		Origin:  rl.Vector2{X: 32, Y: 40},
-		Dest:    rl.Rectangle{0, 0, 64, 64},
 		Frame:   rl.Rectangle{0, 0, 64, 64},
 		Tint:    color.RGBA{255, 255, 255, 255},
 	})
-	props.Textures.Create(entity, stdcomponents.RLTexturePro{})
 
 	props.BoxColliders.Create(entity, stdcomponents.BoxCollider{
 		WH: vectors.Vec2{
@@ -94,7 +90,6 @@ func CreateSatellite(
 		Type:       stdcomponents.SpriteRenderableType,
 		CameraMask: config.MainCameraLayer | config.MinimapCameraLayer,
 	})
-	props.RenderOrders.Create(entity, stdcomponents.RenderOrder{})
 
 	return entity
 }

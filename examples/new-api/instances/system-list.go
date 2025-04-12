@@ -42,6 +42,7 @@ func NewSystemList() SystemList {
 		CollisionResolution:      stdsystems.NewCollisionResolutionSystem(),
 		TexturePositionSmooth:    stdsystems.NewTexturePositionSmoothSystem(),
 		RenderCameras:            stdsystems.NewRender2DCamerasSystem(),
+		Culling:                  stdsystems.NewCullingSystem(),
 		Player:                   systems.NewPlayerSystem(),
 		RenderBogdan:             systems.NewRenderBogdanSystem(),
 		Audio:                    systems.NewAudioSystem(),
@@ -53,7 +54,6 @@ func NewSystemList() SystemList {
 		SpaceSpawner:             systems.NewSpaceSpawnerSystem(),
 		Hp:                       systems.NewHpSystem(),
 		MainCamera:               systems.NewMainCameraSystem(),
-		PositionToSprite:         systems.NewPositionToSpriteSystem(),
 		TextureRect:              systems.NewTextureRectSystem(),
 		TextureCircle:            systems.NewTextureCircleSystem(),
 		Minimap:                  systems.NewMinimapSystem(),
@@ -84,6 +84,7 @@ type SystemList struct {
 	CollisionResolution      stdsystems.CollisionResolutionSystem
 	TexturePositionSmooth    stdsystems.TexturePositionSmoothSystem
 	RenderCameras            stdsystems.Render2DCamerasSystem
+	Culling                  stdsystems.CullingSystem
 	RenderBogdan             systems.RenderBogdanSystem
 	Player                   systems.PlayerSystem
 	Audio                    systems.AudioSystem
@@ -95,7 +96,6 @@ type SystemList struct {
 	SpaceSpawner             systems.SpaceSpawnerSystem
 	Hp                       systems.HpSystem
 	MainCamera               systems.MainCameraSystem
-	PositionToSprite         systems.PositionToSpriteSystem
 	Minimap                  systems.MinimapSystem
 	DebugInfo                systems.DebugInfoSystem
 	TextureRect              systems.TextureRectSystem
