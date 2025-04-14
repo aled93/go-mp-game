@@ -129,7 +129,7 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 				}
 			} else {
 				if isSleeping != nil {
-					s.ColliderSleepStateComponentManager.Remove(entity)
+					s.ColliderSleepStateComponentManager.Delete(entity)
 				}
 			}
 		}

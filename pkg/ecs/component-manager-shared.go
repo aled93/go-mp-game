@@ -164,7 +164,7 @@ func (c *SharedComponentManager[T]) Set(entity Entity, instanceId SharedComponen
 	return c.components.Get(componentIndex)
 }
 
-func (c *SharedComponentManager[T]) Remove(entity Entity) {
+func (c *SharedComponentManager[T]) Delete(entity Entity) {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 

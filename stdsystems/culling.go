@@ -71,7 +71,7 @@ func (s *CullingSystem) Run(dt time.Duration) {
 			}
 		} else {
 			if !renderable.Observed {
-				s.RenderVisible.Remove(entity)
+				s.RenderVisible.Delete(entity)
 			}
 		}
 		return true

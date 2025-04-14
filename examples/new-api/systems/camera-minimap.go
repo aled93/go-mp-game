@@ -74,8 +74,8 @@ func (s *MinimapSystem) Run(dt time.Duration) bool {
 			s.disabled = true
 			s.cameraComponent = *c
 			s.frameBufferComponent = *s.FrameBuffer2D.GetUnsafe(s.minimapCamera)
-			s.Cameras.Remove(s.minimapCamera)
-			s.FrameBuffer2D.Remove(s.minimapCamera)
+			s.Cameras.Delete(s.minimapCamera)
+			s.FrameBuffer2D.Delete(s.minimapCamera)
 		}
 	}
 	if s.disabled {

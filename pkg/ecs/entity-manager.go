@@ -85,7 +85,7 @@ func (e *EntityManager) Delete(entity Entity) {
 	e.mx.Lock()
 	defer e.mx.Unlock()
 	e.componentBitSet.AllSet(entity, func(id ComponentId) bool {
-		e.components[id].Remove(entity)
+		e.components[id].Delete(entity)
 		return true
 	})
 

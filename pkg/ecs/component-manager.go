@@ -31,7 +31,7 @@ type AnyComponentListPtr interface{}
 
 type AnyComponentManagerPtr interface {
 	Id() ComponentId
-	Remove(Entity)
+	Delete(Entity)
 	Clean()
 	Has(Entity) bool
 	PatchAdd(Entity)
@@ -182,7 +182,7 @@ func (c *ComponentManager[T]) Set(entity Entity, value T) *T {
 	return component
 }
 
-func (c *ComponentManager[T]) Remove(entity Entity) {
+func (c *ComponentManager[T]) Delete(entity Entity) {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 
@@ -325,7 +325,7 @@ func (c *ComponentManager[T]) PatchApply(patch ComponentPatch) {
 	deleted := patch.Deleted
 	components = c.decoder(deleted.Components)
 	for i := range deleted.Len {
-		c.Remove(deleted.Entities[i])
+		c.Delete(deleted.Entities[i])
 	}
 }
 
