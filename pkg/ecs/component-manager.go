@@ -150,6 +150,20 @@ func (c *ComponentManager[T]) GetUnsafe(entity Entity) (component *T) {
 	return c.components.Get(index)
 }
 
+func (c *ComponentManager[T]) Get(entity Entity) (component T, ok bool) {
+	c.mx.Lock()
+	defer c.mx.Unlock()
+
+	assert.True(c.isInitialized, "ComponentManager should be created with NewComponentManager()")
+
+	index, ok := c.lookup.Get(entity)
+	if !ok {
+		return component, false
+	}
+
+	return c.components.GetValue(index), true
+}
+
 func (c *ComponentManager[T]) Set(entity Entity, value T) *T {
 	c.mx.Lock()
 	defer c.mx.Unlock()
