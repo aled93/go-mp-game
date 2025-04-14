@@ -41,7 +41,7 @@ func (s *SpatialAudioSystem) Init() {
 func (s *SpatialAudioSystem) Run(dt time.Duration) {
 	var player ecs.Entity = 0
 
-	s.Player.EachEntity(func(entity ecs.Entity) bool {
+	s.Player.EachEntity()(func(entity ecs.Entity) bool {
 		player = entity
 		return false
 	})
@@ -56,7 +56,7 @@ func (s *SpatialAudioSystem) Run(dt time.Duration) {
 		return
 	}
 
-	s.SoundEffects.EachEntity(func(entity ecs.Entity) bool {
+	s.SoundEffects.EachEntity()(func(entity ecs.Entity) bool {
 		soundEffect := s.SoundEffects.GetUnsafe(entity)
 
 		clip := soundEffect.Clip

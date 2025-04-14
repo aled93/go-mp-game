@@ -75,7 +75,7 @@ func (s *PlayerSystem) Run() {
 
 	var speed float32 = 300
 
-	for e := range s.Controllers.EachEntity {
+	for e := range s.Controllers.EachEntity() {
 		velocity := s.Velocities.GetUnsafe(e)
 		flip := s.Flips.GetUnsafe(e)
 		animationState := s.AnimationStates.GetUnsafe(e)

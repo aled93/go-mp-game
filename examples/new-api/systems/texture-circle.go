@@ -39,10 +39,11 @@ func (s *TextureCircleSystem) Init() {
 }
 
 func (s *TextureCircleSystem) Run(dt time.Duration) {
-	s.Circles.EachEntityParallel(s.numWorkers, func(entity ecs.Entity, i int) bool {
+	s.Circles.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, i int) bool {
 		circle := s.Circles.GetUnsafe(entity)
+		assert.NotNil(circle, "circle is nil; entity: %d", entity)
 		texture := s.Textures.GetUnsafe(entity)
-		assert.Nil(texture, "texture is nil; entity: %d", entity)
+		assert.NotNil(texture, "texture is nil; entity: %d", entity)
 
 		texture.Texture = &s.texture.Texture
 		texture.Dest.X = circle.CenterX

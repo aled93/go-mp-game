@@ -10,6 +10,7 @@ import (
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"gomp/vectors"
+	"runtime"
 	"time"
 )
 
@@ -25,20 +26,22 @@ type CullingSystem struct {
 	AABBs           *stdcomponents.AABBComponentManager
 	Cameras         *stdcomponents.CameraComponentManager
 	RenderTexture2D *stdcomponents.FrameBuffer2DComponentManager
+	numWorkers      int
 }
 
 func (s *CullingSystem) Init() {
+	s.numWorkers = runtime.NumCPU() - 2
 }
 
 func (s *CullingSystem) Run(dt time.Duration) {
-	s.Renderables.EachComponentParallel(2048, func(r *stdcomponents.Renderable, i int) bool {
+	s.Renderables.EachComponentParallel(s.numWorkers)(func(r *stdcomponents.Renderable, i int) bool {
 		r.Observed = false
 		return true
 	})
-	s.Cameras.EachEntity(func(entity ecs.Entity) bool {
+	s.Cameras.EachEntity()(func(entity ecs.Entity) bool {
 		camera := s.Cameras.GetUnsafe(entity)
 		cameraRect := camera.Rect()
-		s.Renderables.EachEntity(func(entity ecs.Entity) bool {
+		s.Renderables.EachEntity()(func(entity ecs.Entity) bool {
 			renderable := s.Renderables.GetUnsafe(entity)
 			//renderVisible := s.RenderVisible.GetUnsafe(entity)
 			aabb := s.AABBs.GetUnsafe(entity)
@@ -62,7 +65,7 @@ func (s *CullingSystem) Run(dt time.Duration) {
 		})
 		return true
 	})
-	s.Renderables.EachEntity(func(entity ecs.Entity) bool {
+	s.Renderables.EachEntity()(func(entity ecs.Entity) bool {
 		renderable := s.Renderables.GetUnsafe(entity)
 		visible := s.RenderVisible.GetUnsafe(entity)
 		if visible == nil {

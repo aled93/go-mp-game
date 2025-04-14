@@ -34,7 +34,7 @@ type YSortSystem struct {
 
 func (s *YSortSystem) Init() {}
 func (s *YSortSystem) Run() {
-	s.YSorts.EachEntity(func(entity ecs.Entity) bool {
+	s.YSorts.EachEntity()(func(entity ecs.Entity) bool {
 		pos := s.Positions.GetUnsafe(entity)
 		renderOrder := s.RenderOrders.GetUnsafe(entity)
 

@@ -161,7 +161,7 @@ func (s *AssteroddSystem) Init() {
 	s.SceneManager.Create(manager, components.AsteroidSceneManager{})
 }
 func (s *AssteroddSystem) Run(dt time.Duration) {
-	s.PlayerTags.EachEntity(func(e ecs.Entity) bool {
+	s.PlayerTags.EachEntity()(func(e ecs.Entity) bool {
 		intents := s.SpaceshipIntents.GetUnsafe(e)
 
 		intents.MoveUp = false
@@ -191,9 +191,9 @@ func (s *AssteroddSystem) Run(dt time.Duration) {
 		return true
 	})
 
-	s.SceneManager.EachEntity(func(e ecs.Entity) bool {
+	s.SceneManager.EachEntity()(func(e ecs.Entity) bool {
 		sceneManager := s.SceneManager.GetUnsafe(e)
-		s.PlayerTags.EachEntity(func(e ecs.Entity) bool {
+		s.PlayerTags.EachEntity()(func(e ecs.Entity) bool {
 			playerHp := s.Hps.GetUnsafe(e)
 			if playerHp == nil {
 				return true

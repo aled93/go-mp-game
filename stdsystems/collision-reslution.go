@@ -35,7 +35,7 @@ type CollisionResolutionSystem struct {
 
 func (s *CollisionResolutionSystem) Init() {}
 func (s *CollisionResolutionSystem) Run(dt time.Duration) {
-	s.Collisions.EachComponent(func(collision *stdcomponents.Collision) bool {
+	s.Collisions.EachComponent()(func(collision *stdcomponents.Collision) bool {
 		if collision.State == stdcomponents.CollisionStateEnter || collision.State == stdcomponents.CollisionStateStay {
 			// Resolve penetration
 			var displacement vectors.Vec2

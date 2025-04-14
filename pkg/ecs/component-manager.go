@@ -233,54 +233,58 @@ func (c *ComponentManager[T]) Clean() {
 // Iterators
 // ========================================================
 
-func (c *ComponentManager[T]) EachComponent(yield func(*T) bool) {
+func (c *ComponentManager[T]) EachComponent() func(yield func(entity *T) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.components.EachData(yield)
+	return c.components.EachData()
 }
 
-func (c *ComponentManager[T]) EachEntity(yield func(Entity) bool) {
+func (c *ComponentManager[T]) EachEntity() func(yield func(entity Entity) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.entities.EachDataValue(yield)
+	return c.entities.EachDataValue()
 }
 
-func (c *ComponentManager[T]) Each(yield func(Entity, *T) bool) {
+func (c *ComponentManager[T]) Each() func(yield func(entity Entity, component *T) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.components.Each(func(i int, d *T) bool {
-		entity := c.entities.Get(i)
-		entId := *entity
-		shouldContinue := yield(entId, d)
-		return shouldContinue
-	})
+	return func(yield func(entity Entity, component *T) bool) {
+		c.components.Each()(func(i int, d *T) bool {
+			entity := c.entities.Get(i)
+			entId := *entity
+			shouldContinue := yield(entId, d)
+			return shouldContinue
+		})
+	}
 }
 
 // ========================================================
 // Iterators Parallel
 // ========================================================
 
-func (c *ComponentManager[T]) EachComponentParallel(numWorkers int, yield func(*T, int) bool) {
+func (c *ComponentManager[T]) EachComponentParallel(numWorkers int) func(yield func(*T, int) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.components.EachDataParallel(numWorkers, yield)
+	return c.components.EachDataParallel(numWorkers)
 }
 
-func (c *ComponentManager[T]) EachEntityParallel(numWorkers int, yield func(Entity, int) bool) {
+func (c *ComponentManager[T]) EachEntityParallel(numWorkers int) func(yield func(Entity, int) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.entities.EachDataValueParallel(numWorkers, yield)
+	return c.entities.EachDataValueParallel(numWorkers)
 }
 
-func (c *ComponentManager[T]) EachParallel(numWorkers int, yield func(Entity, *T, int) bool) {
+func (c *ComponentManager[T]) EachParallel(numWorkers int) func(yield func(Entity, *T, int) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.components.EachParallel(numWorkers, func(i int, t *T, workerId int) bool {
-		entity := c.entities.Get(i)
-		entId := *entity
-		shouldContinue := yield(entId, t, workerId)
-		return shouldContinue
-	})
+	return func(yield func(Entity, *T, int) bool) {
+		c.components.EachParallel(numWorkers)(func(i int, t *T, workerId int) bool {
+			entity := c.entities.Get(i)
+			entId := *entity
+			shouldContinue := yield(entId, t, workerId)
+			return shouldContinue
+		})
+	}
 }
 
 // ========================================================
@@ -342,7 +346,7 @@ func (c *ComponentManager[T]) getChangesBinary(source *PagedArray[Entity]) Compo
 	components := make([]T, 0, changesLen)
 	entities := make([]Entity, 0, changesLen)
 
-	source.EachData(func(e *Entity) bool {
+	source.EachData()(func(e *Entity) bool {
 		assert.True(e != nil)
 		entId := *e
 		assert.True(c.Has(entId))

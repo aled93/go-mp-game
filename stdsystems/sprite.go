@@ -35,7 +35,7 @@ type SpriteSystem struct {
 
 func (s *SpriteSystem) Init() {}
 func (s *SpriteSystem) Run() {
-	s.Sprites.EachEntity(func(entity ecs.Entity) bool {
+	s.Sprites.EachEntity()(func(entity ecs.Entity) bool {
 		sprite := s.Sprites.GetUnsafe(entity) //
 		position := s.Positions.GetUnsafe(entity)
 		scale := s.Scales.GetUnsafe(entity)

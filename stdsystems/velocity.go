@@ -29,7 +29,7 @@ func (s *VelocitySystem) Init() {}
 func (s *VelocitySystem) Run(dt time.Duration) {
 	dtSec := float32(dt.Seconds())
 
-	s.Velocities.EachEntity(func(e ecs.Entity) bool {
+	s.Velocities.EachEntity()(func(e ecs.Entity) bool {
 		velocity := s.Velocities.GetUnsafe(e)
 		assert.True(s.isVelocityValid(velocity))
 

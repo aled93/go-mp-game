@@ -5,7 +5,7 @@ tasks:
     env:
       CGO_ENABLED: 1
     cmds:
-      - go run ./examples/new-api/game.go
+      - go run ./examples/new-api
 
   server:
     cmds:

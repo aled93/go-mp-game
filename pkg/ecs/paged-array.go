@@ -164,141 +164,151 @@ func (a *PagedArray[T]) getPageIdAndIndex(index int) (int, int) {
 	return pageId, index
 }
 
-func (a *PagedArray[T]) Each(yield func(int, *T) bool) {
-	var page *ArrayPage[T]
-	var index_offset int
+func (a *PagedArray[T]) Each() func(yield func(int, *T) bool) {
+	return func(yield func(int, *T) bool) {
+		var page *ArrayPage[T]
+		var index_offset int
 
-	book := a.book
+		book := a.book
 
-	if a.len == 0 {
-		return
-	}
-
-	for i := a.currentPageIndex; i >= 0; i-- {
-		page = &book[i]
-		index_offset = i << pageSizeShift
-
-		for j := page.len - 1; j >= 0; j-- {
-			if !yield(index_offset+j, &page.data[j]) {
-				return
-			}
+		if a.len == 0 {
+			return
 		}
-	}
-}
 
-func (a *PagedArray[T]) EachParallel(numWorkers int, yield func(int, *T, int) bool) {
-	assert.True(numWorkers > 0)
-	var chunkSize = a.len / numWorkers
-	var wg sync.WaitGroup
+		for i := a.currentPageIndex; i >= 0; i-- {
+			page = &book[i]
+			index_offset = i << pageSizeShift
 
-	wg.Add(numWorkers)
-	for workedId := 0; workedId < numWorkers; workedId++ {
-		startIndex := workedId * chunkSize
-		endIndex := startIndex + chunkSize - 1
-		if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
-			endIndex = a.len
-		}
-		go func(start int, end int) {
-			defer wg.Done()
-			r := end - start
-			for i := range r {
-				if !yield(i, a.Get(i+startIndex), workedId) {
+			for j := page.len - 1; j >= 0; j-- {
+				if !yield(index_offset+j, &page.data[j]) {
 					return
 				}
 			}
-		}(startIndex, endIndex)
+		}
 	}
-	wg.Wait()
 }
 
-func (a *PagedArray[T]) EachData(yield func(*T) bool) {
-	var page *ArrayPage[T]
+func (a *PagedArray[T]) EachParallel(numWorkers int) func(yield func(int, *T, int) bool) {
+	return func(yield func(int, *T, int) bool) {
+		assert.True(numWorkers > 0)
+		var chunkSize = a.len / numWorkers
+		var wg sync.WaitGroup
 
-	book := a.book
-
-	if a.len == 0 {
-		return
-	}
-
-	for i := a.currentPageIndex; i >= 0; i-- {
-		page = &book[i]
-
-		for j := page.len - 1; j >= 0; j-- {
-			if !yield(&page.data[j]) {
-				return
+		wg.Add(numWorkers)
+		for workedId := 0; workedId < numWorkers; workedId++ {
+			startIndex := workedId * chunkSize
+			endIndex := startIndex + chunkSize - 1
+			if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
+				endIndex = a.len
 			}
+			go func(start int, end int) {
+				defer wg.Done()
+				r := end - start
+				for i := range r {
+					if !yield(i, a.Get(i+startIndex), workedId) {
+						return
+					}
+				}
+			}(startIndex, endIndex)
 		}
+		wg.Wait()
 	}
 }
 
-func (a *PagedArray[T]) EachDataValue(yield func(T) bool) {
-	var page *ArrayPage[T]
+func (a *PagedArray[T]) EachData() func(yield func(*T) bool) {
+	return func(yield func(*T) bool) {
+		var page *ArrayPage[T]
+		var book = a.book
 
-	book := a.book
-
-	if a.len == 0 {
-		return
-	}
-
-	for i := a.currentPageIndex; i >= 0; i-- {
-		page = &book[i]
-
-		for j := page.len - 1; j >= 0; j-- {
-			if !yield(page.data[j]) {
-				return
-			}
+		if a.len == 0 {
+			return
 		}
-	}
-}
 
-func (a *PagedArray[T]) EachDataValueParallel(numWorkers int, yield func(T, int) bool) {
-	assert.True(numWorkers > 0)
-	var chunkSize = a.len / numWorkers
-	var wg sync.WaitGroup
+		for i := a.currentPageIndex; i >= 0; i-- {
+			page = &book[i]
 
-	wg.Add(numWorkers)
-	for workedId := 0; workedId < numWorkers; workedId++ {
-		startIndex := workedId * chunkSize
-		endIndex := startIndex + chunkSize - 1
-		if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
-			endIndex = a.len
-		}
-		go func(start int, end int) {
-			defer wg.Done()
-			r := end - start
-			for i := range r {
-				if !yield(a.GetValue(i+startIndex), workedId) {
+			for j := page.len - 1; j >= 0; j-- {
+				if !yield(&page.data[j]) {
 					return
 				}
 			}
-		}(startIndex, endIndex)
+		}
 	}
-	wg.Wait()
 }
 
-func (a *PagedArray[T]) EachDataParallel(numWorkers int, yield func(*T, int) bool) {
-	assert.True(numWorkers > 0)
-	var chunkSize = a.len / numWorkers
-	var wg sync.WaitGroup
+func (a *PagedArray[T]) EachDataValue() func(yield func(T) bool) {
+	return func(yield func(T) bool) {
+		var page *ArrayPage[T]
+		var book = a.book
 
-	wg.Add(numWorkers)
-	for workedId := 0; workedId < numWorkers; workedId++ {
-		startIndex := workedId * chunkSize
-		endIndex := startIndex + chunkSize - 1
-		if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
-			endIndex = a.len
+		if a.len == 0 {
+			return
 		}
-		go func(start int, end int) {
-			defer wg.Done()
-			r := end - start
-			for i := range r {
-				if !yield(a.Get(i+startIndex), workedId) {
+
+		for i := a.currentPageIndex; i >= 0; i-- {
+			page = &book[i]
+
+			for j := page.len - 1; j >= 0; j-- {
+				if !yield(page.data[j]) {
 					return
 				}
 			}
-		}(startIndex, endIndex)
+		}
 	}
-	wg.Wait()
+}
+
+func (a *PagedArray[T]) EachDataValueParallel(numWorkers int) func(yield func(T, int) bool) {
+	return func(yield func(T, int) bool) {
+		assert.True(numWorkers > 0)
+		var chunkSize = a.len / numWorkers
+		var wg sync.WaitGroup
+
+		wg.Add(numWorkers)
+		for workedId := 0; workedId < numWorkers; workedId++ {
+			startIndex := workedId * chunkSize
+			endIndex := startIndex + chunkSize - 1
+			if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
+				endIndex = a.len
+			}
+			go func(start int, end int) {
+				defer wg.Done()
+				r := end - start
+				for i := range r {
+					if !yield(a.GetValue(i+startIndex), workedId) {
+						return
+					}
+				}
+			}(startIndex, endIndex)
+		}
+		wg.Wait()
+	}
+}
+
+func (a *PagedArray[T]) EachDataParallel(numWorkers int) func(yield func(*T, int) bool) {
+	return func(yield func(*T, int) bool) {
+		assert.True(numWorkers > 0)
+		var chunkSize = a.len / numWorkers
+		var wg sync.WaitGroup
+
+		wg.Add(numWorkers)
+		for workedId := 0; workedId < numWorkers; workedId++ {
+			startIndex := workedId * chunkSize
+			endIndex := startIndex + chunkSize - 1
+			if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
+				endIndex = a.len
+			}
+			go func(start int, end int) {
+				defer wg.Done()
+				r := end - start
+				for i := range r {
+					if !yield(a.Get(i+startIndex), workedId) {
+						return
+					}
+				}
+			}(startIndex, endIndex)
+		}
+		wg.Wait()
+	}
 }
 
 type SlicePage[T any] struct {

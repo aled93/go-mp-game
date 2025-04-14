@@ -28,42 +28,43 @@ func (s *AnimationPlayerSystem) Init() {
 }
 func (s *AnimationPlayerSystem) Run() {
 	dt := time.Since(s.lastRunAt)
-	s.AnimationPlayers.EachComponent(func(animation *stdcomponents.AnimationPlayer) bool {
-		animation.ElapsedTime += time.Duration(float32(dt.Microseconds())*animation.Speed) * time.Microsecond
+	s.AnimationPlayers.EachComponent()(
+		func(animation *stdcomponents.AnimationPlayer) bool {
+			animation.ElapsedTime += time.Duration(float32(dt.Microseconds())*animation.Speed) * time.Microsecond
 
-		assert.True(animation.FrameDuration > 0, "frame duration must be greater than 0")
+			assert.True(animation.FrameDuration > 0, "frame duration must be greater than 0")
 
-		// Check if animation is playing backwards
-		if animation.Speed < 0 {
-			for animation.ElapsedTime <= 0 {
-				animation.ElapsedTime += animation.FrameDuration
-				animation.Current--
+			// Check if animation is playing backwards
+			if animation.Speed < 0 {
+				for animation.ElapsedTime <= 0 {
+					animation.ElapsedTime += animation.FrameDuration
+					animation.Current--
 
-				if animation.Current < animation.First {
-					if animation.Loop {
-						animation.Current = animation.Last
-					} else {
-						animation.Current = animation.First
+					if animation.Current < animation.First {
+						if animation.Loop {
+							animation.Current = animation.Last
+						} else {
+							animation.Current = animation.First
+						}
+					}
+				}
+			} else {
+				for animation.ElapsedTime >= animation.FrameDuration {
+					animation.ElapsedTime -= animation.FrameDuration
+					animation.Current++
+
+					if animation.Current > animation.Last {
+						if animation.Loop {
+							animation.Current = animation.First
+						} else {
+							animation.Current = animation.Last
+						}
 					}
 				}
 			}
-		} else {
-			for animation.ElapsedTime >= animation.FrameDuration {
-				animation.ElapsedTime -= animation.FrameDuration
-				animation.Current++
 
-				if animation.Current > animation.Last {
-					if animation.Loop {
-						animation.Current = animation.First
-					} else {
-						animation.Current = animation.Last
-					}
-				}
-			}
-		}
-
-		return true
-	})
+			return true
+		})
 	s.lastRunAt = time.Now()
 }
 func (s *AnimationPlayerSystem) Destroy() {}

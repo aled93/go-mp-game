@@ -38,10 +38,11 @@ func (s *TextureRectSystem) Init() {
 
 func (s *TextureRectSystem) Run(dt time.Duration) {
 	// Create shallow copy of texture to draw rectangles
-	s.TextureRect.EachEntityParallel(s.numWorkers, func(entity ecs.Entity, i int) bool {
+	s.TextureRect.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, i int) bool {
 		rect := s.TextureRect.GetUnsafe(entity)
+		assert.NotNil(rect, "rect is nil; entity: %d", entity)
 		texture := s.Textures.GetUnsafe(entity)
-		assert.Nil(texture, "texture is nil; entity: %d", entity)
+		assert.NotNil(texture, "texture is nil; entity: %d", entity)
 
 		texture.Texture = &s.texture.Texture
 		texture.Dest = rect.Dest

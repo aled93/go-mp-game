@@ -89,7 +89,7 @@ func (s *CollisionDetectionGridSystem) Run(dt time.Duration) {
 	s.currentCollisions = make(map[CollisionPair]struct{})
 
 	// Build spatial buckets and entity-to-cell map
-	s.GenericCollider.EachEntity(func(entity ecs.Entity) bool {
+	s.GenericCollider.EachEntity()(func(entity ecs.Entity) bool {
 		position := s.Positions.GetUnsafe(entity)
 		scale := s.Scales.GetUnsafe(entity)
 
@@ -104,7 +104,7 @@ func (s *CollisionDetectionGridSystem) Run(dt time.Duration) {
 
 	// Precompute AABBs for box colliders
 	s.aabbs = make(map[ecs.Entity]aabb, s.BoxColliders.Len())
-	s.BoxColliders.EachEntity(func(entity ecs.Entity) bool {
+	s.BoxColliders.EachEntity()(func(entity ecs.Entity) bool {
 		position := s.Positions.GetUnsafe(entity)
 		collider := s.BoxColliders.GetUnsafe(entity)
 		scale := s.Scales.GetUnsafe(entity)
