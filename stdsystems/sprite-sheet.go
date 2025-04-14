@@ -27,7 +27,7 @@ func (s *TextureRenderSpriteSheetSystem) Run() {
 	//		return true
 	//	}
 	//
-	//	tr := s.RlTexturePros.Get(entity)
+	//	tr := s.RlTexturePros.GetUnsafe(entity)
 	//	if tr == nil {
 	//		// Create new spriteRender
 	//		newRender := stdcomponents.RLTexturePro{

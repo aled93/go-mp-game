@@ -41,9 +41,9 @@ type ColliderSystem struct {
 func (s *ColliderSystem) Init() {}
 func (s *ColliderSystem) Run(dt time.Duration) {
 	s.BoxColliders.EachEntity(func(entity ecs.Entity) bool {
-		boxCollider := s.BoxColliders.Get(entity)
+		boxCollider := s.BoxColliders.GetUnsafe(entity)
 
-		genCollider := s.GenericColliders.Get(entity)
+		genCollider := s.GenericColliders.GetUnsafe(entity)
 		if genCollider == nil {
 			genCollider = s.GenericColliders.Create(entity, stdcomponents.GenericCollider{})
 		}
@@ -54,10 +54,10 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		genCollider.Shape = stdcomponents.BoxColliderShape
 		genCollider.AllowSleep = boxCollider.AllowSleep
 
-		position := s.Positions.Get(entity)
-		scale := s.Scales.Get(entity)
-		rotation := s.Rotations.Get(entity)
-		aabb := s.AABB.Get(entity)
+		position := s.Positions.GetUnsafe(entity)
+		scale := s.Scales.GetUnsafe(entity)
+		rotation := s.Rotations.GetUnsafe(entity)
+		aabb := s.AABB.GetUnsafe(entity)
 		if aabb == nil {
 			aabb = s.AABB.Create(entity, stdcomponents.AABB{})
 		}
@@ -82,9 +82,9 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 	})
 
 	s.CircleColliders.EachEntity(func(entity ecs.Entity) bool {
-		circleCollider := s.CircleColliders.Get(entity)
+		circleCollider := s.CircleColliders.GetUnsafe(entity)
 
-		genCollider := s.GenericColliders.Get(entity)
+		genCollider := s.GenericColliders.GetUnsafe(entity)
 		if genCollider == nil {
 			genCollider = s.GenericColliders.Create(entity, stdcomponents.GenericCollider{})
 		}
@@ -96,9 +96,9 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		genCollider.Shape = stdcomponents.CircleColliderShape
 		genCollider.AllowSleep = circleCollider.AllowSleep
 
-		position := s.Positions.Get(entity)
-		scale := s.Scales.Get(entity)
-		aabb := s.AABB.Get(entity)
+		position := s.Positions.GetUnsafe(entity)
+		scale := s.Scales.GetUnsafe(entity)
+		aabb := s.AABB.GetUnsafe(entity)
 		if aabb == nil {
 			aabb = s.AABB.Create(entity, stdcomponents.AABB{})
 		}
@@ -112,17 +112,17 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 	})
 
 	s.GenericColliders.EachEntity(func(entity ecs.Entity) bool {
-		genCollider := s.GenericColliders.Get(entity)
+		genCollider := s.GenericColliders.GetUnsafe(entity)
 
 		if genCollider.AllowSleep {
 			shouldSleep := true
-			velocity := s.Velocities.Get(entity)
+			velocity := s.Velocities.GetUnsafe(entity)
 			if velocity != nil {
 				if velocity.Vec2().LengthSquared() != 0 {
 					shouldSleep = false
 				}
 			}
-			isSleeping := s.ColliderSleepStateComponentManager.Get(entity)
+			isSleeping := s.ColliderSleepStateComponentManager.GetUnsafe(entity)
 			if shouldSleep {
 				if isSleeping == nil {
 					isSleeping = s.ColliderSleepStateComponentManager.Create(entity, stdcomponents.ColliderSleepState{})

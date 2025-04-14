@@ -30,10 +30,10 @@ func (s *VelocitySystem) Run(dt time.Duration) {
 	dtSec := float32(dt.Seconds())
 
 	s.Velocities.EachEntity(func(e ecs.Entity) bool {
-		velocity := s.Velocities.Get(e)
+		velocity := s.Velocities.GetUnsafe(e)
 		assert.True(s.isVelocityValid(velocity))
 
-		position := s.Positions.Get(e)
+		position := s.Positions.GetUnsafe(e)
 		assert.True(s.isPositionValid(position))
 
 		position.XY.X += velocity.X * dtSec

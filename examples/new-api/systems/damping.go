@@ -28,8 +28,8 @@ func (s *DampingSystem) Run(dt time.Duration) {
 	dampingFactor := float32(0.98) // Damping factor for velocity
 
 	s.Velocities.EachEntity(func(e ecs.Entity) bool {
-		velocity := s.Velocities.Get(e)
-		rigidbody := s.RigidBodies.Get(e)
+		velocity := s.Velocities.GetUnsafe(e)
+		rigidbody := s.RigidBodies.GetUnsafe(e)
 
 		if rigidbody != nil && !rigidbody.IsStatic {
 			velocity.X *= dampingFactor

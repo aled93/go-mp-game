@@ -41,8 +41,8 @@ func (s *CollisionResolutionSystem) Run(dt time.Duration) {
 			var displacement vectors.Vec2
 
 			// Move entities apart
-			rigidbody1 := s.RigidBodies.Get(collision.E1)
-			rigidbody2 := s.RigidBodies.Get(collision.E2)
+			rigidbody1 := s.RigidBodies.GetUnsafe(collision.E1)
+			rigidbody2 := s.RigidBodies.GetUnsafe(collision.E2)
 
 			if rigidbody1 == nil || rigidbody2 == nil {
 				return true
@@ -57,20 +57,20 @@ func (s *CollisionResolutionSystem) Run(dt time.Duration) {
 			}
 
 			if !rigidbody1.IsStatic {
-				p1 := s.Positions.Get(collision.E1)
+				p1 := s.Positions.GetUnsafe(collision.E1)
 				p1d := p1.XY.Sub(displacement)
 				p1.XY.X, p1.XY.Y = p1d.X, p1d.Y
 			}
 
 			if !rigidbody2.IsStatic {
-				p2 := s.Positions.Get(collision.E2)
+				p2 := s.Positions.GetUnsafe(collision.E2)
 				p2d := p2.XY.Add(displacement)
 				p2.XY.X, p2.XY.Y = p2d.X, p2d.Y
 			}
 
 			// Apply impulse resolution
-			velocity1 := s.Velocities.Get(collision.E1)
-			velocity2 := s.Velocities.Get(collision.E2)
+			velocity1 := s.Velocities.GetUnsafe(collision.E1)
+			velocity2 := s.Velocities.GetUnsafe(collision.E2)
 
 			if velocity1 == nil || velocity2 == nil {
 				return true

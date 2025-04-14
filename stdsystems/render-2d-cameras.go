@@ -68,7 +68,7 @@ func (s *Render2DCamerasSystem) Run(dt time.Duration) {
 	}
 
 	s.RenderVisibles.EachEntity(func(entity ecs.Entity) bool {
-		o := s.RenderOrders.Get(entity)
+		o := s.RenderOrders.GetUnsafe(entity)
 		assert.NotNil(o)
 
 		s.renderObjectsSorted = append(s.renderObjectsSorted, renderObjectSorted{
@@ -86,7 +86,7 @@ func (s *Render2DCamerasSystem) Run(dt time.Duration) {
 	for i := range s.renderObjectsSorted {
 		obj := &s.renderObjectsSorted[i]
 
-		t := s.Textures.Get(obj.entity)
+		t := s.Textures.GetUnsafe(obj.entity)
 		assert.NotNil(t)
 
 		//TODO: rework this with future new assets manager
@@ -94,7 +94,7 @@ func (s *Render2DCamerasSystem) Run(dt time.Duration) {
 			continue
 		}
 
-		r := s.Renderables.Get(obj.entity)
+		r := s.Renderables.GetUnsafe(obj.entity)
 		assert.NotNil(r)
 
 		s.renderObjects = append(s.renderObjects, renderObject{
@@ -105,9 +105,9 @@ func (s *Render2DCamerasSystem) Run(dt time.Duration) {
 	}
 
 	s.Cameras.EachEntity(func(cameraEntity ecs.Entity) bool {
-		camera := s.Cameras.Get(cameraEntity)
+		camera := s.Cameras.GetUnsafe(cameraEntity)
 		assert.NotNil(camera)
-		renderTexture := s.RenderTexture2D.Get(cameraEntity)
+		renderTexture := s.RenderTexture2D.GetUnsafe(cameraEntity)
 		assert.NotNil(renderTexture)
 
 		// Draw render objects
@@ -151,8 +151,8 @@ func (s *Render2DCamerasSystem) prepareRender(dt time.Duration) {
 func (s *Render2DCamerasSystem) prepareAnimations(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.Textures.EachEntityParallel(128, func(entity ecs.Entity, workerId int) bool {
-		texturePro := s.Textures.Get(entity)
-		animation := s.AnimationPlayers.Get(entity)
+		texturePro := s.Textures.GetUnsafe(entity)
+		animation := s.AnimationPlayers.GetUnsafe(entity)
 		if animation == nil {
 			return true
 		}
@@ -169,8 +169,8 @@ func (s *Render2DCamerasSystem) prepareAnimations(wg *sync.WaitGroup) {
 func (s *Render2DCamerasSystem) prepareFlips(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.Textures.EachEntityParallel(128, func(entity ecs.Entity, workerId int) bool {
-		texturePro := s.Textures.Get(entity)
-		flipped := s.Flips.Get(entity)
+		texturePro := s.Textures.GetUnsafe(entity)
+		flipped := s.Flips.GetUnsafe(entity)
 		if flipped == nil {
 			return true
 		}
@@ -188,8 +188,8 @@ func (s *Render2DCamerasSystem) preparePositions(wg *sync.WaitGroup, dt time.Dur
 	defer wg.Done()
 	//dts := dt.Seconds()
 	s.Textures.EachEntityParallel(128, func(entity ecs.Entity, workerId int) bool {
-		texturePro := s.Textures.Get(entity)
-		position := s.Positions.Get(entity)
+		texturePro := s.Textures.GetUnsafe(entity)
+		position := s.Positions.GetUnsafe(entity)
 		if position == nil {
 			return true
 		}
@@ -206,8 +206,8 @@ func (s *Render2DCamerasSystem) preparePositions(wg *sync.WaitGroup, dt time.Dur
 func (s *Render2DCamerasSystem) prepareRotations(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.Textures.EachEntityParallel(128, func(entity ecs.Entity, workerId int) bool {
-		texturePro := s.Textures.Get(entity)
-		rotation := s.Rotations.Get(entity)
+		texturePro := s.Textures.GetUnsafe(entity)
+		rotation := s.Rotations.GetUnsafe(entity)
 		if rotation == nil {
 			return true
 		}
@@ -219,8 +219,8 @@ func (s *Render2DCamerasSystem) prepareRotations(wg *sync.WaitGroup) {
 func (s *Render2DCamerasSystem) prepareScales(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.Textures.EachEntityParallel(128, func(entity ecs.Entity, workerId int) bool {
-		texturePro := s.Textures.Get(entity)
-		scale := s.Scales.Get(entity)
+		texturePro := s.Textures.GetUnsafe(entity)
+		scale := s.Scales.GetUnsafe(entity)
 		if scale == nil {
 			return true
 		}
@@ -233,8 +233,8 @@ func (s *Render2DCamerasSystem) prepareScales(wg *sync.WaitGroup) {
 func (s *Render2DCamerasSystem) prepareTints(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.Textures.EachEntityParallel(128, func(entity ecs.Entity, workerId int) bool {
-		tr := s.Textures.Get(entity)
-		tint := s.Tints.Get(entity)
+		tr := s.Textures.GetUnsafe(entity)
+		tint := s.Tints.GetUnsafe(entity)
 		if tint == nil {
 			return true
 		}

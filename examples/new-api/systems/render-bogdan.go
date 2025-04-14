@@ -82,14 +82,14 @@ func (s *RenderBogdanSystem) Run(dt time.Duration) bool {
 	}
 	s.render()
 	s.ColliderBoxes.EachEntity(func(e ecs.Entity) bool {
-		box := s.ColliderBoxes.Get(e)
-		pos := s.Positions.Get(e)
+		box := s.ColliderBoxes.GetUnsafe(e)
+		pos := s.Positions.GetUnsafe(e)
 
 		rl.DrawRectangleLines(int32(pos.XY.X), int32(pos.XY.Y), int32(box.WH.X), int32(box.WH.Y), rl.Red)
 		return true
 	})
 	s.Collisions.EachEntity(func(entity ecs.Entity) bool {
-		pos := s.Positions.Get(entity)
+		pos := s.Positions.GetUnsafe(entity)
 		rl.DrawRectangle(int32(pos.XY.X), int32(pos.XY.X), 16, 16, rl.Red)
 		return true
 	})
@@ -110,7 +110,7 @@ func (s *RenderBogdanSystem) render() {
 	}
 	s.Renderables.EachEntity(func(e ecs.Entity) bool {
 		sprite := s.SpriteMatrixes.Get(e)
-		renderOrder := s.RenderOrders.Get(e)
+		renderOrder := s.RenderOrders.GetUnsafe(e)
 		s.renderList = append(s.renderList, renderEntry{
 			Entity:    e,
 			TextureId: int(sprite.Texture.ID),
@@ -145,7 +145,7 @@ func (s *RenderBogdanSystem) render() {
 }
 
 func (s *RenderBogdanSystem) getInstanceData(e ecs.Entity) stdcomponents.RLTexturePro {
-	return *s.RlTexturePros.Get(e)
+	return *s.RlTexturePros.GetUnsafe(e)
 }
 
 func (s *RenderBogdanSystem) prepareRender(dt time.Duration) {
@@ -163,8 +163,8 @@ func (s *RenderBogdanSystem) prepareRender(dt time.Duration) {
 func (s *RenderBogdanSystem) prepareAnimations(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.RlTexturePros.EachEntity(func(entity ecs.Entity) bool {
-		texturePro := s.RlTexturePros.Get(entity)
-		animation := s.AnimationPlayers.Get(entity)
+		texturePro := s.RlTexturePros.GetUnsafe(entity)
+		animation := s.AnimationPlayers.GetUnsafe(entity)
 		if animation == nil {
 			return true
 		}
@@ -181,8 +181,8 @@ func (s *RenderBogdanSystem) prepareAnimations(wg *sync.WaitGroup) {
 func (s *RenderBogdanSystem) prepareFlips(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.RlTexturePros.EachEntity(func(entity ecs.Entity) bool {
-		texturePro := s.RlTexturePros.Get(entity)
-		mirrored := s.Flips.Get(entity)
+		texturePro := s.RlTexturePros.GetUnsafe(entity)
+		mirrored := s.Flips.GetUnsafe(entity)
 		if mirrored == nil {
 			return true
 		}
@@ -200,8 +200,8 @@ func (s *RenderBogdanSystem) preparePositions(wg *sync.WaitGroup, dt time.Durati
 	defer wg.Done()
 	//dts := dt.Seconds()
 	s.RlTexturePros.EachEntity(func(entity ecs.Entity) bool {
-		texturePro := s.RlTexturePros.Get(entity)
-		position := s.Positions.Get(entity)
+		texturePro := s.RlTexturePros.GetUnsafe(entity)
+		position := s.Positions.GetUnsafe(entity)
 		if position == nil {
 			return true
 		}
@@ -218,8 +218,8 @@ func (s *RenderBogdanSystem) preparePositions(wg *sync.WaitGroup, dt time.Durati
 func (s *RenderBogdanSystem) prepareRotations(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.RlTexturePros.EachEntity(func(entity ecs.Entity) bool {
-		texturePro := s.RlTexturePros.Get(entity)
-		rotation := s.Rotations.Get(entity)
+		texturePro := s.RlTexturePros.GetUnsafe(entity)
+		rotation := s.Rotations.GetUnsafe(entity)
 		if rotation == nil {
 			return true
 		}
@@ -231,8 +231,8 @@ func (s *RenderBogdanSystem) prepareRotations(wg *sync.WaitGroup) {
 func (s *RenderBogdanSystem) prepareScales(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.RlTexturePros.EachEntity(func(entity ecs.Entity) bool {
-		texturePro := s.RlTexturePros.Get(entity)
-		scale := s.Scales.Get(entity)
+		texturePro := s.RlTexturePros.GetUnsafe(entity)
+		scale := s.Scales.GetUnsafe(entity)
 		if scale == nil {
 			return true
 		}
@@ -245,8 +245,8 @@ func (s *RenderBogdanSystem) prepareScales(wg *sync.WaitGroup) {
 func (s *RenderBogdanSystem) prepareTints(wg *sync.WaitGroup) {
 	defer wg.Done()
 	s.RlTexturePros.EachEntity(func(entity ecs.Entity) bool {
-		tr := s.RlTexturePros.Get(entity)
-		tint := s.Tints.Get(entity)
+		tr := s.RlTexturePros.GetUnsafe(entity)
+		tint := s.Tints.GetUnsafe(entity)
 		if tint == nil {
 			return true
 		}

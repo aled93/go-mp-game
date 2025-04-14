@@ -26,13 +26,13 @@ type AnimationSpriteMatrixSystem struct {
 func (s *AnimationSpriteMatrixSystem) Init() {}
 func (s *AnimationSpriteMatrixSystem) Run() {
 	s.AnimationPlayers.EachEntity(func(e ecs.Entity) bool {
-		animationPlayer := s.AnimationPlayers.Get(e)
+		animationPlayer := s.AnimationPlayers.GetUnsafe(e)
 		spriteMatrix := s.SpriteMatrixes.Get(e)
 		if spriteMatrix == nil {
 			return true
 		}
 
-		animationStatePtr := s.AnimationStates.Get(e)
+		animationStatePtr := s.AnimationStates.GetUnsafe(e)
 		if animationStatePtr == nil {
 			return true
 		}

@@ -35,8 +35,8 @@ type YSortSystem struct {
 func (s *YSortSystem) Init() {}
 func (s *YSortSystem) Run() {
 	s.YSorts.EachEntity(func(entity ecs.Entity) bool {
-		pos := s.Positions.Get(entity)
-		renderOrder := s.RenderOrders.Get(entity)
+		pos := s.Positions.GetUnsafe(entity)
+		renderOrder := s.RenderOrders.GetUnsafe(entity)
 
 		// Calculate depth based on Y position
 		yDepth := pos.XY.Y * ySortOffsetScale

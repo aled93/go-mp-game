@@ -50,14 +50,14 @@ func (s *SpatialAudioSystem) Run(dt time.Duration) {
 		return
 	}
 
-	playerPos := s.Positions.Get(player)
+	playerPos := s.Positions.GetUnsafe(player)
 
 	if playerPos == nil {
 		return
 	}
 
 	s.SoundEffects.EachEntity(func(entity ecs.Entity) bool {
-		soundEffect := s.SoundEffects.Get(entity)
+		soundEffect := s.SoundEffects.GetUnsafe(entity)
 
 		clip := soundEffect.Clip
 
@@ -69,7 +69,7 @@ func (s *SpatialAudioSystem) Run(dt time.Duration) {
 			return true
 		}
 
-		position := s.Positions.Get(entity)
+		position := s.Positions.GetUnsafe(entity)
 
 		if position == nil {
 			return true

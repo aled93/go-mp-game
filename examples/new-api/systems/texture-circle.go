@@ -36,8 +36,8 @@ func (s *TextureCircleSystem) Init() {
 
 func (s *TextureCircleSystem) Run(dt time.Duration) {
 	s.Circles.EachEntityParallel(128, func(entity ecs.Entity, i int) bool {
-		circle := s.Circles.Get(entity)
-		texture := s.Textures.Get(entity)
+		circle := s.Circles.GetUnsafe(entity)
+		texture := s.Textures.GetUnsafe(entity)
 		assert.Nil(texture, "texture is nil; entity: %d", entity)
 
 		texture.Texture = &s.texture.Texture

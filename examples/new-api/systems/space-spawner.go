@@ -48,20 +48,20 @@ type SpaceSpawnerSystem struct {
 func (s *SpaceSpawnerSystem) Init() {}
 func (s *SpaceSpawnerSystem) Run(dt time.Duration) {
 	s.SpaceSpawners.EachEntity(func(e ecs.Entity) bool {
-		position := s.Positions.Get(e)
-		velocity := s.Velocities.Get(e)
+		position := s.Positions.GetUnsafe(e)
+		velocity := s.Velocities.GetUnsafe(e)
 
 		if position.XY.X > 5000 || position.XY.X < 0 {
 			velocity.X = -velocity.X
 		}
 
-		spawner := s.SpaceSpawners.Get(e)
+		spawner := s.SpaceSpawners.GetUnsafe(e)
 		if spawner.CooldownLeft > 0 {
 			spawner.CooldownLeft -= dt
 			return true
 		}
 
-		pos := s.Positions.Get(e)
+		pos := s.Positions.GetUnsafe(e)
 		entities.CreateAsteroid(entities.CreateAsteroidManagers{
 			EntityManager:   s.EntityManager,
 			Positions:       s.Positions,

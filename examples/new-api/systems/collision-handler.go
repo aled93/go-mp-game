@@ -72,14 +72,14 @@ func (s *CollisionHandlerSystem) Run(dt time.Duration) {
 func (s *CollisionHandlerSystem) Destroy() {}
 
 func (s *CollisionHandlerSystem) checkAsteroidCollisionEnter(e1, e2 ecs.Entity) bool {
-	e1Tag := s.AsteroidTags.Get(e1)
+	e1Tag := s.AsteroidTags.GetUnsafe(e1)
 	if e1Tag == nil {
 		return false
 	}
 
-	wallTag := s.WallTags.Get(e2)
+	wallTag := s.WallTags.GetUnsafe(e2)
 	if wallTag != nil {
-		hp := s.Hps.Get(e1)
+		hp := s.Hps.GetUnsafe(e1)
 		hp.Hp = 0
 		return true
 	}
@@ -88,20 +88,20 @@ func (s *CollisionHandlerSystem) checkAsteroidCollisionEnter(e1, e2 ecs.Entity) 
 }
 
 func (s *CollisionHandlerSystem) checkPlayerCollisionEnter(e1, e2 ecs.Entity) bool {
-	e1Tag := s.PlayerTags.Get(e1)
-	e2Tag := s.PlayerTags.Get(e2)
+	e1Tag := s.PlayerTags.GetUnsafe(e1)
+	e2Tag := s.PlayerTags.GetUnsafe(e2)
 
 	if e1Tag != nil {
 		// this is a player
-		asteroidTag := s.AsteroidTags.Get(e2)
+		asteroidTag := s.AsteroidTags.GetUnsafe(e2)
 		if asteroidTag != nil {
-			hp := s.Hps.Get(e1)
+			hp := s.Hps.GetUnsafe(e1)
 
 			hp.Hp -= 1
 
 			sfxEntity := s.EntityManager.Create()
 
-			playerPos := s.Positions.Get(e1)
+			playerPos := s.Positions.GetUnsafe(e1)
 			s.Positions.Create(sfxEntity, stdcomponents.Position{XY: playerPos.XY})
 
 			s.SoundEffects.Create(sfxEntity, components.SoundEffect{
@@ -116,11 +116,11 @@ func (s *CollisionHandlerSystem) checkPlayerCollisionEnter(e1, e2 ecs.Entity) bo
 			return true
 		}
 
-		//wallTag := s.WallTags.Get(e2)
+		//wallTag := s.WallTags.GetUnsafe(e2)
 		//if wallTag != nil {
 		//	// reverse player movement vector
-		//	velocity := s.Velocities.Get(e1)
-		//	rotation := s.Rotations.Get(e1)
+		//	velocity := s.Velocities.GetUnsafe(e1)
+		//	rotation := s.Rotations.GetUnsafe(e1)
 		//	velocity.X *= -1
 		//	velocity.Y *= -1
 		//	rotation.Angle += 180
@@ -128,18 +128,18 @@ func (s *CollisionHandlerSystem) checkPlayerCollisionEnter(e1, e2 ecs.Entity) bo
 		//}
 	} else if e2Tag != nil {
 		// this is a player
-		asteroidTag := s.AsteroidTags.Get(e1)
+		asteroidTag := s.AsteroidTags.GetUnsafe(e1)
 		if asteroidTag != nil {
-			hp := s.Hps.Get(e2)
+			hp := s.Hps.GetUnsafe(e2)
 			hp.Hp -= 1
 			return true
 		}
 
-		//wallTag := s.WallTags.Get(e1)
+		//wallTag := s.WallTags.GetUnsafe(e1)
 		//if wallTag != nil {
 		//	// reverse player movement vector
-		//	velocity := s.Velocities.Get(e2)
-		//	rotation := s.Rotations.Get(e2)
+		//	velocity := s.Velocities.GetUnsafe(e2)
+		//	rotation := s.Rotations.GetUnsafe(e2)
 		//	velocity.X *= -1
 		//	velocity.Y *= -1
 		//	rotation.Angle += 180
@@ -151,30 +151,30 @@ func (s *CollisionHandlerSystem) checkPlayerCollisionEnter(e1, e2 ecs.Entity) bo
 }
 
 func (s *CollisionHandlerSystem) checkBulletCollisionEnter(e1, e2 ecs.Entity) bool {
-	e1Tag := s.BulletTags.Get(e1)
-	e2Tag := s.BulletTags.Get(e2)
+	e1Tag := s.BulletTags.GetUnsafe(e1)
+	e2Tag := s.BulletTags.GetUnsafe(e2)
 
 	if e1Tag != nil {
 		// this is a bullet
-		bulletHp := s.Hps.Get(e1)
-		asteroidTag := s.AsteroidTags.Get(e2)
+		bulletHp := s.Hps.GetUnsafe(e1)
+		asteroidTag := s.AsteroidTags.GetUnsafe(e2)
 		if asteroidTag != nil {
-			asteroidHp := s.Hps.Get(e2)
+			asteroidHp := s.Hps.GetUnsafe(e2)
 			asteroidHp.Hp -= 1
 			bulletHp.Hp -= 1
 			return true
 		}
-		wallTag := s.WallTags.Get(e2)
+		wallTag := s.WallTags.GetUnsafe(e2)
 		if wallTag != nil {
 			bulletHp.Hp = 0
 			return true
 		}
 	} else if e2Tag != nil {
 		// this is a bullet
-		bulletHp := s.Hps.Get(e2)
-		asteroidTag := s.AsteroidTags.Get(e1)
+		bulletHp := s.Hps.GetUnsafe(e2)
+		asteroidTag := s.AsteroidTags.GetUnsafe(e1)
 		if asteroidTag != nil {
-			asteroidHp := s.Hps.Get(e1)
+			asteroidHp := s.Hps.GetUnsafe(e1)
 			asteroidHp.Hp -= 1
 			bulletHp.Hp -= 1
 			return true

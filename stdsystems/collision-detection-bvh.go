@@ -79,8 +79,8 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 
 	// Fill trees
 	s.GenericCollider.EachEntity(func(entity ecs.Entity) bool {
-		aabb := s.AABB.Get(entity)
-		layer := s.GenericCollider.Get(entity).Layer
+		aabb := s.AABB.GetUnsafe(entity)
+		layer := s.GenericCollider.GetUnsafe(entity).Layer
 
 		treeId, exists := s.treesLookup[layer]
 		if !exists {
@@ -174,8 +174,8 @@ func (s *CollisionDetectionBVHSystem) registerCollisionEvents() {
 				s.activeCollisions[pair] = proxy
 			} else {
 				proxy := s.activeCollisions[pair]
-				collision := s.Collisions.Get(proxy)
-				position := s.Positions.Get(proxy)
+				collision := s.Collisions.GetUnsafe(proxy)
+				position := s.Positions.GetUnsafe(proxy)
 				collision.State = stdcomponents.CollisionStateStay
 				collision.Depth = event.depth
 				collision.Normal = event.normal
@@ -189,15 +189,15 @@ func (s *CollisionDetectionBVHSystem) registerCollisionEvents() {
 }
 
 func (s *CollisionDetectionBVHSystem) broadPhase(entityA ecs.Entity, result []ecs.Entity) []ecs.Entity {
-	colliderA := s.GenericCollider.Get(entityA)
+	colliderA := s.GenericCollider.GetUnsafe(entityA)
 	if colliderA.AllowSleep {
-		isSleeping := s.ColliderSleepStateComponentManager.Get(entityA)
+		isSleeping := s.ColliderSleepStateComponentManager.GetUnsafe(entityA)
 		if isSleeping != nil {
 			return result
 		}
 	}
 
-	aabb := s.AABB.Get(entityA)
+	aabb := s.AABB.GetUnsafe(entityA)
 
 	// Iterate through all trees
 	for treeIndex := range s.trees {
@@ -221,14 +221,14 @@ func (s *CollisionDetectionBVHSystem) narrowPhase(entityA ecs.Entity, potentialE
 			continue
 		}
 
-		colliderA := s.GenericCollider.Get(entityA)
-		colliderB := s.GenericCollider.Get(entityB)
-		posA := s.Positions.Get(entityA)
-		posB := s.Positions.Get(entityB)
-		scaleA := s.Scales.Get(entityA)
-		scaleB := s.Scales.Get(entityB)
-		rotA := s.Rotations.Get(entityA)
-		rotB := s.Rotations.Get(entityB)
+		colliderA := s.GenericCollider.GetUnsafe(entityA)
+		colliderB := s.GenericCollider.GetUnsafe(entityB)
+		posA := s.Positions.GetUnsafe(entityA)
+		posB := s.Positions.GetUnsafe(entityB)
+		scaleA := s.Scales.GetUnsafe(entityA)
+		scaleB := s.Scales.GetUnsafe(entityB)
+		rotA := s.Rotations.GetUnsafe(entityA)
+		rotB := s.Rotations.GetUnsafe(entityB)
 		transformA := stdcomponents.Transform2d{
 			Position: posA.XY,
 			Rotation: rotA.Angle,
@@ -240,8 +240,8 @@ func (s *CollisionDetectionBVHSystem) narrowPhase(entityA ecs.Entity, potentialE
 			Scale:    scaleB.XY,
 		}
 
-		circleA := s.CircleColliders.Get(entityA)
-		circleB := s.CircleColliders.Get(entityB)
+		circleA := s.CircleColliders.GetUnsafe(entityA)
+		circleB := s.CircleColliders.GetUnsafe(entityB)
 		if circleA != nil && circleB != nil {
 			radiusA := circleA.Radius * scaleA.XY.X
 			radiusB := circleB.Radius * scaleB.XY.X
@@ -282,7 +282,7 @@ func (s *CollisionDetectionBVHSystem) narrowPhase(entityA ecs.Entity, potentialE
 func (s *CollisionDetectionBVHSystem) processExitStates() {
 	for pair, proxy := range s.activeCollisions {
 		if _, exists := s.currentCollisions[pair]; !exists {
-			collision := s.Collisions.Get(proxy)
+			collision := s.Collisions.GetUnsafe(proxy)
 			if collision.State == stdcomponents.CollisionStateExit {
 				delete(s.activeCollisions, pair)
 				s.EntityManager.Delete(proxy)
@@ -296,11 +296,11 @@ func (s *CollisionDetectionBVHSystem) processExitStates() {
 func (s *CollisionDetectionBVHSystem) getGjkCollider(collider *stdcomponents.GenericCollider, entity ecs.Entity) gjk.AnyCollider {
 	switch collider.Shape {
 	case stdcomponents.BoxColliderShape:
-		return s.BoxColliders.Get(entity)
+		return s.BoxColliders.GetUnsafe(entity)
 	case stdcomponents.CircleColliderShape:
-		return s.CircleColliders.Get(entity)
+		return s.CircleColliders.GetUnsafe(entity)
 	case stdcomponents.PolygonColliderShape:
-		return s.PolygonColliders.Get(entity)
+		return s.PolygonColliders.GetUnsafe(entity)
 	default:
 		panic("unsupported collider shape")
 	}

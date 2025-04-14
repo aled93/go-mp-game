@@ -88,11 +88,11 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 	}
 
 	s.Cameras.EachEntity(func(entity ecs.Entity) bool {
-		camera := s.Cameras.Get(entity)
-		frame := s.FrameBuffer2D.Get(entity)
+		camera := s.Cameras.GetUnsafe(entity)
+		frame := s.FrameBuffer2D.GetUnsafe(entity)
 		switch frame.Layer {
 		case config.MainCameraLayer:
-			overlayFrame := s.FrameBuffer2D.Get(s.frameBuffer)
+			overlayFrame := s.FrameBuffer2D.GetUnsafe(s.frameBuffer)
 			rl.BeginTextureMode(overlayFrame.Texture)
 			rl.ClearBackground(rl.Blank)
 
@@ -102,20 +102,20 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 
 				cameraRect := camera.Rect()
 				s.CollisionChunks.EachEntity(func(e ecs.Entity) bool {
-					chunk := s.CollisionChunks.Get(e)
+					chunk := s.CollisionChunks.GetUnsafe(e)
 					assert.NotNil(chunk)
 
 					if chunk.Layer != stdcomponents.CollisionLayer(s.debugLvl) {
 						return true
 					}
 
-					tint := s.Tints.Get(e)
+					tint := s.Tints.GetUnsafe(e)
 					assert.NotNil(tint)
 
-					position := s.Positions.Get(e)
+					position := s.Positions.GetUnsafe(e)
 					assert.NotNil(position)
 
-					tree := s.BvhTrees.Get(e)
+					tree := s.BvhTrees.GetUnsafe(e)
 					assert.NotNil(tree)
 
 					tree.AabbNodes.EachData(func(a *stdcomponents.AABB) bool {
@@ -150,9 +150,9 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 					return true
 				})
 				s.AABBs.EachEntity(func(e ecs.Entity) bool {
-					aabb := s.AABBs.Get(e)
+					aabb := s.AABBs.GetUnsafe(e)
 					clr := rl.Green
-					isSleeping := s.ColliderSleepStateComponentManager.Get(e)
+					isSleeping := s.ColliderSleepStateComponentManager.GetUnsafe(e)
 					if isSleeping != nil {
 						clr = rl.Blue
 					}
@@ -167,7 +167,7 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 					return true
 				})
 				s.Collisions.EachEntity(func(entity ecs.Entity) bool {
-					pos := s.Positions.Get(entity)
+					pos := s.Positions.GetUnsafe(entity)
 					rl.DrawRectangle(int32(pos.XY.X-8), int32(pos.XY.Y-8), 16, 16, rl.Red)
 					return true
 				})

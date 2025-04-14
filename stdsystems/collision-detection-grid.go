@@ -90,10 +90,10 @@ func (s *CollisionDetectionGridSystem) Run(dt time.Duration) {
 
 	// Build spatial buckets and entity-to-cell map
 	s.GenericCollider.EachEntity(func(entity ecs.Entity) bool {
-		position := s.Positions.Get(entity)
-		scale := s.Scales.Get(entity)
+		position := s.Positions.GetUnsafe(entity)
+		scale := s.Scales.GetUnsafe(entity)
 
-		collider := s.GenericCollider.Get(entity)
+		collider := s.GenericCollider.GetUnsafe(entity)
 		cellX := int(position.XY.X-(collider.Offset.X*scale.XY.X)) / s.cellSizeX
 		cellY := int(position.XY.Y-(collider.Offset.Y*scale.XY.Y)) / s.cellSizeY
 		cell := stdcomponents.SpatialIndex{X: cellX, Y: cellY}
@@ -105,9 +105,9 @@ func (s *CollisionDetectionGridSystem) Run(dt time.Duration) {
 	// Precompute AABBs for box colliders
 	s.aabbs = make(map[ecs.Entity]aabb, s.BoxColliders.Len())
 	s.BoxColliders.EachEntity(func(entity ecs.Entity) bool {
-		position := s.Positions.Get(entity)
-		collider := s.BoxColliders.Get(entity)
-		scale := s.Scales.Get(entity)
+		position := s.Positions.GetUnsafe(entity)
+		collider := s.BoxColliders.GetUnsafe(entity)
+		scale := s.Scales.GetUnsafe(entity)
 		newAABB := aabb{
 			Left:   position.XY.X - (collider.Offset.X * scale.XY.X),
 			Right:  position.XY.X + (collider.WH.X-collider.Offset.X)*scale.XY.X,
@@ -140,9 +140,9 @@ func (s *CollisionDetectionGridSystem) Run(dt time.Duration) {
 				s.activeCollisions[pair] = proxy
 			} else {
 				proxy := s.activeCollisions[pair]
-				s.Collisions.Get(proxy).State = stdcomponents.CollisionStateStay
-				s.Positions.Get(proxy).XY.X = event.position.X
-				s.Positions.Get(proxy).XY.Y = event.position.Y
+				s.Collisions.GetUnsafe(proxy).State = stdcomponents.CollisionStateStay
+				s.Positions.GetUnsafe(proxy).XY.X = event.position.X
+				s.Positions.GetUnsafe(proxy).XY.Y = event.position.Y
 			}
 		}
 		close(doneChan)
@@ -171,7 +171,7 @@ func (s *CollisionDetectionGridSystem) Run(dt time.Duration) {
 			defer wg.Done()
 
 			for _, entityA := range entities[start:end] {
-				collider := s.GenericCollider.Get(entityA)
+				collider := s.GenericCollider.GetUnsafe(entityA)
 
 				switch collider.Shape {
 				case stdcomponents.BoxColliderShape:
@@ -191,7 +191,7 @@ func (s *CollisionDetectionGridSystem) Run(dt time.Duration) {
 	<-doneChan // Wait for result collector
 
 	//s.GenericCollider.EachEntity(func(entity ecs.Entity) bool {
-	//	collider := s.GenericCollider.Get(entity)
+	//	collider := s.GenericCollider.GetUnsafe(entity)
 	//
 	//	switch collider.Shape {
 	//	case stdcomponents.BoxColliderShape:
@@ -220,16 +220,16 @@ func (s *CollisionDetectionGridSystem) registerCollision(entityA, entityB ecs.En
 		s.Positions.Create(proxy, stdcomponents.Position{XY: vectors.Vec2{X: posX, Y: posY}})
 		s.activeCollisions[pair] = proxy
 	} else {
-		s.Collisions.Get(s.activeCollisions[pair]).State = stdcomponents.CollisionStateStay
-		s.Positions.Get(s.activeCollisions[pair]).XY.X = posX
-		s.Positions.Get(s.activeCollisions[pair]).XY.Y = posY
+		s.Collisions.GetUnsafe(s.activeCollisions[pair]).State = stdcomponents.CollisionStateStay
+		s.Positions.GetUnsafe(s.activeCollisions[pair]).XY.X = posX
+		s.Positions.GetUnsafe(s.activeCollisions[pair]).XY.Y = posY
 	}
 }
 
 func (s *CollisionDetectionGridSystem) processExitStates() {
 	for pair, proxy := range s.activeCollisions {
 		if _, exists := s.currentCollisions[pair]; !exists {
-			collision := s.Collisions.Get(proxy)
+			collision := s.Collisions.GetUnsafe(proxy)
 			if collision.State == stdcomponents.CollisionStateExit {
 				delete(s.activeCollisions, pair)
 				s.EntityManager.Delete(proxy)
@@ -241,9 +241,9 @@ func (s *CollisionDetectionGridSystem) processExitStates() {
 }
 
 func (s *CollisionDetectionGridSystem) boxToXCollision(entityA ecs.Entity, collisionChan chan<- CollisionEvent) {
-	position1 := s.Positions.Get(entityA)
+	position1 := s.Positions.GetUnsafe(entityA)
 	spatialIndex1 := s.entityToCell[entityA]
-	genericCollider1 := s.GenericCollider.Get(entityA)
+	genericCollider1 := s.GenericCollider.GetUnsafe(entityA)
 
 	var nearByIndexes = [9]stdcomponents.SpatialIndex{
 		{spatialIndex1.X, spatialIndex1.Y},
@@ -265,14 +265,14 @@ func (s *CollisionDetectionGridSystem) boxToXCollision(entityA ecs.Entity, colli
 			}
 
 			// Broad Phase
-			genericCollider2 := s.GenericCollider.Get(entityB)
+			genericCollider2 := s.GenericCollider.GetUnsafe(entityB)
 			if genericCollider1.Mask&(1<<genericCollider2.Layer) == 0 &&
 				genericCollider2.Mask&(1<<genericCollider1.Layer) == 0 {
 				continue
 			}
 
 			// Narrow Phase
-			position2 := s.Positions.Get(entityB)
+			position2 := s.Positions.GetUnsafe(entityB)
 
 			switch genericCollider2.Shape {
 			case stdcomponents.BoxColliderShape:

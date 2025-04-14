@@ -36,17 +36,17 @@ type HpSystem struct {
 func (s *HpSystem) Init() {}
 func (s *HpSystem) Run(dt time.Duration) {
 	s.Hps.EachEntity(func(e ecs.Entity) bool {
-		hp := s.Hps.Get(e)
+		hp := s.Hps.GetUnsafe(e)
 
 		if hp.Hp <= 0 {
-			asteroid := s.Asteroids.Get(e)
-			player := s.Players.Get(e)
+			asteroid := s.Asteroids.GetUnsafe(e)
+			player := s.Players.GetUnsafe(e)
 			s.AsteroidSceneManager.EachComponent(func(a *components.AsteroidSceneManager) bool {
 				if asteroid != nil {
 					a.PlayerScore += hp.MaxHp
 				}
 				if player != nil {
-					playerHp := s.Hp.Get(e)
+					playerHp := s.Hp.GetUnsafe(e)
 					a.PlayerHp = playerHp.Hp
 				}
 				return false

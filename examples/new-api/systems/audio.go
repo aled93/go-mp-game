@@ -37,7 +37,7 @@ func (s *AudioSystem) Init() {
 
 func (s *AudioSystem) Run(dt time.Duration) {
 	s.SoundEffects.EachEntity(func(entity ecs.Entity) bool {
-		soundEffect := s.SoundEffects.Get(entity)
+		soundEffect := s.SoundEffects.GetUnsafe(entity)
 		clip := soundEffect.Clip
 
 		// check if clip is valid

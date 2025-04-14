@@ -36,12 +36,12 @@ func (s *CullingSystem) Run(dt time.Duration) {
 		return true
 	})
 	s.Cameras.EachEntity(func(entity ecs.Entity) bool {
-		camera := s.Cameras.Get(entity)
+		camera := s.Cameras.GetUnsafe(entity)
 		cameraRect := camera.Rect()
 		s.Renderables.EachEntity(func(entity ecs.Entity) bool {
-			renderable := s.Renderables.Get(entity)
-			//renderVisible := s.RenderVisible.Get(entity)
-			aabb := s.AABBs.Get(entity)
+			renderable := s.Renderables.GetUnsafe(entity)
+			//renderVisible := s.RenderVisible.GetUnsafe(entity)
+			aabb := s.AABBs.GetUnsafe(entity)
 
 			switch camera.Culling {
 			case stdcomponents.Culling2DFullscreenBB:
@@ -63,8 +63,8 @@ func (s *CullingSystem) Run(dt time.Duration) {
 		return true
 	})
 	s.Renderables.EachEntity(func(entity ecs.Entity) bool {
-		renderable := s.Renderables.Get(entity)
-		visible := s.RenderVisible.Get(entity)
+		renderable := s.Renderables.GetUnsafe(entity)
+		visible := s.RenderVisible.GetUnsafe(entity)
 		if visible == nil {
 			if renderable.Observed {
 				s.RenderVisible.Create(entity, stdcomponents.RenderVisible{})

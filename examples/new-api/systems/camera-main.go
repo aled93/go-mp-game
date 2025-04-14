@@ -87,14 +87,14 @@ func (s *MainCameraSystem) Run(dt time.Duration) {
 		s.shouldRotate = !s.shouldRotate
 	}
 	s.Player.EachEntity(func(entity ecs.Entity) bool {
-		playerPosition := s.Position.Get(entity)
-		c := s.Cameras.Get(s.mainCamera)
+		playerPosition := s.Position.GetUnsafe(entity)
+		c := s.Cameras.GetUnsafe(s.mainCamera)
 		//decay := 40.0 // DECAY IS TICKRATE DEPENDENT
 		//c.Camera2D.Target.X = float32(s.expDecay(float64(c.Camera2D.Target.X), float64(playerPosition.XY.X), decay, float64(dt)))
 		//c.Camera2D.Target.Y = float32(s.expDecay(float64(c.Camera2D.Target.Y), float64(playerPosition.XY.Y), decay, float64(dt)))
 		c.Camera2D.Target = rl.Vector2(playerPosition.XY)
 		if s.shouldRotate {
-			rotation := s.Rotation.Get(entity)
+			rotation := s.Rotation.GetUnsafe(entity)
 			c.Camera2D.Rotation = -float32(rotation.Degrees())
 		} else {
 			c.Camera2D.Rotation = 0
@@ -104,10 +104,10 @@ func (s *MainCameraSystem) Run(dt time.Duration) {
 
 	//if rl.IsWindowResized() {
 	//	width, height := rl.GetScreenWidth(), rl.GetScreenHeight()
-	//	main := s.Cameras.Get(s.mainCamera)
+	//	main := s.Cameras.GetUnsafe(s.mainCamera)
 	//	main.Dst = vectors.Rectangle{X: 0, Y: 0, Width: float32(width), Height: float32(height)}
 	//
-	//	mini := s.Cameras.Get(s.minimapCamera)
+	//	mini := s.Cameras.GetUnsafe(s.minimapCamera)
 	//	mini.Dst = vectors.Rectangle{X: float32(width) - mini.Dst.Width, Y: float32(height) - mini.Dst.Height, Width: mini.Dst.Width, Height: mini.Dst.Height}
 	//}
 

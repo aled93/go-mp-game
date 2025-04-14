@@ -36,16 +36,16 @@ type SpriteSystem struct {
 func (s *SpriteSystem) Init() {}
 func (s *SpriteSystem) Run() {
 	s.Sprites.EachEntity(func(entity ecs.Entity) bool {
-		sprite := s.Sprites.Get(entity) //
-		position := s.Positions.Get(entity)
-		scale := s.Scales.Get(entity)
+		sprite := s.Sprites.GetUnsafe(entity) //
+		position := s.Positions.GetUnsafe(entity)
+		scale := s.Scales.GetUnsafe(entity)
 
-		renderOrder := s.RenderOrder.Get(entity)
+		renderOrder := s.RenderOrder.GetUnsafe(entity)
 		if renderOrder == nil {
 			renderOrder = s.RenderOrder.Create(entity, stdcomponents.RenderOrder{})
 		}
 
-		tr := s.RLTexturePros.Get(entity)
+		tr := s.RLTexturePros.GetUnsafe(entity)
 		if tr == nil {
 			s.RLTexturePros.Create(entity, stdcomponents.RLTexturePro{
 				Texture: sprite.Texture, //

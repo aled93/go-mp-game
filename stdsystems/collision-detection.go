@@ -64,7 +64,7 @@ func (s *CollisionDetectionSystem) setup() {
 
 	// Reset grids
 	s.CollisionGridComponentManager.EachEntityParallel(batchSize, func(entity ecs.Entity, workerId int) bool {
-		grid := s.CollisionGridComponentManager.Get(entity)
+		grid := s.CollisionGridComponentManager.GetUnsafe(entity)
 		assert.NotNil(grid)
 		grid.Entities.Reset()
 		grid.MinBounds = vectors.Vec2{
@@ -77,7 +77,7 @@ func (s *CollisionDetectionSystem) setup() {
 	// Accumulate used CollisionLayers
 	var collisionLayerAccumulators = make([]stdcomponents.CollisionLayer, runtime.NumCPU()-2)
 	s.GenericCollider.EachEntityParallel(batchSize*4, func(entity ecs.Entity, workerId int) bool {
-		collider := s.GenericCollider.Get(entity)
+		collider := s.GenericCollider.GetUnsafe(entity)
 		assert.NotNil(collider)
 		collisionLayerAccumulators[workerId] |= 1 << collider.Layer
 		return true
@@ -111,18 +111,18 @@ func (s *CollisionDetectionSystem) setup() {
 
 	// Register all entities in grids
 	s.GenericCollider.EachEntity(func(entity ecs.Entity) bool {
-		collider := s.GenericCollider.Get(entity)
+		collider := s.GenericCollider.GetUnsafe(entity)
 		assert.NotNil(collider)
 
 		gridEntity := s.gridLookup[collider.Layer]
 
-		grid := s.CollisionGridComponentManager.Get(gridEntity)
+		grid := s.CollisionGridComponentManager.GetUnsafe(gridEntity)
 		assert.NotNil(grid)
 
-		position := s.Positions.Get(entity)
+		position := s.Positions.GetUnsafe(entity)
 		assert.NotNil(position)
 
-		aabb := s.AABB.Get(entity)
+		aabb := s.AABB.GetUnsafe(entity)
 		assert.NotNil(aabb)
 
 		grid.RegisterEntity(entity, aabb)
@@ -132,7 +132,7 @@ func (s *CollisionDetectionSystem) setup() {
 
 	// Distribute entities in grids
 	s.CollisionGridComponentManager.EachEntity(func(gridEntity ecs.Entity) bool {
-		grid := s.CollisionGridComponentManager.Get(gridEntity)
+		grid := s.CollisionGridComponentManager.GetUnsafe(gridEntity)
 		assert.NotNil(grid)
 
 		const chunkScaleFactor = 32
@@ -148,7 +148,7 @@ func (s *CollisionDetectionSystem) setup() {
 		}
 
 		grid.Entities.AllDataValue(func(entity ecs.Entity) bool {
-			position := s.Positions.Get(entity)
+			position := s.Positions.GetUnsafe(entity)
 			assert.NotNil(position)
 
 			spatialIndex := grid.GetSpatialIndex(position.XY)
@@ -181,10 +181,10 @@ func (s *CollisionDetectionSystem) setup() {
 				})
 			}
 
-			tree := s.BvhTreeComponentManager.Get(chunkEntity)
+			tree := s.BvhTreeComponentManager.GetUnsafe(chunkEntity)
 			assert.NotNil(tree)
 
-			aabb := s.AABB.Get(entity)
+			aabb := s.AABB.GetUnsafe(entity)
 			assert.NotNil(aabb)
 
 			tree.AddComponent(entity, *aabb)
@@ -195,7 +195,7 @@ func (s *CollisionDetectionSystem) setup() {
 	})
 
 	s.CollisionChunkComponentManager.EachEntityParallel(batchSize, func(chunkEntity ecs.Entity, workerId int) bool {
-		tree := s.BvhTreeComponentManager.Get(chunkEntity)
+		tree := s.BvhTreeComponentManager.GetUnsafe(chunkEntity)
 		assert.NotNil(tree)
 		tree.Build()
 		return true

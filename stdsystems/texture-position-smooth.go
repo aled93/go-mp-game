@@ -52,9 +52,9 @@ func (s *TexturePositionSmoothSystem) Run(dt time.Duration) {
 	//END DEBUG
 
 	s.TexturePositionSmooth.EachEntityParallel(128, func(entity ecs.Entity, i int) bool {
-		position := s.Position.Get(entity)
-		texture := s.RLTexture.Get(entity)
-		smooth := s.TexturePositionSmooth.Get(entity)
+		position := s.Position.GetUnsafe(entity)
+		texture := s.RLTexture.GetUnsafe(entity)
+		smooth := s.TexturePositionSmooth.GetUnsafe(entity)
 		if texture == nil {
 			return true
 		}

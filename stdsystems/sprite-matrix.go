@@ -28,12 +28,12 @@ func (s *SpriteMatrixSystem) Init() {}
 func (s *SpriteMatrixSystem) Run() {
 	s.SpriteMatrixes.EachEntity(func(entity ecs.Entity) bool {
 		spriteMatrix := s.SpriteMatrixes.Get(entity) //
-		position := s.Positions.Get(entity)
-		animationState := s.AnimationStates.Get(entity) //
+		position := s.Positions.GetUnsafe(entity)
+		animationState := s.AnimationStates.GetUnsafe(entity) //
 
 		frame := spriteMatrix.Animations[*animationState].Frame
 
-		tr := s.RLTexturePros.Get(entity)
+		tr := s.RLTexturePros.GetUnsafe(entity)
 		if tr == nil {
 			s.RLTexturePros.Create(entity, stdcomponents.RLTexturePro{
 				Texture: spriteMatrix.Texture, //

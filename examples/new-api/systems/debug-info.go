@@ -61,10 +61,10 @@ func (s *DebugInfoSystem) Run(dt time.Duration) bool {
 	if rl.IsKeyPressed(rl.KeyF6) {
 		if !s.debug {
 			s.BoxColliders.EachEntity(func(e ecs.Entity) bool {
-				col := s.BoxColliders.Get(e)
-				scale := s.Scales.Get(e)
-				position := s.Positions.Get(e)
-				rotation := s.Rotations.Get(e)
+				col := s.BoxColliders.GetUnsafe(e)
+				scale := s.Scales.GetUnsafe(e)
+				position := s.Positions.GetUnsafe(e)
+				rotation := s.Rotations.GetUnsafe(e)
 
 				x := position.XY.X
 				y := position.XY.Y
@@ -77,12 +77,12 @@ func (s *DebugInfoSystem) Run(dt time.Duration) bool {
 				return true
 			})
 			s.CircleColliders.EachEntity(func(e ecs.Entity) bool {
-				col := s.CircleColliders.Get(e)
-				scale := s.Scales.Get(e)
-				pos := s.Positions.Get(e)
+				col := s.CircleColliders.GetUnsafe(e)
+				scale := s.Scales.GetUnsafe(e)
+				pos := s.Positions.GetUnsafe(e)
 
 				circleColor := rl.DarkGreen
-				isSleeping := s.ColliderSleepStateComponentManager.Get(e)
+				isSleeping := s.ColliderSleepStateComponentManager.GetUnsafe(e)
 				if isSleeping != nil {
 					circleColor = rl.Blue
 				}
@@ -104,18 +104,18 @@ func (s *DebugInfoSystem) Run(dt time.Duration) bool {
 		// TODO: Parallelize this with future batches feature
 		// Follow child to texture of parent box collider
 		s.BoxColliders.EachEntity(func(e ecs.Entity) bool {
-			parentAABB := s.AABBs.Get(e)
-			parentPosition := s.Positions.Get(e)
-			col := s.BoxColliders.Get(e)
-			scale := s.Scales.Get(e)
-			rotation := s.Rotations.Get(e)
+			parentAABB := s.AABBs.GetUnsafe(e)
+			parentPosition := s.Positions.GetUnsafe(e)
+			col := s.BoxColliders.GetUnsafe(e)
+			scale := s.Scales.GetUnsafe(e)
+			rotation := s.Rotations.GetUnsafe(e)
 
 			s.liveParents = append(s.liveParents, e)
 			child, ok := s.children[e]
 
 			if ok {
-				childAABB := s.AABBs.Get(child.id)
-				childRect := s.TextureRect.Get(child.id)
+				childAABB := s.AABBs.GetUnsafe(child.id)
+				childRect := s.TextureRect.GetUnsafe(child.id)
 
 				if parentAABB != nil && childAABB != nil {
 					childAABB.Min = parentAABB.Min
@@ -146,18 +146,18 @@ func (s *DebugInfoSystem) Run(dt time.Duration) bool {
 		// TODO: Parallelize this with future batches feature
 		// Follow child to texture of parent circle collider
 		s.CircleColliders.EachEntity(func(e ecs.Entity) bool {
-			parentAABB := s.AABBs.Get(e)
-			pos := s.Positions.Get(e)
-			col := s.CircleColliders.Get(e)
-			scale := s.Scales.Get(e)
+			parentAABB := s.AABBs.GetUnsafe(e)
+			pos := s.Positions.GetUnsafe(e)
+			col := s.CircleColliders.GetUnsafe(e)
+			scale := s.Scales.GetUnsafe(e)
 
 			s.liveParents = append(s.liveParents, e)
 			child, ok := s.children[e]
 			if ok {
-				childAABB := s.AABBs.Get(child.id)
-				childCircle := s.Circle.Get(child.id)
+				childAABB := s.AABBs.GetUnsafe(child.id)
+				childCircle := s.Circle.GetUnsafe(child.id)
 				circleColor := rl.DarkGreen
-				isSleeping := s.ColliderSleepStateComponentManager.Get(e)
+				isSleeping := s.ColliderSleepStateComponentManager.GetUnsafe(e)
 				if isSleeping != nil {
 					circleColor = rl.Blue
 				}

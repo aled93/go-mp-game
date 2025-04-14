@@ -8,6 +8,7 @@ Donations during this file development:
 -===-===-===-===-===-===-===-===-===-===
 
 <- Hininn Donated 2 000 RUB
+<- Сосисочник Паша Donated 77 RUB
 
 Thank you for your support!
 */
@@ -135,7 +136,10 @@ func (c *ComponentManager[T]) Create(entity Entity, value T) (component *T) {
 	return component
 }
 
-func (c *ComponentManager[T]) Get(entity Entity) (component *T) {
+/*
+GetUnsafe - is not thread safe. DO NOT store the pointer to the value anywhere, because it might be changed anytime with Create or Remove operations.
+*/
+func (c *ComponentManager[T]) GetUnsafe(entity Entity) (component *T) {
 	assert.True(c.isInitialized, "ComponentManager should be created with NewComponentManager()")
 
 	index, ok := c.lookup.Get(entity)
@@ -147,6 +151,9 @@ func (c *ComponentManager[T]) Get(entity Entity) (component *T) {
 }
 
 func (c *ComponentManager[T]) Set(entity Entity, value T) *T {
+	c.mx.Lock()
+	defer c.mx.Unlock()
+
 	assert.True(c.isInitialized, "ComponentManager should be created with NewComponentManager()")
 
 	index, ok := c.lookup.Get(entity)
@@ -325,7 +332,7 @@ func (c *ComponentManager[T]) getChangesBinary(source *PagedArray[Entity]) Compo
 		assert.True(e != nil)
 		entId := *e
 		assert.True(c.Has(entId))
-		components = append(components, *c.Get(entId))
+		components = append(components, *c.GetUnsafe(entId))
 		entities = append(entities, entId)
 		return true
 	})

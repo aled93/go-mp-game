@@ -63,7 +63,7 @@ func (s *MinimapSystem) Init() {
 }
 
 func (s *MinimapSystem) Run(dt time.Duration) bool {
-	c := s.Cameras.Get(s.minimapCamera)
+	c := s.Cameras.GetUnsafe(s.minimapCamera)
 
 	if rl.IsKeyPressed(rl.KeyM) {
 		if s.disabled {
@@ -73,7 +73,7 @@ func (s *MinimapSystem) Run(dt time.Duration) bool {
 		} else {
 			s.disabled = true
 			s.cameraComponent = *c
-			s.frameBufferComponent = *s.FrameBuffer2D.Get(s.minimapCamera)
+			s.frameBufferComponent = *s.FrameBuffer2D.GetUnsafe(s.minimapCamera)
 			s.Cameras.Remove(s.minimapCamera)
 			s.FrameBuffer2D.Remove(s.minimapCamera)
 		}
@@ -82,8 +82,8 @@ func (s *MinimapSystem) Run(dt time.Duration) bool {
 		return false
 	}
 	s.Player.EachEntity(func(entity ecs.Entity) bool {
-		playerPosition := s.Position.Get(entity)
-		rotation := s.Rotation.Get(entity)
+		playerPosition := s.Position.GetUnsafe(entity)
+		rotation := s.Rotation.GetUnsafe(entity)
 
 		c.Camera2D.Target.X = playerPosition.XY.X
 		c.Camera2D.Target.Y = playerPosition.XY.Y

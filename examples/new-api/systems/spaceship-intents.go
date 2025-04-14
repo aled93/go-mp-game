@@ -63,13 +63,13 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 	dtSec := float32(dt.Seconds())
 
 	s.SpaceshipIntents.EachEntity(func(entity ecs.Entity) bool {
-		intent := s.SpaceshipIntents.Get(entity)
-		vel := s.Velocities.Get(entity)
-		rot := s.Rotations.Get(entity)
-		pos := s.Positions.Get(entity)
-		weapon := s.Weapons.Get(entity)
-		hp := s.Hps.Get(entity)
-		flySfx := s.SoundEffects.Get(entity)
+		intent := s.SpaceshipIntents.GetUnsafe(entity)
+		vel := s.Velocities.GetUnsafe(entity)
+		rot := s.Rotations.GetUnsafe(entity)
+		pos := s.Positions.GetUnsafe(entity)
+		weapon := s.Weapons.GetUnsafe(entity)
+		hp := s.Hps.GetUnsafe(entity)
+		flySfx := s.SoundEffects.GetUnsafe(entity)
 
 		if intent.RotateLeft {
 			rot.Angle -= rotateSpeed * vectors.Radians(dtSec)
