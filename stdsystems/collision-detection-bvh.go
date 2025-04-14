@@ -60,13 +60,14 @@ type CollisionDetectionBVHSystem struct {
 
 	activeCollisions  map[CollisionPair]ecs.Entity // Maps collision pairs to proxy entities
 	currentCollisions map[CollisionPair]struct{}
-	entities          []ecs.Entity
+	numWorkers        int
 }
 
 func (s *CollisionDetectionBVHSystem) Init() {
 	for i := range maxNumWorkers {
 		s.collisionEvents[i] = ecs.NewPagedArray[CollisionEvent]()
 	}
+	s.numWorkers = runtime.NumCPU() - 2
 }
 
 func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
@@ -105,47 +106,22 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 	}
 	wg.Wait()
 
-	if len(s.entities) < s.GenericCollider.Len() {
-		s.entities = make([]ecs.Entity, 0, s.GenericCollider.Len())
-	}
-	s.entities = s.GenericCollider.RawEntities(s.entities)
-	s.findEntityCollisions(s.entities)
+	s.findEntityCollisions()
 	s.registerCollisionEvents()
 }
 
 func (s *CollisionDetectionBVHSystem) Destroy() {}
 
-func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity) {
-	var wg sync.WaitGroup
-	entitiesLength := len(entities)
-	// get minimum 1 worker for small amount of entities, and maximum maxNumWorkers for a lot of entities
-	numWorkers := max(min(entitiesLength/128, maxNumWorkers), 1)
-	chunkSize := entitiesLength / numWorkers
-
-	wg.Add(numWorkers)
-	for workedId := 0; workedId < numWorkers; workedId++ {
-		startIndex := workedId * chunkSize
-		endIndex := startIndex + chunkSize - 1
-		if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
-			endIndex = entitiesLength
+func (s *CollisionDetectionBVHSystem) findEntityCollisions() {
+	s.GenericCollider.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
+		potentialEntities := s.broadPhase(entity, make([]ecs.Entity, 0, 64))
+		if len(potentialEntities) == 0 {
+			return true
 		}
 
-		go func(start int, end int, id int) {
-			defer wg.Done()
-
-			for i := range entities[start:end] {
-				entityA := entities[i+startIndex]
-
-				potentialEntities := s.broadPhase(entityA, make([]ecs.Entity, 0, 64))
-				if len(potentialEntities) == 0 {
-					continue
-				}
-				s.narrowPhase(entityA, potentialEntities, id)
-			}
-		}(startIndex, endIndex, workedId)
-	}
-	// Wait for workers and close collision channel
-	wg.Wait()
+		s.narrowPhase(entity, potentialEntities, workerId)
+		return true
+	})
 }
 
 func (s *CollisionDetectionBVHSystem) registerCollisionEvents() {

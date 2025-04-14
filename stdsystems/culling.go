@@ -7,6 +7,7 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package stdsystems
 
 import (
+	"github.com/negrel/assert"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"gomp/vectors"
@@ -38,47 +39,54 @@ func (s *CullingSystem) Run(dt time.Duration) {
 		r.Observed = false
 		return true
 	})
+
 	s.Cameras.EachEntity()(func(entity ecs.Entity) bool {
 		camera := s.Cameras.GetUnsafe(entity)
 		cameraRect := camera.Rect()
-		s.Renderables.EachEntity()(func(entity ecs.Entity) bool {
+
+		s.Renderables.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, _ int) bool {
 			renderable := s.Renderables.GetUnsafe(entity)
-			//renderVisible := s.RenderVisible.GetUnsafe(entity)
-			aabb := s.AABBs.GetUnsafe(entity)
+			assert.NotNil(renderable)
 
-			switch camera.Culling {
-			case stdcomponents.Culling2DFullscreenBB:
-				//TODO: textureAABB
-				if aabb == nil {
-					renderable.Observed = true
-					return true
-				}
-				if s.intersects(cameraRect, aabb.Rect()) {
-					renderable.Observed = true
-				}
+			texture := s.Textures.GetUnsafe(entity)
+			assert.NotNil(texture)
 
-			default:
+			textureRect := texture.Rect()
+
+			if s.intersects(cameraRect, textureRect) {
 				renderable.Observed = true
 			}
-
 			return true
 		})
 		return true
 	})
-	s.Renderables.EachEntity()(func(entity ecs.Entity) bool {
+
+	var accRenderVisibleCreate = make([][]ecs.Entity, s.numWorkers)
+	var accRenderVisibleDelete = make([][]ecs.Entity, s.numWorkers)
+	s.Renderables.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
 		renderable := s.Renderables.GetUnsafe(entity)
-		visible := s.RenderVisible.GetUnsafe(entity)
-		if visible == nil {
+		assert.NotNil(renderable)
+		if !s.RenderVisible.Has(entity) {
 			if renderable.Observed {
-				s.RenderVisible.Create(entity, stdcomponents.RenderVisible{})
+				accRenderVisibleCreate[workerId] = append(accRenderVisibleCreate[workerId], entity)
 			}
 		} else {
 			if !renderable.Observed {
-				s.RenderVisible.Delete(entity)
+				accRenderVisibleDelete[workerId] = append(accRenderVisibleDelete[workerId], entity)
 			}
 		}
 		return true
 	})
+	for a := range accRenderVisibleCreate {
+		for _, entity := range accRenderVisibleCreate[a] {
+			s.RenderVisible.Create(entity, stdcomponents.RenderVisible{})
+		}
+	}
+	for a := range accRenderVisibleDelete {
+		for _, entity := range accRenderVisibleDelete[a] {
+			s.RenderVisible.Delete(entity)
+		}
+	}
 }
 
 func (_ *CullingSystem) intersects(rect1, rect2 vectors.Rectangle) bool {

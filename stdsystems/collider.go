@@ -15,9 +15,11 @@ Thank you for your support!
 package stdsystems
 
 import (
+	"github.com/negrel/assert"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"gomp/vectors"
+	"runtime"
 	"time"
 )
 
@@ -36,17 +38,52 @@ type ColliderSystem struct {
 	CircleColliders                    *stdcomponents.CircleColliderComponentManager
 	ColliderSleepStateComponentManager *stdcomponents.ColliderSleepStateComponentManager
 	AABB                               *stdcomponents.AABBComponentManager
+
+	numWorkers int
 }
 
-func (s *ColliderSystem) Init() {}
+func (s *ColliderSystem) Init() {
+	s.numWorkers = runtime.NumCPU() - 2
+}
 func (s *ColliderSystem) Run(dt time.Duration) {
-	s.BoxColliders.EachEntity()(func(entity ecs.Entity) bool {
+	var accAABB = make([][]ecs.Entity, s.numWorkers)
+	var accGenericColliders = make([][]ecs.Entity, s.numWorkers)
+	s.BoxColliders.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
+		if !s.GenericColliders.Has(entity) {
+			accGenericColliders[workerId] = append(accGenericColliders[workerId], entity)
+		}
+		if !s.AABB.Has(entity) {
+			accAABB[workerId] = append(accAABB[workerId], entity)
+		}
+		return true
+	})
+	s.CircleColliders.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
+		if !s.GenericColliders.Has(entity) {
+			accGenericColliders[workerId] = append(accGenericColliders[workerId], entity)
+		}
+		if !s.AABB.Has(entity) {
+			accAABB[workerId] = append(accAABB[workerId], entity)
+		}
+		return true
+	})
+	for i := range accAABB {
+		a := accAABB[i]
+		for _, entity := range a {
+			s.AABB.Create(entity, stdcomponents.AABB{})
+		}
+	}
+	for i := range accGenericColliders {
+		a := accGenericColliders[i]
+		for _, entity := range a {
+			s.GenericColliders.Create(entity, stdcomponents.GenericCollider{})
+		}
+	}
+
+	s.BoxColliders.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, _ int) bool {
 		boxCollider := s.BoxColliders.GetUnsafe(entity)
 
 		genCollider := s.GenericColliders.GetUnsafe(entity)
-		if genCollider == nil {
-			genCollider = s.GenericColliders.Create(entity, stdcomponents.GenericCollider{})
-		}
+
 		genCollider.Layer = boxCollider.Layer
 		genCollider.Mask = boxCollider.Mask
 		genCollider.Offset.X = boxCollider.Offset.X
@@ -54,13 +91,24 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		genCollider.Shape = stdcomponents.BoxColliderShape
 		genCollider.AllowSleep = boxCollider.AllowSleep
 
+		return true
+	})
+
+	s.BoxColliders.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, _ int) bool {
+		boxCollider := s.BoxColliders.GetUnsafe(entity)
+		assert.NotNil(boxCollider)
+
 		position := s.Positions.GetUnsafe(entity)
+		assert.NotNil(position)
+
 		scale := s.Scales.GetUnsafe(entity)
+		assert.NotNil(scale)
+
 		rotation := s.Rotations.GetUnsafe(entity)
+		assert.NotNil(rotation)
+
 		aabb := s.AABB.GetUnsafe(entity)
-		if aabb == nil {
-			aabb = s.AABB.Create(entity, stdcomponents.AABB{})
-		}
+		assert.NotNil(aabb)
 
 		a := boxCollider.WH
 		b := vectors.Vec2{X: 0, Y: boxCollider.WH.Y}
@@ -81,13 +129,12 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		return true
 	})
 
-	s.CircleColliders.EachEntity()(func(entity ecs.Entity) bool {
+	s.CircleColliders.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, _ int) bool {
 		circleCollider := s.CircleColliders.GetUnsafe(entity)
+		assert.NotNil(circleCollider)
 
 		genCollider := s.GenericColliders.GetUnsafe(entity)
-		if genCollider == nil {
-			genCollider = s.GenericColliders.Create(entity, stdcomponents.GenericCollider{})
-		}
+		assert.NotNil(genCollider)
 
 		genCollider.Layer = circleCollider.Layer
 		genCollider.Mask = circleCollider.Mask
@@ -96,12 +143,21 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		genCollider.Shape = stdcomponents.CircleColliderShape
 		genCollider.AllowSleep = circleCollider.AllowSleep
 
+		return true
+	})
+
+	s.CircleColliders.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, _ int) bool {
+		circleCollider := s.CircleColliders.GetUnsafe(entity)
+		assert.NotNil(circleCollider)
+
 		position := s.Positions.GetUnsafe(entity)
+		assert.NotNil(position)
+
 		scale := s.Scales.GetUnsafe(entity)
+		assert.NotNil(scale)
+
 		aabb := s.AABB.GetUnsafe(entity)
-		if aabb == nil {
-			aabb = s.AABB.Create(entity, stdcomponents.AABB{})
-		}
+		assert.NotNil(aabb)
 
 		offset := circleCollider.Offset.Mul(scale.XY)
 		scaledRadius := scale.XY.Scale(circleCollider.Radius)
@@ -111,9 +167,10 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		return true
 	})
 
-	s.GenericColliders.EachEntity()(func(entity ecs.Entity) bool {
+	var accColliderSleepCreate = make([][]ecs.Entity, s.numWorkers)
+	var accColliderSleepDelete = make([][]ecs.Entity, s.numWorkers)
+	s.GenericColliders.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
 		genCollider := s.GenericColliders.GetUnsafe(entity)
-
 		if genCollider.AllowSleep {
 			shouldSleep := true
 			velocity := s.Velocities.GetUnsafe(entity)
@@ -125,15 +182,28 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 			isSleeping := s.ColliderSleepStateComponentManager.GetUnsafe(entity)
 			if shouldSleep {
 				if isSleeping == nil {
-					isSleeping = s.ColliderSleepStateComponentManager.Create(entity, stdcomponents.ColliderSleepState{})
+					accColliderSleepCreate[workerId] = append(accColliderSleepCreate[workerId], entity)
 				}
 			} else {
 				if isSleeping != nil {
-					s.ColliderSleepStateComponentManager.Delete(entity)
+					accColliderSleepDelete[workerId] = append(accColliderSleepDelete[workerId], entity)
 				}
 			}
 		}
 		return true
 	})
+	for i := range accColliderSleepCreate {
+		a := accColliderSleepCreate[i]
+		for _, entity := range a {
+			s.ColliderSleepStateComponentManager.Create(entity, stdcomponents.ColliderSleepState{})
+		}
+	}
+	for i := range accColliderSleepDelete {
+		a := accColliderSleepDelete[i]
+		for _, entity := range a {
+			s.ColliderSleepStateComponentManager.Delete(entity)
+		}
+	}
+
 }
 func (s *ColliderSystem) Destroy() {}

@@ -7,7 +7,7 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package ecs
 
 const (
-	pageSizeShift   = 12
+	pageSizeShift   = 10
 	pageSize        = 1 << pageSizeShift
 	initialBookSize = 4 // Starting with a small initial book size
 )

@@ -15,6 +15,7 @@ Thank you for your support!
 package stdsystems
 
 import (
+	"cmp"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"gomp/vectors"
@@ -46,7 +47,7 @@ func (s *BvhTreeSystem) build(t *stdcomponents.BvhTree) {
 	var sorted = t.Components.Raw()
 
 	slices.SortFunc(sorted, func(a, b stdcomponents.BvhComponent) int {
-		return int(a.Code - b.Code)
+		return cmp.Compare(a.Code, b.Code)
 	})
 
 	// Add leaves

@@ -11,6 +11,7 @@ import (
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"math"
+	"runtime"
 	"time"
 )
 
@@ -22,14 +23,18 @@ type VelocitySystem struct {
 	Velocities  *stdcomponents.VelocityComponentManager
 	Positions   *stdcomponents.PositionComponentManager
 	RigidBodies *stdcomponents.RigidBodyComponentManager
+
+	numWorkers int
 }
 
-func (s *VelocitySystem) Init() {}
+func (s *VelocitySystem) Init() {
+	s.numWorkers = runtime.NumCPU() - 2
+}
 
 func (s *VelocitySystem) Run(dt time.Duration) {
 	dtSec := float32(dt.Seconds())
 
-	s.Velocities.EachEntity()(func(e ecs.Entity) bool {
+	s.Velocities.EachEntityParallel(s.numWorkers)(func(e ecs.Entity, _ int) bool {
 		velocity := s.Velocities.GetUnsafe(e)
 		assert.True(s.isVelocityValid(velocity))
 

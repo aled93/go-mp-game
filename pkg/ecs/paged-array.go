@@ -270,15 +270,15 @@ func (a *PagedArray[T]) EachDataValueParallel(numWorkers int) func(yield func(T,
 			if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
 				endIndex = a.len
 			}
-			go func(start int, end int) {
-				defer wg.Done()
-				r := end - start
+			go func(y func(T, int) bool, s int, e int, id int, w *sync.WaitGroup) {
+				defer w.Done()
+				r := e - s
 				for i := range r {
-					if !yield(a.GetValue(i+startIndex), workedId) {
+					if !y(a.GetValue(i+s), id) {
 						return
 					}
 				}
-			}(startIndex, endIndex)
+			}(yield, startIndex, endIndex, workedId, &wg)
 		}
 		wg.Wait()
 	}
