@@ -49,10 +49,12 @@ type CollisionDetectionSystem struct {
 	CollisionChunkComponentManager     *stdcomponents.CollisionChunkComponentManager
 
 	gridLookup map[stdcomponents.CollisionLayer]ecs.Entity
+	numWorkers int
 }
 
 func (s *CollisionDetectionSystem) Init() {
 	s.gridLookup = make(map[stdcomponents.CollisionLayer]ecs.Entity)
+	s.numWorkers = runtime.NumCPU() - 2
 }
 func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 	s.setup()
@@ -60,10 +62,8 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 }
 func (s *CollisionDetectionSystem) Destroy() {}
 func (s *CollisionDetectionSystem) setup() {
-	const batchSize = 1 << 14
-
 	// Reset grids
-	s.CollisionGridComponentManager.EachEntityParallel(batchSize, func(entity ecs.Entity, workerId int) bool {
+	s.CollisionGridComponentManager.EachEntityParallel(s.numWorkers, func(entity ecs.Entity, workerId int) bool {
 		grid := s.CollisionGridComponentManager.GetUnsafe(entity)
 		assert.NotNil(grid)
 		grid.Entities.Reset()
@@ -75,8 +75,8 @@ func (s *CollisionDetectionSystem) setup() {
 	})
 
 	// Accumulate used CollisionLayers
-	var collisionLayerAccumulators = make([]stdcomponents.CollisionLayer, runtime.NumCPU()-2)
-	s.GenericCollider.EachEntityParallel(batchSize*4, func(entity ecs.Entity, workerId int) bool {
+	var collisionLayerAccumulators = make([]stdcomponents.CollisionLayer, s.numWorkers)
+	s.GenericCollider.EachEntityParallel(s.numWorkers, func(entity ecs.Entity, workerId int) bool {
 		collider := s.GenericCollider.GetUnsafe(entity)
 		assert.NotNil(collider)
 		collisionLayerAccumulators[workerId] |= 1 << collider.Layer
@@ -172,12 +172,12 @@ func (s *CollisionDetectionSystem) setup() {
 					Codes:      ecs.NewSlice[uint64](64),
 					Components: ecs.NewSlice[stdcomponents.BvhComponent](64),
 				})
-				const colorbase int = 70
+				const colorbase int = 120
 				s.Tints.Create(chunkEntity, color.RGBA{
 					R: uint8(colorbase + rand.Intn(255-colorbase)),
 					G: uint8(colorbase + rand.Intn(255-colorbase)),
 					B: uint8(colorbase + rand.Intn(255-colorbase)),
-					A: 50,
+					A: 70,
 				})
 			}
 
@@ -194,7 +194,7 @@ func (s *CollisionDetectionSystem) setup() {
 		return true
 	})
 
-	s.CollisionChunkComponentManager.EachEntityParallel(batchSize, func(chunkEntity ecs.Entity, workerId int) bool {
+	s.CollisionChunkComponentManager.EachEntityParallel(s.numWorkers, func(chunkEntity ecs.Entity, workerId int) bool {
 		tree := s.BvhTreeComponentManager.GetUnsafe(chunkEntity)
 		assert.NotNil(tree)
 		tree.Build()

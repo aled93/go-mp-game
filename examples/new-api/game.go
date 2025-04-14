@@ -77,6 +77,8 @@ func (g *Game) Init() {
 		systems.AssetLib.Init()
 		systems.Audio.Init()
 		systems.SpatialAudio.Init()
+		systems.RenderCameras.Init()
+		systems.Culling.Init()
 		systems.TexturePositionSmooth.Init()
 
 		scene.Init(world)
@@ -154,8 +156,9 @@ func (g *Game) Destroy() {
 		systems.AssetLib.Destroy()
 		systems.Audio.Destroy()
 		systems.SpatialAudio.Destroy()
-		systems.TexturePositionSmooth.Destroy()
+		systems.RenderCameras.Destroy()
 		systems.Culling.Destroy()
+		systems.TexturePositionSmooth.Destroy()
 
 		world.Destroy()
 	}

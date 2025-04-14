@@ -7,7 +7,6 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package ecs
 
 import (
-	"runtime"
 	"sync"
 
 	"github.com/negrel/assert"
@@ -17,12 +16,10 @@ type PagedArray[T any] struct {
 	book             []ArrayPage[T]
 	currentPageIndex int
 	len              int
-	maxNumWorkers    int
 }
 
 func NewPagedArray[T any]() (a PagedArray[T]) {
 	a.book = make([]ArrayPage[T], 2, initialBookSize)
-	a.maxNumWorkers = max(runtime.NumCPU()-2, 1) // Recover if less than 2 cpu
 
 	return a
 }
@@ -189,43 +186,28 @@ func (a *PagedArray[T]) All(yield func(int, *T) bool) {
 	}
 }
 
-func (a *PagedArray[T]) AllParallel(yield func(int, *T) bool) {
-	var page *ArrayPage[T]
-	var data *[pageSize]T
-	var index_offset int
+func (a *PagedArray[T]) AllParallel(numWorkers int, yield func(int, *T, int) bool) {
+	assert.True(numWorkers > 0)
+	var chunkSize = a.len / numWorkers
+	var wg sync.WaitGroup
 
-	book := a.book
-	wg := new(sync.WaitGroup)
-	gorutineBudget := a.maxNumWorkers
-
-	runner := func(data *[pageSize]T, offset int, startIndex int, wg *sync.WaitGroup) {
-		defer wg.Done()
-		for j := startIndex; j >= 0; j-- {
-			if !yield(offset+j, &(data[j])) {
-				return
+	wg.Add(numWorkers)
+	for workedId := 0; workedId < numWorkers; workedId++ {
+		startIndex := workedId * chunkSize
+		endIndex := startIndex + chunkSize - 1
+		if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
+			endIndex = a.len
+		}
+		go func(start int, end int) {
+			defer wg.Done()
+			r := end - start
+			for i := range r {
+				if !yield(i, a.Get(i+startIndex), workedId) {
+					return
+				}
 			}
-		}
+		}(startIndex, endIndex)
 	}
-
-	if a.len == 0 {
-		return
-	}
-
-	wg.Add(int(a.currentPageIndex) + 1)
-	for i := a.currentPageIndex; i >= 0; i-- {
-		page = &book[i]
-		data = &page.data
-		index_offset = int(i) << pageSizeShift
-
-		if gorutineBudget > 0 {
-			go runner(data, index_offset, page.len-1, wg)
-			gorutineBudget--
-			continue
-		}
-
-		runner(data, index_offset, page.len-1, wg)
-	}
-
 	wg.Wait()
 }
 
@@ -269,11 +251,9 @@ func (a *PagedArray[T]) AllDataValue(yield func(T) bool) {
 	}
 }
 
-func (a *PagedArray[T]) AllDataValueParallel(batchSize int, yield func(T, int) bool) {
-	// get minimum 1 worker for small amount of entities, and maximum maxNumWorkers for a lot of entities
-	numWorkers := max(min(a.len/batchSize, a.maxNumWorkers), 1)
-	chunkSize := a.len / numWorkers
-
+func (a *PagedArray[T]) AllDataValueParallel(numWorkers int, yield func(T, int) bool) {
+	assert.True(numWorkers > 0)
+	var chunkSize = a.len / numWorkers
 	var wg sync.WaitGroup
 
 	wg.Add(numWorkers)
@@ -296,11 +276,9 @@ func (a *PagedArray[T]) AllDataValueParallel(batchSize int, yield func(T, int) b
 	wg.Wait()
 }
 
-func (a *PagedArray[T]) AllDataParallel(batchSize int, yield func(*T, int) bool) {
-	// get minimum 1 worker for small amount of entities, and maximum maxNumWorkers for a lot of entities
-	numWorkers := max(min(a.len/batchSize, a.maxNumWorkers), 1)
-	chunkSize := a.len / numWorkers
-
+func (a *PagedArray[T]) AllDataParallel(numWorkers int, yield func(*T, int) bool) {
+	assert.True(numWorkers > 0)
+	var chunkSize = a.len / numWorkers
 	var wg sync.WaitGroup
 
 	wg.Add(numWorkers)

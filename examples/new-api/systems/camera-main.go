@@ -60,7 +60,7 @@ func (s *MainCameraSystem) Init() {
 		Layer:     config.MainCameraLayer,
 		Order:     0,
 		Culling:   stdcomponents.Culling2DFullscreenBB,
-		BlendMode: rl.BlendAlpha,
+		BlendMode: rl.BlendAlphaPremultiply,
 		BGColor:   color.RGBA{R: 0, G: 0, B: 0, A: 255},
 		Tint:      color.RGBA{R: 255, G: 255, B: 255, A: 255},
 	})
@@ -69,7 +69,7 @@ func (s *MainCameraSystem) Init() {
 		Frame:     rl.Rectangle{X: 0, Y: 0, Width: float32(width), Height: float32(height)},
 		Texture:   rl.LoadRenderTexture(int32(width), int32(height)),
 		Layer:     config.MainCameraLayer,
-		BlendMode: rl.BlendAlpha,
+		BlendMode: rl.BlendColor,
 		Rotation:  0,
 		Tint:      rl.White,
 		Dst:       rl.Rectangle{Width: float32(width), Height: float32(height)},

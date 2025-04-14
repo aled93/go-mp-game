@@ -7,23 +7,18 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package ecs
 
 import (
-	"runtime"
 	"sync"
 
 	"github.com/negrel/assert"
 )
 
 type Slice[T any] struct {
-	data          []T
-	len           int
-	maxNumWorkers int
-	wg            sync.WaitGroup
+	data []T
+	len  int
 }
 
 func NewSlice[T any](size int) (a Slice[T]) {
 	a.data = make([]T, 0, size)
-	a.maxNumWorkers = max(runtime.NumCPU()-2, 1) // Recover if less than 2 cpu
-
 	return a
 }
 
@@ -139,12 +134,12 @@ func (a *Slice[T]) EachDataValue(yield func(T) bool) {
 	}
 }
 
-func (a *Slice[T]) EachParallel(batchSize int, yield func(int, *T, int) bool) {
-	// get minimum 1 worker for small amount of entities, and maximum maxNumWorkers for a lot of entities
-	numWorkers := max(min(a.len/batchSize, a.maxNumWorkers), 1)
-	chunkSize := a.len / numWorkers
+func (a *Slice[T]) EachParallel(numWorkers int, yield func(int, *T, int) bool) {
+	assert.True(numWorkers > 0)
+	var chunkSize = a.len / numWorkers
+	var wg sync.WaitGroup
 
-	a.wg.Add(numWorkers)
+	wg.Add(numWorkers)
 	for workedId := 0; workedId < numWorkers; workedId++ {
 		startIndex := workedId * chunkSize
 		endIndex := startIndex + chunkSize - 1
@@ -152,7 +147,7 @@ func (a *Slice[T]) EachParallel(batchSize int, yield func(int, *T, int) bool) {
 			endIndex = a.len
 		}
 		go func(start int, end int) {
-			defer a.wg.Done()
+			defer wg.Done()
 			for i := range a.data[start:end] {
 				if !yield(i, &a.data[i+startIndex], workedId) {
 					return
@@ -160,15 +155,15 @@ func (a *Slice[T]) EachParallel(batchSize int, yield func(int, *T, int) bool) {
 			}
 		}(startIndex, endIndex)
 	}
-	a.wg.Wait()
+	wg.Wait()
 }
 
-func (a *Slice[T]) EachDataValueParallel(batchSize int, yield func(T, int) bool) {
-	// get minimum 1 worker for small amount of entities, and maximum maxNumWorkers for a lot of entities
-	numWorkers := max(min(a.len/batchSize, a.maxNumWorkers), 1)
-	chunkSize := a.len / numWorkers
+func (a *Slice[T]) EachDataValueParallel(numWorkers int, yield func(T, int) bool) {
+	assert.True(numWorkers > 0)
+	var chunkSize = a.len / numWorkers
+	var wg sync.WaitGroup
 
-	a.wg.Add(numWorkers)
+	wg.Add(numWorkers)
 	for workedId := 0; workedId < numWorkers; workedId++ {
 		startIndex := workedId * chunkSize
 		endIndex := startIndex + chunkSize - 1
@@ -176,7 +171,7 @@ func (a *Slice[T]) EachDataValueParallel(batchSize int, yield func(T, int) bool)
 			endIndex = a.len
 		}
 		go func(start int, end int) {
-			defer a.wg.Done()
+			defer wg.Done()
 			for i := range a.data[start:end] {
 				if !yield(a.data[i+startIndex], workedId) {
 					return
@@ -184,15 +179,15 @@ func (a *Slice[T]) EachDataValueParallel(batchSize int, yield func(T, int) bool)
 			}
 		}(startIndex, endIndex)
 	}
-	a.wg.Wait()
+	wg.Wait()
 }
 
-func (a *Slice[T]) EachDataParallel(batchSize int, yield func(*T, int) bool) {
-	// get minimum 1 worker for small amount of entities, and maximum maxNumWorkers for a lot of entities
-	numWorkers := max(min(a.len/batchSize, a.maxNumWorkers), 1)
-	chunkSize := a.len / numWorkers
+func (a *Slice[T]) EachDataParallel(numWorkers int, yield func(*T, int) bool) {
+	assert.True(numWorkers > 0)
+	var chunkSize = a.len / numWorkers
+	var wg sync.WaitGroup
 
-	a.wg.Add(numWorkers)
+	wg.Add(numWorkers)
 	for workedId := 0; workedId < numWorkers; workedId++ {
 		startIndex := workedId * chunkSize
 		endIndex := startIndex + chunkSize - 1
@@ -200,7 +195,7 @@ func (a *Slice[T]) EachDataParallel(batchSize int, yield func(*T, int) bool) {
 			endIndex = a.len
 		}
 		go func(start int, end int) {
-			defer a.wg.Done()
+			defer wg.Done()
 			for i := range a.data[start:end] {
 				if !yield(&a.data[i+startIndex], workedId) {
 					return
@@ -208,5 +203,5 @@ func (a *Slice[T]) EachDataParallel(batchSize int, yield func(*T, int) bool) {
 			}
 		}(startIndex, endIndex)
 	}
-	a.wg.Wait()
+	wg.Wait()
 }

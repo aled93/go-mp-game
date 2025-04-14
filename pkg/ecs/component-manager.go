@@ -16,9 +16,8 @@ Thank you for your support!
 package ecs
 
 import (
-	"sync"
-
 	"github.com/negrel/assert"
+	"sync"
 )
 
 // ================
@@ -65,7 +64,6 @@ func NewComponentManager[T any](id ComponentId) ComponentManager[T] {
 }
 
 type ComponentManager[T any] struct {
-	mx         sync.Mutex
 	components PagedArray[T]
 	entities   PagedArray[Entity]
 	lookup     PagedMap[Entity, int]
@@ -85,6 +83,8 @@ type ComponentManager[T any] struct {
 
 	encoder func([]T) []byte
 	decoder func([]byte) []T
+
+	mx sync.Mutex
 }
 
 // ComponentChanges with byte encoded Components
@@ -260,25 +260,25 @@ func (c *ComponentManager[T]) Each(yield func(Entity, *T) bool) {
 // Iterators Parallel
 // ========================================================
 
-func (c *ComponentManager[T]) EachComponentParallel(batchSize int, yield func(*T, int) bool) {
+func (c *ComponentManager[T]) EachComponentParallel(numWorkers int, yield func(*T, int) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.components.AllDataParallel(batchSize, yield)
+	c.components.AllDataParallel(numWorkers, yield)
 }
 
-func (c *ComponentManager[T]) EachEntityParallel(batchSize int, yield func(Entity, int) bool) {
+func (c *ComponentManager[T]) EachEntityParallel(numWorkers int, yield func(Entity, int) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.entities.AllDataValueParallel(batchSize, yield)
+	c.entities.AllDataValueParallel(numWorkers, yield)
 }
 
-func (c *ComponentManager[T]) EachParallel(yield func(Entity, *T) bool) {
+func (c *ComponentManager[T]) EachParallel(numWorkers int, yield func(Entity, *T, int) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.components.AllParallel(func(i int, t *T) bool {
+	c.components.AllParallel(numWorkers, func(i int, t *T, workerId int) bool {
 		entity := c.entities.Get(i)
 		entId := *entity
-		shouldContinue := yield(entId, t)
+		shouldContinue := yield(entId, t, workerId)
 		return shouldContinue
 	})
 }

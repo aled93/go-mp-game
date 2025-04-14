@@ -242,25 +242,25 @@ func (c *SharedComponentManager[T]) Each(yield func(Entity, *T) bool) {
 // Iterators Parallel
 // ========================================================
 
-func (c *SharedComponentManager[T]) EachComponentParallel(batchSize int, yield func(*T, int) bool) {
+func (c *SharedComponentManager[T]) EachComponentParallel(numWorkers int, yield func(*T, int) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.components.AllDataParallel(batchSize, yield)
+	c.components.AllDataParallel(numWorkers, yield)
 }
 
-func (c *SharedComponentManager[T]) EachEntityParallel(batchSize int, yield func(Entity, int) bool) {
+func (c *SharedComponentManager[T]) EachEntityParallel(numWorkers int, yield func(Entity, int) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.entities.AllDataValueParallel(batchSize, yield)
+	c.entities.AllDataValueParallel(numWorkers, yield)
 }
 
-func (c *SharedComponentManager[T]) EachParallel(yield func(Entity, *T) bool) {
+func (c *SharedComponentManager[T]) EachParallel(numWorkers int, yield func(Entity, *T, int) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.components.AllParallel(func(i int, t *T) bool {
+	c.components.AllParallel(numWorkers, func(i int, t *T, workerId int) bool {
 		entity := c.entities.Get(i)
 		entId := *entity
-		shouldContinue := yield(entId, t)
+		shouldContinue := yield(entId, t, workerId)
 		return shouldContinue
 	})
 }

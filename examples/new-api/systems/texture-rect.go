@@ -12,6 +12,7 @@ import (
 	"gomp/examples/new-api/components"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
+	"runtime"
 	"time"
 )
 
@@ -23,6 +24,7 @@ type TextureRectSystem struct {
 	TextureRect *components.TextureRectComponentManager
 	Textures    *stdcomponents.RLTextureProComponentManager
 	texture     rl.RenderTexture2D
+	numWorkers  int
 }
 
 func (s *TextureRectSystem) Init() {
@@ -31,11 +33,12 @@ func (s *TextureRectSystem) Init() {
 	rl.ClearBackground(rl.White)
 	rl.EndTextureMode()
 	s.texture = texture
+	s.numWorkers = runtime.NumCPU() - 2
 }
 
 func (s *TextureRectSystem) Run(dt time.Duration) {
 	// Create shallow copy of texture to draw rectangles
-	s.TextureRect.EachEntityParallel(128, func(entity ecs.Entity, i int) bool {
+	s.TextureRect.EachEntityParallel(s.numWorkers, func(entity ecs.Entity, i int) bool {
 		rect := s.TextureRect.GetUnsafe(entity)
 		texture := s.Textures.GetUnsafe(entity)
 		assert.Nil(texture, "texture is nil; entity: %d", entity)

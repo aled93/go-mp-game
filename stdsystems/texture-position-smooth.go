@@ -13,6 +13,7 @@ import (
 	"gomp/stdcomponents"
 	"gomp/vectors"
 	"math"
+	"runtime"
 	"time"
 )
 
@@ -24,34 +25,36 @@ type TexturePositionSmoothSystem struct {
 	TexturePositionSmooth *stdcomponents.TexturePositionSmoothComponentManager
 	Position              *stdcomponents.PositionComponentManager
 	RLTexture             *stdcomponents.RLTextureProComponentManager
+	numWorkers            int
 }
 
 func (s *TexturePositionSmoothSystem) Init() {
+	s.numWorkers = runtime.NumCPU() - 2
 }
 
 func (s *TexturePositionSmoothSystem) Run(dt time.Duration) {
 	//DEBUG Temporary, TODO: remove
 	if rl.IsKeyPressed(rl.KeyI) {
-		s.TexturePositionSmooth.EachComponentParallel(128, func(t *stdcomponents.TexturePositionSmooth, i int) bool {
+		s.TexturePositionSmooth.EachComponentParallel(s.numWorkers, func(t *stdcomponents.TexturePositionSmooth, i int) bool {
 			*t = stdcomponents.TexturePositionSmoothOff
 			return true
 		})
 	}
 	if rl.IsKeyPressed(rl.KeyO) {
-		s.TexturePositionSmooth.EachComponentParallel(128, func(t *stdcomponents.TexturePositionSmooth, i int) bool {
+		s.TexturePositionSmooth.EachComponentParallel(s.numWorkers, func(t *stdcomponents.TexturePositionSmooth, i int) bool {
 			*t = stdcomponents.TexturePositionSmoothLerp
 			return true
 		})
 	}
 	if rl.IsKeyPressed(rl.KeyP) {
-		s.TexturePositionSmooth.EachComponentParallel(128, func(t *stdcomponents.TexturePositionSmooth, i int) bool {
+		s.TexturePositionSmooth.EachComponentParallel(s.numWorkers, func(t *stdcomponents.TexturePositionSmooth, i int) bool {
 			*t = stdcomponents.TexturePositionSmoothExpDecay
 			return true
 		})
 	}
 	//END DEBUG
 
-	s.TexturePositionSmooth.EachEntityParallel(128, func(entity ecs.Entity, i int) bool {
+	s.TexturePositionSmooth.EachEntityParallel(s.numWorkers, func(entity ecs.Entity, i int) bool {
 		position := s.Position.GetUnsafe(entity)
 		texture := s.RLTexture.GetUnsafe(entity)
 		smooth := s.TexturePositionSmooth.GetUnsafe(entity)

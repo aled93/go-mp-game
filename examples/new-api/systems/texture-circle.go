@@ -12,6 +12,7 @@ import (
 	"gomp/examples/new-api/components"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
+	"runtime"
 	"time"
 )
 
@@ -23,6 +24,8 @@ type TextureCircleSystem struct {
 	Circles  *components.PrimitiveCircleComponentManager
 	Textures *stdcomponents.RLTextureProComponentManager
 	texture  rl.RenderTexture2D
+
+	numWorkers int
 }
 
 func (s *TextureCircleSystem) Init() {
@@ -32,10 +35,11 @@ func (s *TextureCircleSystem) Init() {
 	rl.DrawCircle(circleRadius, circleRadius, circleRadius, rl.White)
 	rl.EndTextureMode()
 	s.texture = texture
+	s.numWorkers = runtime.NumCPU() - 2
 }
 
 func (s *TextureCircleSystem) Run(dt time.Duration) {
-	s.Circles.EachEntityParallel(128, func(entity ecs.Entity, i int) bool {
+	s.Circles.EachEntityParallel(s.numWorkers, func(entity ecs.Entity, i int) bool {
 		circle := s.Circles.GetUnsafe(entity)
 		texture := s.Textures.GetUnsafe(entity)
 		assert.Nil(texture, "texture is nil; entity: %d", entity)
