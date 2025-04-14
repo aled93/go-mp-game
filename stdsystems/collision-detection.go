@@ -147,7 +147,7 @@ func (s *CollisionDetectionSystem) setup() {
 			grid.ChunkSize = newChunkSize
 		}
 
-		grid.Entities.AllDataValue(func(entity ecs.Entity) bool {
+		grid.Entities.EachDataValue(func(entity ecs.Entity) bool {
 			position := s.Positions.GetUnsafe(entity)
 			assert.NotNil(position)
 

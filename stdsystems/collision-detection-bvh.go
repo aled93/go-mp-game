@@ -151,7 +151,7 @@ func (s *CollisionDetectionBVHSystem) findEntityCollisions(entities []ecs.Entity
 func (s *CollisionDetectionBVHSystem) registerCollisionEvents() {
 	for i := range s.collisionEvents {
 		events := &s.collisionEvents[i]
-		events.AllData(func(event *CollisionEvent) bool {
+		events.EachData(func(event *CollisionEvent) bool {
 			pair := CollisionPair{event.entityA, event.entityB}
 			s.currentCollisions[pair] = struct{}{}
 			displacement := event.normal.Scale(event.depth)

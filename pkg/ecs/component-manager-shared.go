@@ -218,19 +218,19 @@ func (c *SharedComponentManager[T]) Clean() {
 func (c *SharedComponentManager[T]) EachComponent(yield func(*T) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.components.AllData(yield)
+	c.components.EachData(yield)
 }
 
 func (c *SharedComponentManager[T]) EachEntity(yield func(Entity) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.entities.AllDataValue(yield)
+	c.entities.EachDataValue(yield)
 }
 
 func (c *SharedComponentManager[T]) Each(yield func(Entity, *T) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.components.All(func(i int, d *T) bool {
+	c.components.Each(func(i int, d *T) bool {
 		entity := c.entities.Get(i)
 		entId := *entity
 		shouldContinue := yield(entId, d)
@@ -245,19 +245,19 @@ func (c *SharedComponentManager[T]) Each(yield func(Entity, *T) bool) {
 func (c *SharedComponentManager[T]) EachComponentParallel(numWorkers int, yield func(*T, int) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.components.AllDataParallel(numWorkers, yield)
+	c.components.EachDataParallel(numWorkers, yield)
 }
 
 func (c *SharedComponentManager[T]) EachEntityParallel(numWorkers int, yield func(Entity, int) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.entities.AllDataValueParallel(numWorkers, yield)
+	c.entities.EachDataValueParallel(numWorkers, yield)
 }
 
 func (c *SharedComponentManager[T]) EachParallel(numWorkers int, yield func(Entity, *T, int) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.components.AllParallel(numWorkers, func(i int, t *T, workerId int) bool {
+	c.components.EachParallel(numWorkers, func(i int, t *T, workerId int) bool {
 		entity := c.entities.Get(i)
 		entId := *entity
 		shouldContinue := yield(entId, t, workerId)

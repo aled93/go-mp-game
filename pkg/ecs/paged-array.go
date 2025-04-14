@@ -164,7 +164,7 @@ func (a *PagedArray[T]) getPageIdAndIndex(index int) (int, int) {
 	return pageId, index
 }
 
-func (a *PagedArray[T]) All(yield func(int, *T) bool) {
+func (a *PagedArray[T]) Each(yield func(int, *T) bool) {
 	var page *ArrayPage[T]
 	var index_offset int
 
@@ -186,7 +186,7 @@ func (a *PagedArray[T]) All(yield func(int, *T) bool) {
 	}
 }
 
-func (a *PagedArray[T]) AllParallel(numWorkers int, yield func(int, *T, int) bool) {
+func (a *PagedArray[T]) EachParallel(numWorkers int, yield func(int, *T, int) bool) {
 	assert.True(numWorkers > 0)
 	var chunkSize = a.len / numWorkers
 	var wg sync.WaitGroup
@@ -211,7 +211,7 @@ func (a *PagedArray[T]) AllParallel(numWorkers int, yield func(int, *T, int) boo
 	wg.Wait()
 }
 
-func (a *PagedArray[T]) AllData(yield func(*T) bool) {
+func (a *PagedArray[T]) EachData(yield func(*T) bool) {
 	var page *ArrayPage[T]
 
 	book := a.book
@@ -231,7 +231,7 @@ func (a *PagedArray[T]) AllData(yield func(*T) bool) {
 	}
 }
 
-func (a *PagedArray[T]) AllDataValue(yield func(T) bool) {
+func (a *PagedArray[T]) EachDataValue(yield func(T) bool) {
 	var page *ArrayPage[T]
 
 	book := a.book
@@ -251,7 +251,7 @@ func (a *PagedArray[T]) AllDataValue(yield func(T) bool) {
 	}
 }
 
-func (a *PagedArray[T]) AllDataValueParallel(numWorkers int, yield func(T, int) bool) {
+func (a *PagedArray[T]) EachDataValueParallel(numWorkers int, yield func(T, int) bool) {
 	assert.True(numWorkers > 0)
 	var chunkSize = a.len / numWorkers
 	var wg sync.WaitGroup
@@ -276,7 +276,7 @@ func (a *PagedArray[T]) AllDataValueParallel(numWorkers int, yield func(T, int) 
 	wg.Wait()
 }
 
-func (a *PagedArray[T]) AllDataParallel(numWorkers int, yield func(*T, int) bool) {
+func (a *PagedArray[T]) EachDataParallel(numWorkers int, yield func(*T, int) bool) {
 	assert.True(numWorkers > 0)
 	var chunkSize = a.len / numWorkers
 	var wg sync.WaitGroup
