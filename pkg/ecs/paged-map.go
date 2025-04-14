@@ -35,11 +35,11 @@ func (m *PagedMap[K, V]) Get(key K) (value V, ok bool) {
 	if pageID >= len(m.book) {
 		return value, false
 	}
-	page := m.book[pageID]
+	page := &m.book[pageID]
 	if page.data == nil {
 		return value, false
 	}
-	d := page.data[index]
+	d := &page.data[index]
 	return d.value, d.ok
 }
 
@@ -77,11 +77,7 @@ func (m *PagedMap[K, V]) Delete(key K) {
 }
 
 func (m *PagedMap[K, V]) getPageIDAndIndex(key K) (pageID int, index int) {
-	// Convert key to uint64 to handle large values safely
-	u := uint64(key)
-	pageID = int(u >> pageSizeShift)
-	index = int(u % pageSize)
-	return
+	return int(uint64(key) >> pageSizeShift), int(uint64(key) % pageSize)
 }
 
 func (m *PagedMap[K, V]) expandBook(minLen int) {

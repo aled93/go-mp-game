@@ -28,20 +28,19 @@ const (
 EPA - Expanding Polytope Algorithm
 Based on https://dyn4j.org/2010/05/epa-expanding-polytope-algorithm/#epa-alternatives
 */
-func EPA(
+func (s *GJK) EPA(
 	a, b AnyCollider,
-	transformA, transformB *stdcomponents.Transform2d,
-	simplex *Simplex2d,
+	transformA, transformB stdcomponents.Transform2d,
 ) (vectors.Vec2, float32) {
-	polytope := simplex.toPolytope(make([]vectors.Vec2, 0, 6))
+	polytope := s.simplex.toPolytope(make([]vectors.Vec2, 0, 6))
 
 	bestNormal := vectors.Vec2{}
 	bestDistance := float32(math.MaxFloat32)
 	bestTolerance := float32(math.MaxFloat32)
 
 	for range maxIterations {
-		edge := findClosestEdge(polytope)
-		point := minkowskiSupport2d(a, b, transformA, transformB, edge.normal)
+		edge := s.findClosestEdge(polytope)
+		point := s.minkowskiSupport2d(a, b, transformA, transformB, edge.normal)
 		distance := point.Dot(edge.normal)
 		tolerance := distance - edge.distance
 		if tolerance < epaMaxTolerance {
@@ -59,7 +58,7 @@ func EPA(
 	return bestNormal, bestDistance
 }
 
-func findClosestEdge(polytope []vectors.Vec2) closestEdge {
+func (s *GJK) findClosestEdge(polytope []vectors.Vec2) closestEdge {
 	closest := closestEdge{
 		distance: float32(math.MaxFloat32),
 		normal:   vectors.Vec2{},

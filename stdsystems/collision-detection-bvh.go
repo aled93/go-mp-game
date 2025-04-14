@@ -27,12 +27,9 @@ import (
 
 const debugTree = false
 
-var maxNumWorkers = runtime.NumCPU() - 1
-
 func NewCollisionDetectionBVHSystem() CollisionDetectionBVHSystem {
 	return CollisionDetectionBVHSystem{
 		activeCollisions: make(map[CollisionPair]ecs.Entity),
-		collisionEvents:  make([]ecs.PagedArray[CollisionEvent], maxNumWorkers),
 		trees:            make([]bvh.Tree, 0, 8),
 		treesLookup:      make(map[stdcomponents.CollisionLayer]int, 8),
 	}
@@ -64,10 +61,11 @@ type CollisionDetectionBVHSystem struct {
 }
 
 func (s *CollisionDetectionBVHSystem) Init() {
-	for i := range maxNumWorkers {
+	s.numWorkers = runtime.NumCPU() - 2
+	s.collisionEvents = make([]ecs.PagedArray[CollisionEvent], s.numWorkers)
+	for i := range s.numWorkers {
 		s.collisionEvents[i] = ecs.NewPagedArray[CollisionEvent]()
 	}
-	s.numWorkers = runtime.NumCPU() - 2
 }
 
 func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
@@ -237,13 +235,13 @@ func (s *CollisionDetectionBVHSystem) narrowPhase(entityA ecs.Entity, potentialE
 		colA := s.getGjkCollider(colliderA, entityA)
 		colB := s.getGjkCollider(colliderB, entityB)
 		// First detect collision using GJK
-		simplex, collision := gjk.CheckCollision(colA, colB, &transformA, &transformB)
-		if !collision {
+		test := gjk.New()
+		if !test.CheckCollision(colA, colB, transformA, transformB) {
 			continue
 		}
 
 		// If collision detected, get penetration details using EPA
-		normal, depth := gjk.EPA(colA, colB, &transformA, &transformB, &simplex)
+		normal, depth := test.EPA(colA, colB, transformA, transformB)
 		position := posA.XY.Add(posB.XY.Sub(posA.XY))
 		s.collisionEvents[workerId].Append(CollisionEvent{
 			entityA:  entityA,

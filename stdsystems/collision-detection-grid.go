@@ -152,7 +152,7 @@ func (s *CollisionDetectionGridSystem) Run(dt time.Duration) {
 
 	// Worker pool setup
 	var wg sync.WaitGroup
-	maxNumWorkers := runtime.NumCPU() * 4
+	maxNumWorkers := runtime.NumCPU() - 2
 	entitiesLength := len(entities)
 	// get minimum 1 worker for small amount of entities, and maximum maxNumWorkers for a lot entities
 	numWorkers := max(min(entitiesLength/32, maxNumWorkers), 1)

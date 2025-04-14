@@ -16,6 +16,7 @@ type PagedArray[T any] struct {
 	book             []ArrayPage[T]
 	currentPageIndex int
 	len              int
+	wg               sync.WaitGroup
 }
 
 func NewPagedArray[T any]() (a PagedArray[T]) {
@@ -155,13 +156,7 @@ func (a *PagedArray[T]) Raw(result []T) []T {
 }
 
 func (a *PagedArray[T]) getPageIdAndIndex(index int) (int, int) {
-	pageId := index >> pageSizeShift
-	assert.True(pageId < len(a.book), "index out of range")
-
-	index %= pageSize
-	assert.True(index < pageSize, "index out of range")
-
-	return pageId, index
+	return index >> pageSizeShift, index % pageSize
 }
 
 func (a *PagedArray[T]) Each() func(yield func(int, *T) bool) {
@@ -261,26 +256,27 @@ func (a *PagedArray[T]) EachDataValueParallel(numWorkers int) func(yield func(T,
 	return func(yield func(T, int) bool) {
 		assert.True(numWorkers > 0)
 		var chunkSize = a.len / numWorkers
-		var wg sync.WaitGroup
 
-		wg.Add(numWorkers)
+		a.wg.Add(numWorkers)
 		for workedId := 0; workedId < numWorkers; workedId++ {
 			startIndex := workedId * chunkSize
 			endIndex := startIndex + chunkSize - 1
 			if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
 				endIndex = a.len
 			}
-			go func(y func(T, int) bool, s int, e int, id int, w *sync.WaitGroup) {
-				defer w.Done()
-				r := e - s
-				for i := range r {
-					if !y(a.GetValue(i+s), id) {
-						return
-					}
-				}
-			}(yield, startIndex, endIndex, workedId, &wg)
+			go a.edvpTask(yield, startIndex, endIndex, workedId, &a.wg)
 		}
-		wg.Wait()
+		a.wg.Wait()
+	}
+}
+
+func (a *PagedArray[T]) edvpTask(y func(T, int) bool, s int, e int, id int, w *sync.WaitGroup) {
+	defer w.Done()
+	r := e - s
+	for i := range r {
+		if !y(a.GetValue(i+s), id) {
+			return
+		}
 	}
 }
 
@@ -288,26 +284,27 @@ func (a *PagedArray[T]) EachDataParallel(numWorkers int) func(yield func(*T, int
 	return func(yield func(*T, int) bool) {
 		assert.True(numWorkers > 0)
 		var chunkSize = a.len / numWorkers
-		var wg sync.WaitGroup
 
-		wg.Add(numWorkers)
+		a.wg.Add(numWorkers)
 		for workedId := 0; workedId < numWorkers; workedId++ {
 			startIndex := workedId * chunkSize
 			endIndex := startIndex + chunkSize - 1
 			if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
 				endIndex = a.len
 			}
-			go func(start int, end int) {
-				defer wg.Done()
-				r := end - start
-				for i := range r {
-					if !yield(a.Get(i+startIndex), workedId) {
-						return
-					}
-				}
-			}(startIndex, endIndex)
+			go a.edpTask(yield, startIndex, endIndex, workedId, &a.wg)
 		}
-		wg.Wait()
+		a.wg.Wait()
+	}
+}
+
+func (a *PagedArray[T]) edpTask(y func(*T, int) bool, s int, e int, id int, w *sync.WaitGroup) {
+	defer w.Done()
+	r := e - s
+	for i := range r {
+		if !y(a.Get(i+s), id) {
+			return
+		}
 	}
 }
 

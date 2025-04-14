@@ -21,8 +21,16 @@ const (
 	maxIterations = 64
 )
 
+func New() GJK {
+	return GJK{}
+}
+
+type GJK struct {
+	simplex Simplex2d
+}
+
 type AnyCollider interface {
-	GetSupport(direction vectors.Vec2, transform *stdcomponents.Transform2d) vectors.Vec2
+	GetSupport(direction vectors.Vec2, transform stdcomponents.Transform2d) vectors.Vec2
 }
 
 /*
@@ -30,34 +38,33 @@ CheckCollision - GJK, Distance, Closest Points
 https://www.youtube.com/watch?v=Qupqu1xe7Io
 https://dyn4j.org/2010/04/gjk-distance-closest-points/#gjk-distance
 */
-func CheckCollision(
+func (s *GJK) CheckCollision(
 	a, b AnyCollider,
-	transformA, transformB *stdcomponents.Transform2d,
-) (Simplex2d, bool) {
+	transformA, transformB stdcomponents.Transform2d,
+) bool {
 	direction := vectors.Vec2{X: 1, Y: 0}
-	simplex := Simplex2d{}
 
-	p := minkowskiSupport2d(a, b, transformA, transformB, direction)
-	simplex.add(p.ToVec3())
+	p := s.minkowskiSupport2d(a, b, transformA, transformB, direction)
+	s.simplex.add(p.ToVec3())
 	direction = p.Neg()
 
 	for range maxIterations {
-		p = minkowskiSupport2d(a, b, transformA, transformB, direction)
+		p = s.minkowskiSupport2d(a, b, transformA, transformB, direction)
 
 		if p.Dot(direction) < 0 {
-			return simplex, false
+			return false
 		}
 
-		simplex.add(p.ToVec3())
+		s.simplex.add(p.ToVec3())
 
-		if simplex.do(&direction) {
-			return simplex, true
+		if s.simplex.do(&direction) {
+			return true
 		}
 	}
 
 	panic("GJK infinite loop")
 }
 
-func minkowskiSupport2d(a, b AnyCollider, transformA, transformB *stdcomponents.Transform2d, direction vectors.Vec2) vectors.Vec2 {
+func (s *GJK) minkowskiSupport2d(a, b AnyCollider, transformA, transformB stdcomponents.Transform2d, direction vectors.Vec2) vectors.Vec2 {
 	return a.GetSupport(direction, transformA).Sub(b.GetSupport(direction.Neg(), transformB))
 }

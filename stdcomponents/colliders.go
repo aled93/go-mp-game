@@ -49,7 +49,7 @@ type BoxCollider struct {
 	AllowSleep bool
 }
 
-func (c *BoxCollider) GetSupport(direction vectors.Vec2, transform *Transform2d) vectors.Vec2 {
+func (c *BoxCollider) GetSupport(direction vectors.Vec2, transform Transform2d) vectors.Vec2 {
 	var maxDistance float32 = -math.MaxFloat32
 	var maxPoint vectors.Vec2
 
@@ -88,7 +88,7 @@ type CircleCollider struct {
 	AllowSleep bool
 }
 
-func (c *CircleCollider) GetSupport(direction vectors.Vec2, transform *Transform2d) vectors.Vec2 {
+func (c *CircleCollider) GetSupport(direction vectors.Vec2, transform Transform2d) vectors.Vec2 {
 	angle := direction.Angle()
 	rotatedRadius := vectors.Vec2{
 		X: c.Radius * float32(math.Cos(angle)),
@@ -112,7 +112,7 @@ type PolygonCollider struct {
 	AllowSleep bool
 }
 
-func (c *PolygonCollider) GetSupport(direction vectors.Vec2, transform *Transform2d) vectors.Vec2 {
+func (c *PolygonCollider) GetSupport(direction vectors.Vec2, transform Transform2d) vectors.Vec2 {
 	maxDot := math.Inf(-1)
 	var maxVertex vectors.Vec2
 

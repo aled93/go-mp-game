@@ -60,7 +60,7 @@ tasks:
     env:
       CGO_ENABLED: 1
     cmds:
-      - go build -o ./.dist/game-win64.exe -tags opengl43 examples/new-api/game.go
+      - go build -o ./.dist/game-win64.exe -tags opengl43 ./examples/new-api
 
   build-mac:
     - task: build-darwin-amd64

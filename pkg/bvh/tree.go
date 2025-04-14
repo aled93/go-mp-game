@@ -15,6 +15,7 @@ Thank you for your support!
 package bvh
 
 import (
+	"cmp"
 	"github.com/negrel/assert"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
@@ -81,13 +82,13 @@ func (t *Tree) Build() {
 
 	// Extract and sort components by morton code
 	if cap(t.componentsSlice) < t.components.Len() {
-		t.componentsSlice = make([]component, 0, t.components.Len())
+		t.componentsSlice = make([]component, 0, max(cap(t.componentsSlice)*2, t.components.Len()))
 	}
 
 	t.componentsSlice = t.components.Raw(t.componentsSlice)
 
 	slices.SortFunc(t.componentsSlice, func(a, b component) int {
-		return int(a.code - b.code)
+		return cmp.Compare(a.code, b.code)
 	})
 
 	// Add leaves
@@ -114,14 +115,15 @@ func (t *Tree) Build() {
 		childrenCreated bool
 	}
 
-	stack := []buildTask{
+	stack := [64]buildTask{
 		{parentIndex: 0, start: 0, end: t.leaves.Len() - 1, childrenCreated: false},
 	}
+	stackLen := 1
 
-	for len(stack) > 0 {
+	for stackLen > 0 {
+		stackLen--
 		// Pop the last task
-		task := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
+		task := stack[stackLen]
 
 		if !task.childrenCreated {
 			if task.start == task.end {
@@ -142,28 +144,31 @@ func (t *Tree) Build() {
 			t.nodes.Get(task.parentIndex).childIndex = int32(leftIndex)
 
 			// Push parent task back with childrenCreated=true
-			stack = append(stack, buildTask{
+			stack[stackLen] = buildTask{
 				parentIndex:     task.parentIndex,
 				start:           task.start,
 				end:             task.end,
 				childrenCreated: true,
-			})
+			}
+			stackLen++
 
 			// Push right child task (split+1 to end)
-			stack = append(stack, buildTask{
+			stack[stackLen] = buildTask{
 				parentIndex:     leftIndex + 1,
 				start:           split + 1,
 				end:             task.end,
 				childrenCreated: false,
-			})
+			}
+			stackLen++
 
 			// Push left child task (start to split)
-			stack = append(stack, buildTask{
+			stack[stackLen] = buildTask{
 				parentIndex:     leftIndex,
 				start:           task.start,
 				end:             split,
 				childrenCreated: false,
-			})
+			}
+			stackLen++
 		} else {
 			// Merge children's AABBs into parent
 			leftChildIndex := int(t.nodes.Get(task.parentIndex).childIndex)
