@@ -39,41 +39,60 @@ type ColliderSystem struct {
 	ColliderSleepStateComponentManager *stdcomponents.ColliderSleepStateComponentManager
 	AABB                               *stdcomponents.AABBComponentManager
 
-	numWorkers int
+	numWorkers             int
+	accAABB                [][]ecs.Entity
+	accGenericColliders    [][]ecs.Entity
+	accColliderSleepCreate [][]ecs.Entity
+	accColliderSleepDelete [][]ecs.Entity
 }
 
 func (s *ColliderSystem) Init() {
 	s.numWorkers = runtime.NumCPU() - 2
+	s.accAABB = make([][]ecs.Entity, s.numWorkers)
+	s.accGenericColliders = make([][]ecs.Entity, s.numWorkers)
+
+	s.accColliderSleepCreate = make([][]ecs.Entity, s.numWorkers)
+	s.accColliderSleepDelete = make([][]ecs.Entity, s.numWorkers)
 }
 func (s *ColliderSystem) Run(dt time.Duration) {
-	var accAABB = make([][]ecs.Entity, s.numWorkers)
-	var accGenericColliders = make([][]ecs.Entity, s.numWorkers)
+	for i := range s.accAABB {
+		s.accAABB[i] = s.accAABB[i][:0]
+	}
+	for i := range s.accGenericColliders {
+		s.accGenericColliders[i] = s.accGenericColliders[i][:0]
+	}
+	for i := range s.accColliderSleepCreate {
+		s.accColliderSleepCreate[i] = s.accColliderSleepCreate[i][:0]
+	}
+	for i := range s.accColliderSleepDelete {
+		s.accColliderSleepDelete[i] = s.accColliderSleepDelete[i][:0]
+	}
 	s.BoxColliders.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
 		if !s.GenericColliders.Has(entity) {
-			accGenericColliders[workerId] = append(accGenericColliders[workerId], entity)
+			s.accGenericColliders[workerId] = append(s.accGenericColliders[workerId], entity)
 		}
 		if !s.AABB.Has(entity) {
-			accAABB[workerId] = append(accAABB[workerId], entity)
+			s.accAABB[workerId] = append(s.accAABB[workerId], entity)
 		}
 		return true
 	})
 	s.CircleColliders.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
 		if !s.GenericColliders.Has(entity) {
-			accGenericColliders[workerId] = append(accGenericColliders[workerId], entity)
+			s.accGenericColliders[workerId] = append(s.accGenericColliders[workerId], entity)
 		}
 		if !s.AABB.Has(entity) {
-			accAABB[workerId] = append(accAABB[workerId], entity)
+			s.accAABB[workerId] = append(s.accAABB[workerId], entity)
 		}
 		return true
 	})
-	for i := range accAABB {
-		a := accAABB[i]
+	for i := range s.accAABB {
+		a := s.accAABB[i]
 		for _, entity := range a {
 			s.AABB.Create(entity, stdcomponents.AABB{})
 		}
 	}
-	for i := range accGenericColliders {
-		a := accGenericColliders[i]
+	for i := range s.accGenericColliders {
+		a := s.accGenericColliders[i]
 		for _, entity := range a {
 			s.GenericColliders.Create(entity, stdcomponents.GenericCollider{})
 		}
@@ -167,8 +186,6 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		return true
 	})
 
-	var accColliderSleepCreate = make([][]ecs.Entity, s.numWorkers)
-	var accColliderSleepDelete = make([][]ecs.Entity, s.numWorkers)
 	s.GenericColliders.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
 		genCollider := s.GenericColliders.GetUnsafe(entity)
 		if genCollider.AllowSleep {
@@ -182,24 +199,24 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 			isSleeping := s.ColliderSleepStateComponentManager.GetUnsafe(entity)
 			if shouldSleep {
 				if isSleeping == nil {
-					accColliderSleepCreate[workerId] = append(accColliderSleepCreate[workerId], entity)
+					s.accColliderSleepCreate[workerId] = append(s.accColliderSleepCreate[workerId], entity)
 				}
 			} else {
 				if isSleeping != nil {
-					accColliderSleepDelete[workerId] = append(accColliderSleepDelete[workerId], entity)
+					s.accColliderSleepDelete[workerId] = append(s.accColliderSleepDelete[workerId], entity)
 				}
 			}
 		}
 		return true
 	})
-	for i := range accColliderSleepCreate {
-		a := accColliderSleepCreate[i]
+	for i := range s.accColliderSleepCreate {
+		a := s.accColliderSleepCreate[i]
 		for _, entity := range a {
 			s.ColliderSleepStateComponentManager.Create(entity, stdcomponents.ColliderSleepState{})
 		}
 	}
-	for i := range accColliderSleepDelete {
-		a := accColliderSleepDelete[i]
+	for i := range s.accColliderSleepDelete {
+		a := s.accColliderSleepDelete[i]
 		for _, entity := range a {
 			s.ColliderSleepStateComponentManager.Delete(entity)
 		}
