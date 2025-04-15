@@ -34,33 +34,41 @@ type SpriteSystem struct {
 	RLTexturePros *stdcomponents.RLTextureProComponentManager
 	RenderOrder   *stdcomponents.RenderOrderComponentManager
 
-	numWorkers int
+	numWorkers       int
+	accRenderOrder   [][]ecs.Entity
+	accRLTexturePros [][]ecs.Entity
 }
 
 func (s *SpriteSystem) Init() {
 	s.numWorkers = runtime.NumCPU() - 2
+	s.accRenderOrder = make([][]ecs.Entity, s.numWorkers)
+	s.accRLTexturePros = make([][]ecs.Entity, s.numWorkers)
 }
 func (s *SpriteSystem) Run() {
-	var accRenderOrder = make([][]ecs.Entity, s.numWorkers)
-	var accRLTexturePros = make([][]ecs.Entity, s.numWorkers)
+	for i := range s.accRenderOrder {
+		s.accRenderOrder[i] = s.accRenderOrder[i][:0]
+	}
+	for i := range s.accRLTexturePros {
+		s.accRLTexturePros[i] = s.accRLTexturePros[i][:0]
+	}
 	s.Sprites.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
 		renderOrder := s.RenderOrder.GetUnsafe(entity)
 		if renderOrder == nil {
-			accRenderOrder[workerId] = append(accRenderOrder[workerId], entity)
+			s.accRenderOrder[workerId] = append(s.accRenderOrder[workerId], entity)
 		}
 		tr := s.RLTexturePros.GetUnsafe(entity)
 		if tr == nil {
-			accRLTexturePros[workerId] = append(accRLTexturePros[workerId], entity)
+			s.accRLTexturePros[workerId] = append(s.accRLTexturePros[workerId], entity)
 		}
 		return true
 	})
-	for a := range accRenderOrder {
-		for _, entity := range accRenderOrder[a] {
+	for a := range s.accRenderOrder {
+		for _, entity := range s.accRenderOrder[a] {
 			s.RenderOrder.Create(entity, stdcomponents.RenderOrder{})
 		}
 	}
-	for a := range accRLTexturePros {
-		for _, entity := range accRLTexturePros[a] {
+	for a := range s.accRLTexturePros {
+		for _, entity := range s.accRLTexturePros[a] {
 			s.RLTexturePros.Create(entity, stdcomponents.RLTexturePro{})
 		}
 	}

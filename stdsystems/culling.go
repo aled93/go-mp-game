@@ -20,21 +20,32 @@ func NewCullingSystem() CullingSystem {
 }
 
 type CullingSystem struct {
-	Renderables     *stdcomponents.RenderableComponentManager
-	RenderVisible   *stdcomponents.RenderVisibleComponentManager
-	RenderOrders    *stdcomponents.RenderOrderComponentManager
-	Textures        *stdcomponents.RLTextureProComponentManager
-	AABBs           *stdcomponents.AABBComponentManager
-	Cameras         *stdcomponents.CameraComponentManager
-	RenderTexture2D *stdcomponents.FrameBuffer2DComponentManager
-	numWorkers      int
+	Renderables            *stdcomponents.RenderableComponentManager
+	RenderVisible          *stdcomponents.RenderVisibleComponentManager
+	RenderOrders           *stdcomponents.RenderOrderComponentManager
+	Textures               *stdcomponents.RLTextureProComponentManager
+	AABBs                  *stdcomponents.AABBComponentManager
+	Cameras                *stdcomponents.CameraComponentManager
+	RenderTexture2D        *stdcomponents.FrameBuffer2DComponentManager
+	numWorkers             int
+	accRenderVisibleCreate [][]ecs.Entity
+	accRenderVisibleDelete [][]ecs.Entity
 }
 
 func (s *CullingSystem) Init() {
 	s.numWorkers = runtime.NumCPU() - 2
+	s.accRenderVisibleCreate = make([][]ecs.Entity, s.numWorkers)
+	s.accRenderVisibleDelete = make([][]ecs.Entity, s.numWorkers)
 }
 
 func (s *CullingSystem) Run(dt time.Duration) {
+	for i := range s.accRenderVisibleCreate {
+		s.accRenderVisibleCreate[i] = s.accRenderVisibleCreate[i][:0]
+	}
+	for i := range s.accRenderVisibleDelete {
+		s.accRenderVisibleDelete[i] = s.accRenderVisibleDelete[i][:0]
+	}
+
 	s.Renderables.EachComponentParallel(s.numWorkers)(func(r *stdcomponents.Renderable, i int) bool {
 		r.Observed = false
 		return true
@@ -61,29 +72,27 @@ func (s *CullingSystem) Run(dt time.Duration) {
 		return true
 	})
 
-	var accRenderVisibleCreate = make([][]ecs.Entity, s.numWorkers)
-	var accRenderVisibleDelete = make([][]ecs.Entity, s.numWorkers)
 	s.Renderables.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
 		renderable := s.Renderables.GetUnsafe(entity)
 		assert.NotNil(renderable)
 		if !s.RenderVisible.Has(entity) {
 			if renderable.Observed {
-				accRenderVisibleCreate[workerId] = append(accRenderVisibleCreate[workerId], entity)
+				s.accRenderVisibleCreate[workerId] = append(s.accRenderVisibleCreate[workerId], entity)
 			}
 		} else {
 			if !renderable.Observed {
-				accRenderVisibleDelete[workerId] = append(accRenderVisibleDelete[workerId], entity)
+				s.accRenderVisibleDelete[workerId] = append(s.accRenderVisibleDelete[workerId], entity)
 			}
 		}
 		return true
 	})
-	for a := range accRenderVisibleCreate {
-		for _, entity := range accRenderVisibleCreate[a] {
+	for a := range s.accRenderVisibleCreate {
+		for _, entity := range s.accRenderVisibleCreate[a] {
 			s.RenderVisible.Create(entity, stdcomponents.RenderVisible{})
 		}
 	}
-	for a := range accRenderVisibleDelete {
-		for _, entity := range accRenderVisibleDelete[a] {
+	for a := range s.accRenderVisibleDelete {
+		for _, entity := range s.accRenderVisibleDelete[a] {
 			s.RenderVisible.Delete(entity)
 		}
 	}
