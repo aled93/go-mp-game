@@ -8,10 +8,11 @@ package stdsystems
 
 import (
 	"github.com/negrel/assert"
+	"gomp/pkg/core"
 	"gomp/pkg/ecs"
+	"gomp/pkg/worker"
 	"gomp/stdcomponents"
 	"gomp/vectors"
-	"runtime"
 	"time"
 )
 
@@ -30,10 +31,11 @@ type CullingSystem struct {
 	numWorkers             int
 	accRenderVisibleCreate [][]ecs.Entity
 	accRenderVisibleDelete [][]ecs.Entity
+	Engine                 *core.Engine
 }
 
 func (s *CullingSystem) Init() {
-	s.numWorkers = runtime.NumCPU() - 2
+	s.numWorkers = s.Engine.Pool().NumWorkers()
 	s.accRenderVisibleCreate = make([][]ecs.Entity, s.numWorkers)
 	s.accRenderVisibleDelete = make([][]ecs.Entity, s.numWorkers)
 }
@@ -55,7 +57,7 @@ func (s *CullingSystem) Run(dt time.Duration) {
 		camera := s.Cameras.GetUnsafe(entity)
 		cameraRect := camera.Rect()
 
-		s.Renderables.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, _ int) bool {
+		s.Renderables.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 			renderable := s.Renderables.GetUnsafe(entity)
 			assert.NotNil(renderable)
 
@@ -72,7 +74,7 @@ func (s *CullingSystem) Run(dt time.Duration) {
 		return true
 	})
 
-	s.Renderables.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
+	s.Renderables.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 		renderable := s.Renderables.GetUnsafe(entity)
 		assert.NotNil(renderable)
 		if !s.RenderVisible.Has(entity) {

@@ -9,7 +9,9 @@ package stdsystems
 import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/negrel/assert"
+	"gomp/pkg/core"
 	"gomp/pkg/ecs"
+	"gomp/pkg/worker"
 	"gomp/stdcomponents"
 	"gomp/vectors"
 	"math"
@@ -26,6 +28,7 @@ type TexturePositionSmoothSystem struct {
 	Position              *stdcomponents.PositionComponentManager
 	RLTexture             *stdcomponents.RLTextureProComponentManager
 	numWorkers            int
+	Engine                *core.Engine
 }
 
 func (s *TexturePositionSmoothSystem) Init() {
@@ -54,7 +57,7 @@ func (s *TexturePositionSmoothSystem) Run(dt time.Duration) {
 	}
 	//END DEBUG
 
-	s.TexturePositionSmooth.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, i int) bool {
+	s.TexturePositionSmooth.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, i worker.WorkerId) bool {
 		position := s.Position.GetUnsafe(entity)
 		texture := s.RLTexture.GetUnsafe(entity)
 		smooth := s.TexturePositionSmooth.GetUnsafe(entity)

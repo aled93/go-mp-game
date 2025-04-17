@@ -17,7 +17,9 @@ package stdsystems
 import (
 	"gomp/pkg/bvh"
 	gjk "gomp/pkg/collision"
+	"gomp/pkg/core"
 	"gomp/pkg/ecs"
+	"gomp/pkg/worker"
 	"gomp/stdcomponents"
 	"gomp/vectors"
 	"runtime"
@@ -58,6 +60,7 @@ type CollisionDetectionBVHSystem struct {
 	activeCollisions  map[CollisionPair]ecs.Entity // Maps collision pairs to proxy entities
 	currentCollisions map[CollisionPair]struct{}
 	numWorkers        int
+	Engine            *core.Engine
 }
 
 func (s *CollisionDetectionBVHSystem) Init() {
@@ -111,7 +114,7 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 func (s *CollisionDetectionBVHSystem) Destroy() {}
 
 func (s *CollisionDetectionBVHSystem) findEntityCollisions() {
-	s.GenericCollider.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
+	s.GenericCollider.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 		potentialEntities := s.broadPhase(entity, make([]ecs.Entity, 0, 64))
 		if len(potentialEntities) == 0 {
 			return true
@@ -189,7 +192,7 @@ func (s *CollisionDetectionBVHSystem) broadPhase(entityA ecs.Entity, result []ec
 	return result
 }
 
-func (s *CollisionDetectionBVHSystem) narrowPhase(entityA ecs.Entity, potentialEntities []ecs.Entity, workerId int) {
+func (s *CollisionDetectionBVHSystem) narrowPhase(entityA ecs.Entity, potentialEntities []ecs.Entity, workerId worker.WorkerId) {
 	for _, entityB := range potentialEntities {
 		if entityA == entityB {
 			continue

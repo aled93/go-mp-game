@@ -12,14 +12,14 @@ none :)
 Thank you for your support!
 */
 
-package gomp
+package core
 
 import (
 	"time"
 )
 
 type AnyGame interface {
-	Init()
+	Init(engine *Engine)
 	Update(dt time.Duration)
 	FixedUpdate(dt time.Duration)
 	Render(dt time.Duration)

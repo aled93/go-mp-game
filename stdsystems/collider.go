@@ -16,10 +16,11 @@ package stdsystems
 
 import (
 	"github.com/negrel/assert"
+	"gomp/pkg/core"
 	"gomp/pkg/ecs"
+	"gomp/pkg/worker"
 	"gomp/stdcomponents"
 	"gomp/vectors"
-	"runtime"
 	"time"
 )
 
@@ -44,10 +45,11 @@ type ColliderSystem struct {
 	accGenericColliders    [][]ecs.Entity
 	accColliderSleepCreate [][]ecs.Entity
 	accColliderSleepDelete [][]ecs.Entity
+	Engine                 *core.Engine
 }
 
 func (s *ColliderSystem) Init() {
-	s.numWorkers = runtime.NumCPU() - 2
+	s.numWorkers = s.Engine.Pool().NumWorkers()
 	s.accAABB = make([][]ecs.Entity, s.numWorkers)
 	s.accGenericColliders = make([][]ecs.Entity, s.numWorkers)
 
@@ -67,7 +69,7 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 	for i := range s.accColliderSleepDelete {
 		s.accColliderSleepDelete[i] = s.accColliderSleepDelete[i][:0]
 	}
-	s.BoxColliders.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
+	s.BoxColliders.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 		if !s.GenericColliders.Has(entity) {
 			s.accGenericColliders[workerId] = append(s.accGenericColliders[workerId], entity)
 		}
@@ -76,7 +78,7 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		}
 		return true
 	})
-	s.CircleColliders.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
+	s.CircleColliders.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 		if !s.GenericColliders.Has(entity) {
 			s.accGenericColliders[workerId] = append(s.accGenericColliders[workerId], entity)
 		}
@@ -98,7 +100,7 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		}
 	}
 
-	s.BoxColliders.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, _ int) bool {
+	s.BoxColliders.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 		boxCollider := s.BoxColliders.GetUnsafe(entity)
 
 		genCollider := s.GenericColliders.GetUnsafe(entity)
@@ -113,7 +115,7 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		return true
 	})
 
-	s.BoxColliders.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, _ int) bool {
+	s.BoxColliders.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 		boxCollider := s.BoxColliders.GetUnsafe(entity)
 		assert.NotNil(boxCollider)
 
@@ -148,7 +150,7 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		return true
 	})
 
-	s.CircleColliders.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, _ int) bool {
+	s.CircleColliders.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 		circleCollider := s.CircleColliders.GetUnsafe(entity)
 		assert.NotNil(circleCollider)
 
@@ -165,7 +167,7 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		return true
 	})
 
-	s.CircleColliders.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, _ int) bool {
+	s.CircleColliders.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 		circleCollider := s.CircleColliders.GetUnsafe(entity)
 		assert.NotNil(circleCollider)
 
@@ -186,7 +188,7 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		return true
 	})
 
-	s.GenericColliders.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
+	s.GenericColliders.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 		genCollider := s.GenericColliders.GetUnsafe(entity)
 		if genCollider.AllowSleep {
 			shouldSleep := true

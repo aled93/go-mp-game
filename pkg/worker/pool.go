@@ -34,20 +34,17 @@ type Pool struct {
 	ctxCancel context.CancelFunc
 
 	// Cache
-	taskChan chan AnyTask
-	errChan  chan TaskError
+	taskChan    chan AnyTask
+	errChan     chan TaskError
+	groupTaskWg sync.WaitGroup
 }
 
 func (p *Pool) Start() {
 	p.ctx, p.ctxCancel = context.WithCancel(context.Background())
 	for i := range p.workers {
 		p.workers[i] = NewWorker(p.ctx, WorkerId(i))
+		p.workers[i].Start(&p.wg)
 	}
-	//
-	//p.wg.Add(len(p.workers))
-	//for i := range p.workers {
-	//	go p.workers[i].Run()
-	//}
 }
 
 func (p *Pool) AddWorker() {
@@ -65,39 +62,42 @@ func (p *Pool) Stop() {
 	p.wg.Wait()
 }
 
-type poolJob struct {
+type groupTasks struct {
 	taskChan <-chan AnyTask
 	errChan  chan<- TaskError
 	ctx      context.Context
 	wg       *sync.WaitGroup
 }
 
-func (p *Pool) ProcessJob(tasks []AnyTask) (err error) {
-	var wg sync.WaitGroup
+func (p *Pool) ProcessGroupTasks(tasks []AnyTask) error {
 	var ctx, cancel = context.WithCancel(p.ctx)
 	defer cancel()
 
-	var job = poolJob{
+	var job = groupTasks{
 		taskChan: p.taskChan,
 		errChan:  p.errChan,
 		ctx:      ctx,
-		wg:       &wg,
+		wg:       &p.groupTaskWg,
 	}
 
 	for i := range p.workers {
-		p.workers[i].jobChan <- job
+		p.workers[i].groupTasksChan <- job
 	}
 
-	wg.Add(len(tasks))
+	p.groupTaskWg.Add(len(tasks))
 	for i := range tasks {
 		select {
-		case err = <-p.errChan:
+		case err := <-p.errChan:
 			return err
 		default:
 			p.taskChan <- tasks[i]
 		}
 	}
-	wg.Wait()
+	p.groupTaskWg.Wait()
 
-	return err
+	return nil
+}
+
+func (p *Pool) NumWorkers() int {
+	return len(p.workers)
 }

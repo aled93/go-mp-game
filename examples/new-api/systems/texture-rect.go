@@ -10,7 +10,9 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/negrel/assert"
 	"gomp/examples/new-api/components"
+	"gomp/pkg/core"
 	"gomp/pkg/ecs"
+	"gomp/pkg/worker"
 	"gomp/stdcomponents"
 	"runtime"
 	"time"
@@ -25,6 +27,7 @@ type TextureRectSystem struct {
 	Textures    *stdcomponents.RLTextureProComponentManager
 	texture     rl.RenderTexture2D
 	numWorkers  int
+	Engine      *core.Engine
 }
 
 func (s *TextureRectSystem) Init() {
@@ -38,7 +41,7 @@ func (s *TextureRectSystem) Init() {
 
 func (s *TextureRectSystem) Run(dt time.Duration) {
 	// Create shallow copy of texture to draw rectangles
-	s.TextureRect.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, i int) bool {
+	s.TextureRect.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, i worker.WorkerId) bool {
 		rect := s.TextureRect.GetUnsafe(entity)
 		assert.NotNil(rect, "rect is nil; entity: %d", entity)
 		texture := s.Textures.GetUnsafe(entity)

@@ -17,6 +17,7 @@ package ecs
 
 import (
 	"github.com/negrel/assert"
+	"gomp/pkg/worker"
 	"sync"
 )
 
@@ -268,10 +269,10 @@ func (c *ComponentManager[T]) EachComponentParallel(numWorkers int) func(yield f
 	return c.components.EachDataParallel(numWorkers)
 }
 
-func (c *ComponentManager[T]) EachEntityParallel(numWorkers int) func(yield func(Entity, int) bool) {
+func (c *ComponentManager[T]) EachEntityParallel(pool *worker.Pool) func(yield func(Entity, worker.WorkerId) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	return c.entities.EachDataValueParallel(numWorkers)
+	return c.entities.EachDataValueParallel(pool)
 }
 
 func (c *ComponentManager[T]) EachParallel(numWorkers int) func(yield func(Entity, *T, int) bool) {

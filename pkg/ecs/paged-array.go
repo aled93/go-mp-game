@@ -7,9 +7,12 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package ecs
 
 import (
-	"sync"
-
+	"context"
+	"errors"
+	"github.com/labstack/gommon/log"
 	"github.com/negrel/assert"
+	"gomp/pkg/worker"
+	"sync"
 )
 
 type PagedArray[T any] struct {
@@ -17,10 +20,14 @@ type PagedArray[T any] struct {
 	currentPageIndex int
 	len              int
 	wg               sync.WaitGroup
+	edvpTasks        []EdvpTask[T]
+	tasks            []worker.AnyTask
 }
 
 func NewPagedArray[T any]() (a PagedArray[T]) {
 	a.book = make([]ArrayPage[T], 2, initialBookSize)
+	a.edvpTasks = make([]EdvpTask[T], initialBookSize)
+	a.tasks = make([]worker.AnyTask, initialBookSize)
 
 	return a
 }
@@ -68,6 +75,10 @@ func (a *PagedArray[T]) Append(values ...T) *T {
 		if a.currentPageIndex >= len(a.book) {
 			newBooks := make([]ArrayPage[T], len(a.book)*2)
 			a.book = append(a.book, newBooks...)
+			newEdvpTasks := make([]EdvpTask[T], len(a.edvpTasks)*2)
+			a.edvpTasks = append(a.edvpTasks, newEdvpTasks...)
+			newTasks := make([]worker.AnyTask, len(a.tasks)*2)
+			a.tasks = append(a.tasks, newTasks...)
 		}
 
 		page := &a.book[a.currentPageIndex]
@@ -77,6 +88,10 @@ func (a *PagedArray[T]) Append(values ...T) *T {
 			if a.currentPageIndex >= len(a.book) {
 				newBooks := make([]ArrayPage[T], len(a.book)*2)
 				a.book = append(a.book, newBooks...)
+				newEdvpTasks := make([]EdvpTask[T], len(a.edvpTasks)*2)
+				a.edvpTasks = append(a.edvpTasks, newEdvpTasks...)
+				newTasks := make([]worker.AnyTask, len(a.tasks)*2)
+				a.tasks = append(a.tasks, newTasks...)
 			}
 			page = &a.book[a.currentPageIndex]
 		}
@@ -252,30 +267,40 @@ func (a *PagedArray[T]) EachDataValue() func(yield func(T) bool) {
 	}
 }
 
-func (a *PagedArray[T]) EachDataValueParallel(numWorkers int) func(yield func(T, int) bool) {
-	return func(yield func(T, int) bool) {
-		assert.True(numWorkers > 0)
-		var chunkSize = a.len / numWorkers
-
-		a.wg.Add(numWorkers)
-		for workedId := 0; workedId < numWorkers; workedId++ {
-			startIndex := workedId * chunkSize
-			endIndex := startIndex + chunkSize - 1
-			if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
-				endIndex = a.len
-			}
-			go a.edvpTask(yield, startIndex, endIndex, workedId, &a.wg)
-		}
-		a.wg.Wait()
-	}
+type EdvpTask[T any] struct {
+	f    func(T, worker.WorkerId) bool
+	page *ArrayPage[T]
 }
 
-func (a *PagedArray[T]) edvpTask(y func(T, int) bool, s int, e int, id int, w *sync.WaitGroup) {
-	defer w.Done()
-	r := e - s
-	for i := range r {
-		if !y(a.GetValue(i+s), id) {
-			return
+func (t *EdvpTask[T]) Run(ctx context.Context, workerId worker.WorkerId) error {
+	for i := 0; i < t.page.len; i++ {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+			if shouldContinue := t.f(t.page.data[i], workerId); !shouldContinue {
+				return errors.New("loop canceled")
+			}
+		}
+	}
+	return nil
+}
+
+func (a *PagedArray[T]) EachDataValueParallel(pool *worker.Pool) func(yield func(T, worker.WorkerId) bool) {
+	return func(yield func(T, worker.WorkerId) bool) {
+		assert.NotNil(pool)
+		for i := a.currentPageIndex; i >= 0; i-- {
+			j := a.currentPageIndex - i
+			a.edvpTasks[j] = EdvpTask[T]{
+				f:    yield,
+				page: &a.book[i],
+			}
+			a.tasks[j] = &a.edvpTasks[j]
+		}
+		tasks := a.tasks[:a.currentPageIndex+1]
+		err := pool.ProcessGroupTasks(tasks)
+		if err != nil {
+			log.Error(err)
 		}
 	}
 }

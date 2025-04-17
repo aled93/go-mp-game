@@ -10,7 +10,9 @@ import (
 	"cmp"
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/negrel/assert"
+	"gomp/pkg/core"
 	"gomp/pkg/ecs"
+	"gomp/pkg/worker"
 	"gomp/stdcomponents"
 	"math"
 	"runtime"
@@ -39,6 +41,8 @@ type Render2DCamerasSystem struct {
 	renderObjects       []renderObject
 	renderObjectsSorted []renderObjectSorted
 	numWorkers          int
+
+	Engine *core.Engine
 }
 
 type renderObject struct {
@@ -148,7 +152,7 @@ func (s *Render2DCamerasSystem) prepareRender(dt time.Duration) {
 }
 
 func (s *Render2DCamerasSystem) prepareAnimations() {
-	s.Textures.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
+	s.Textures.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 		texturePro := s.Textures.GetUnsafe(entity)
 		animation := s.AnimationPlayers.GetUnsafe(entity)
 		if animation == nil {
@@ -165,7 +169,7 @@ func (s *Render2DCamerasSystem) prepareAnimations() {
 }
 
 func (s *Render2DCamerasSystem) prepareFlips() {
-	s.Textures.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
+	s.Textures.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 		texturePro := s.Textures.GetUnsafe(entity)
 		flipped := s.Flips.GetUnsafe(entity)
 		if flipped == nil {
@@ -183,7 +187,7 @@ func (s *Render2DCamerasSystem) prepareFlips() {
 
 func (s *Render2DCamerasSystem) preparePositions(dt time.Duration) {
 	//dts := dt.Seconds()
-	s.Textures.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
+	s.Textures.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 		texturePro := s.Textures.GetUnsafe(entity)
 		position := s.Positions.GetUnsafe(entity)
 		if position == nil {
@@ -200,7 +204,7 @@ func (s *Render2DCamerasSystem) preparePositions(dt time.Duration) {
 }
 
 func (s *Render2DCamerasSystem) prepareRotations() {
-	s.Textures.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
+	s.Textures.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 		texturePro := s.Textures.GetUnsafe(entity)
 		rotation := s.Rotations.GetUnsafe(entity)
 		if rotation == nil {
@@ -212,7 +216,7 @@ func (s *Render2DCamerasSystem) prepareRotations() {
 }
 
 func (s *Render2DCamerasSystem) prepareScales() {
-	s.Textures.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
+	s.Textures.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 		texturePro := s.Textures.GetUnsafe(entity)
 		scale := s.Scales.GetUnsafe(entity)
 		if scale == nil {
@@ -225,7 +229,7 @@ func (s *Render2DCamerasSystem) prepareScales() {
 }
 
 func (s *Render2DCamerasSystem) prepareTints() {
-	s.Textures.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
+	s.Textures.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 		tr := s.Textures.GetUnsafe(entity)
 		tint := s.Tints.GetUnsafe(entity)
 		if tint == nil {

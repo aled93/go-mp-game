@@ -17,6 +17,7 @@ package scenes
 import (
 	"gomp"
 	"gomp/examples/new-api/instances"
+	"gomp/pkg/core"
 	"gomp/pkg/ecs"
 	"time"
 )
@@ -26,7 +27,7 @@ func NewMainScene() MainScene {
 }
 
 type MainScene struct {
-	Game  gomp.AnyGame
+	Game  core.AnyGame
 	World *instances.World
 }
 

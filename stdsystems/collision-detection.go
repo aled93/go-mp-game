@@ -16,7 +16,9 @@ package stdsystems
 
 import (
 	"github.com/negrel/assert"
+	"gomp/pkg/core"
 	"gomp/pkg/ecs"
+	"gomp/pkg/worker"
 	"gomp/stdcomponents"
 	"gomp/vectors"
 	"image/color"
@@ -50,6 +52,7 @@ type CollisionDetectionSystem struct {
 
 	gridLookup map[stdcomponents.CollisionLayer]ecs.Entity
 	numWorkers int
+	Engine     *core.Engine
 }
 
 func (s *CollisionDetectionSystem) Init() {
@@ -63,7 +66,7 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 func (s *CollisionDetectionSystem) Destroy() {}
 func (s *CollisionDetectionSystem) setup() {
 	// Reset grids
-	s.CollisionGridComponentManager.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
+	s.CollisionGridComponentManager.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 		grid := s.CollisionGridComponentManager.GetUnsafe(entity)
 		assert.NotNil(grid)
 		grid.Entities.Reset()
@@ -76,7 +79,7 @@ func (s *CollisionDetectionSystem) setup() {
 
 	// Accumulate used CollisionLayers
 	var collisionLayerAccumulators = make([]stdcomponents.CollisionLayer, s.numWorkers)
-	s.GenericCollider.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
+	s.GenericCollider.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 		collider := s.GenericCollider.GetUnsafe(entity)
 		assert.NotNil(collider)
 		collisionLayerAccumulators[workerId] |= 1 << collider.Layer
@@ -194,7 +197,7 @@ func (s *CollisionDetectionSystem) setup() {
 		return true
 	})
 
-	s.CollisionChunkComponentManager.EachEntityParallel(s.numWorkers)(func(chunkEntity ecs.Entity, workerId int) bool {
+	s.CollisionChunkComponentManager.EachEntityParallel(s.Engine.Pool())(func(chunkEntity ecs.Entity, workerId worker.WorkerId) bool {
 		tree := s.BvhTreeComponentManager.GetUnsafe(chunkEntity)
 		assert.NotNil(tree)
 		tree.Build()

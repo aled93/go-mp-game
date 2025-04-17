@@ -15,21 +15,25 @@ Thank you for your support!
 package ecs
 
 import (
+	"gomp/pkg/core"
 	"reflect"
 )
 
 type AnyWorld interface {
-	Init()
+	Init(engine *core.Engine)
 	Destroy()
 	injectEntityManagerToComponents()
-	injectComponentsToSystems()
+	injectToSystems()
 }
 
 type World[C, S any] struct {
 	Entities   EntityManager
 	Components C
 	Systems    S
+	Engine     *core.Engine
 }
+
+var _ AnyWorld = new(World[any, any])
 
 func NewWorld[C AnyComponentList, S AnySystemList](componentList C, systemList S) World[C, S] {
 	return World[C, S]{
@@ -39,8 +43,10 @@ func NewWorld[C AnyComponentList, S AnySystemList](componentList C, systemList S
 	}
 }
 
-func (w *World[C, S]) Init() {
-	w.injectComponentsToSystems()
+func (w *World[C, S]) Init(engine *core.Engine) {
+	w.Engine = engine
+
+	w.injectToSystems()
 	w.injectEntityManagerToComponents()
 	w.Entities.init()
 }
@@ -69,8 +75,7 @@ func (w *World[C, S]) injectEntityManagerToComponents() {
 	}
 }
 
-// injectToSystems
-func (w *World[C, S]) injectComponentsToSystems() {
+func (w *World[C, S]) injectToSystems() {
 	systemList := &w.Systems
 	componentList := &w.Components
 	entityManager := &w.Entities
@@ -82,6 +87,7 @@ func (w *World[C, S]) injectComponentsToSystems() {
 	componentsLen := reflectedComponentList.NumField()
 
 	entityManagerType := reflect.TypeOf(entityManager)
+	engineType := reflect.TypeOf(w.Engine)
 
 	for i := range systemsLen {
 		system := reflectedSystemList.Field(i)
@@ -97,6 +103,11 @@ func (w *World[C, S]) injectComponentsToSystems() {
 
 			if systemFieldType == entityManagerType {
 				system.Field(j).Set(reflect.ValueOf(entityManager))
+				continue
+			}
+
+			if systemFieldType == engineType {
+				system.Field(j).Set(reflect.ValueOf(w.Engine))
 				continue
 			}
 

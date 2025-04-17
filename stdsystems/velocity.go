@@ -8,7 +8,9 @@ package stdsystems
 
 import (
 	"github.com/negrel/assert"
+	"gomp/pkg/core"
 	"gomp/pkg/ecs"
+	"gomp/pkg/worker"
 	"gomp/stdcomponents"
 	"math"
 	"runtime"
@@ -25,6 +27,7 @@ type VelocitySystem struct {
 	RigidBodies *stdcomponents.RigidBodyComponentManager
 
 	numWorkers int
+	Engine     *core.Engine
 }
 
 func (s *VelocitySystem) Init() {
@@ -34,7 +37,7 @@ func (s *VelocitySystem) Init() {
 func (s *VelocitySystem) Run(dt time.Duration) {
 	dtSec := float32(dt.Seconds())
 
-	s.Velocities.EachEntityParallel(s.numWorkers)(func(e ecs.Entity, _ int) bool {
+	s.Velocities.EachEntityParallel(s.Engine.Pool())(func(e ecs.Entity, workerId worker.WorkerId) bool {
 		velocity := s.Velocities.GetUnsafe(e)
 		assert.True(s.isVelocityValid(velocity))
 

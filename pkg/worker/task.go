@@ -24,3 +24,7 @@ type TaskError struct {
 	Err error
 	Id  WorkerId
 }
+
+func (e TaskError) Error() string {
+	return e.Err.Error()
+}

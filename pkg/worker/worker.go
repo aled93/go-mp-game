@@ -16,6 +16,8 @@ package worker
 
 import (
 	"context"
+	"github.com/negrel/assert"
+	"runtime"
 	"sync"
 )
 
@@ -23,17 +25,17 @@ type WorkerId int
 
 func NewWorker(ctx context.Context, id WorkerId) Worker {
 	return Worker{
-		id:      id,
-		ctx:     ctx,
-		jobChan: make(chan poolJob),
+		id:             id,
+		ctx:            ctx,
+		groupTasksChan: make(chan groupTasks),
 	}
 }
 
 type Worker struct {
-	id      WorkerId
-	ctx     context.Context
-	jobChan chan poolJob
-	wg      sync.WaitGroup
+	id             WorkerId
+	ctx            context.Context
+	groupTasksChan chan groupTasks
+	wg             sync.WaitGroup
 }
 
 func (w *Worker) Start(poolWg *sync.WaitGroup) {
@@ -42,25 +44,28 @@ func (w *Worker) Start(poolWg *sync.WaitGroup) {
 }
 
 func (w *Worker) Stop() {
-	close(w.jobChan)
+	close(w.groupTasksChan)
 }
 
 func (w *Worker) run(poolWg *sync.WaitGroup) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	defer poolWg.Done()
 	for {
 		select {
 		case <-w.ctx.Done():
 			return
-		case job, ok := <-w.jobChan:
+		case job, ok := <-w.groupTasksChan:
 			if !ok {
 				return
 			}
-			w.processJob(job)
+			w.processGroupTasks(job)
 		}
 	}
 }
 
-func (w *Worker) processJob(job poolJob) {
+func (w *Worker) processGroupTasks(job groupTasks) {
 	for {
 		select {
 		case <-w.ctx.Done():
@@ -73,8 +78,11 @@ func (w *Worker) processJob(job poolJob) {
 	}
 }
 
-func (w *Worker) processTask(job poolJob, task AnyTask) {
+func (w *Worker) processTask(job groupTasks, task AnyTask) {
 	defer job.wg.Done()
+	assert.NotNil(job.ctx)
+	assert.NotNil(task)
+
 	err := task.Run(job.ctx, w.id)
 	if err != nil {
 		job.errChan <- TaskError{Err: err, Id: w.id}

@@ -10,9 +10,10 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/negrel/assert"
 	"gomp/examples/new-api/components"
+	"gomp/pkg/core"
 	"gomp/pkg/ecs"
+	"gomp/pkg/worker"
 	"gomp/stdcomponents"
-	"runtime"
 	"time"
 )
 
@@ -25,7 +26,7 @@ type TextureCircleSystem struct {
 	Textures *stdcomponents.RLTextureProComponentManager
 	texture  rl.RenderTexture2D
 
-	numWorkers int
+	Engine *core.Engine
 }
 
 func (s *TextureCircleSystem) Init() {
@@ -35,11 +36,10 @@ func (s *TextureCircleSystem) Init() {
 	rl.DrawCircle(circleRadius, circleRadius, circleRadius, rl.White)
 	rl.EndTextureMode()
 	s.texture = texture
-	s.numWorkers = runtime.NumCPU() - 2
 }
 
 func (s *TextureCircleSystem) Run(dt time.Duration) {
-	s.Circles.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, i int) bool {
+	s.Circles.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, _ worker.WorkerId) bool {
 		circle := s.Circles.GetUnsafe(entity)
 		assert.NotNil(circle, "circle is nil; entity: %d", entity)
 		texture := s.Textures.GetUnsafe(entity)

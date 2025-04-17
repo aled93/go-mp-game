@@ -16,67 +16,9 @@ Thank you for your support!
 package gomp
 
 import (
-	"log"
-	"time"
+	"gomp/pkg/core"
 )
 
-const (
-	MaxFrameSkips = 5
-)
-
-func NewEngine(game AnyGame) Engine {
-	engine := Engine{
-		Game: game,
-	}
-
-	return engine
-}
-
-type Engine struct {
-	Game AnyGame
-}
-
-func (e *Engine) Run(tickrate uint, framerate uint) {
-
-	fixedUpdDuration := time.Second / time.Duration(tickrate)
-
-	var renderTicker *time.Ticker
-	if framerate > 0 {
-		renderTicker = time.NewTicker(time.Second / time.Duration(framerate))
-		defer renderTicker.Stop()
-	}
-
-	e.Game.Init()
-	defer e.Game.Destroy()
-
-	var lastUpdateAt = time.Now() // TODO: REMOVE?
-	var nextFixedUpdateAt = time.Now()
-	var dt = time.Since(lastUpdateAt)
-
-	for !e.Game.ShouldDestroy() {
-		if renderTicker != nil {
-			<-renderTicker.C
-		}
-		dt = time.Since(lastUpdateAt)
-		lastUpdateAt = time.Now()
-
-		// Update
-		e.Game.Update(dt)
-
-		// Fixed Update
-		loops := 0
-		// TODO: Refactor to work without for loop
-		for nextFixedUpdateAt.Compare(time.Now()) == -1 && loops < MaxFrameSkips {
-			e.Game.FixedUpdate(fixedUpdDuration)
-			nextFixedUpdateAt = nextFixedUpdateAt.Add(fixedUpdDuration)
-			loops++
-		}
-		if loops >= MaxFrameSkips {
-			nextFixedUpdateAt = time.Now()
-			log.Println("Too many updates detected")
-		}
-
-		// RenderAssterodd
-		e.Game.Render(dt)
-	}
+func NewEngine(game core.AnyGame) core.Engine {
+	return core.NewEngine(game)
 }

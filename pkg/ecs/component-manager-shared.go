@@ -7,6 +7,7 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package ecs
 
 import (
+	"gomp/pkg/worker"
 	"sync"
 
 	"github.com/negrel/assert"
@@ -250,10 +251,10 @@ func (c *SharedComponentManager[T]) EachComponentParallel(numWorkers int) func(y
 	return c.components.EachDataParallel(numWorkers)
 }
 
-func (c *SharedComponentManager[T]) EachEntityParallel(numWorkers int) func(yield func(Entity, int) bool) {
+func (c *SharedComponentManager[T]) EachEntityParallel(pool *worker.Pool) func(yield func(Entity, worker.WorkerId) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	return c.entities.EachDataValueParallel(numWorkers)
+	return c.entities.EachDataValueParallel(pool)
 }
 
 func (c *SharedComponentManager[T]) EachParallel(numWorkers int) func(yield func(Entity, *T, int) bool) {

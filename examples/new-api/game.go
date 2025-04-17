@@ -17,6 +17,7 @@ package main
 import (
 	"gomp"
 	"gomp/examples/new-api/instances"
+	"gomp/pkg/core"
 	"gomp/pkg/ecs"
 	"gomp/stdsystems"
 	"time"
@@ -52,7 +53,7 @@ type Game struct {
 	currentSceneId gomp.SceneId
 }
 
-func (g *Game) Init() {
+func (g *Game) Init(engine *core.Engine) {
 	g.osHandlerSystem.Init()
 	g.renderSystem.Init()
 
@@ -61,7 +62,7 @@ func (g *Game) Init() {
 		var world = &g.worlds[i]
 		var systems = &world.Systems
 
-		world.Init()
+		world.Init(engine)
 
 		systems.ColliderSystem.Init()
 		systems.Velocity.Init()

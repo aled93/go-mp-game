@@ -17,9 +17,10 @@ package stdsystems
 import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/negrel/assert"
+	"gomp/pkg/core"
 	"gomp/pkg/ecs"
+	"gomp/pkg/worker"
 	"gomp/stdcomponents"
-	"runtime"
 )
 
 func NewSpriteSystem() SpriteSystem {
@@ -37,10 +38,11 @@ type SpriteSystem struct {
 	numWorkers       int
 	accRenderOrder   [][]ecs.Entity
 	accRLTexturePros [][]ecs.Entity
+	Engine           *core.Engine
 }
 
 func (s *SpriteSystem) Init() {
-	s.numWorkers = runtime.NumCPU() - 2
+	s.numWorkers = s.Engine.Pool().NumWorkers()
 	s.accRenderOrder = make([][]ecs.Entity, s.numWorkers)
 	s.accRLTexturePros = make([][]ecs.Entity, s.numWorkers)
 }
@@ -51,7 +53,7 @@ func (s *SpriteSystem) Run() {
 	for i := range s.accRLTexturePros {
 		s.accRLTexturePros[i] = s.accRLTexturePros[i][:0]
 	}
-	s.Sprites.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, workerId int) bool {
+	s.Sprites.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 		renderOrder := s.RenderOrder.GetUnsafe(entity)
 		if renderOrder == nil {
 			s.accRenderOrder[workerId] = append(s.accRenderOrder[workerId], entity)
@@ -73,7 +75,7 @@ func (s *SpriteSystem) Run() {
 		}
 	}
 
-	s.Sprites.EachEntityParallel(s.numWorkers)(func(entity ecs.Entity, _ int) bool {
+	s.Sprites.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 		sprite := s.Sprites.GetUnsafe(entity)
 		assert.NotNil(sprite)
 
