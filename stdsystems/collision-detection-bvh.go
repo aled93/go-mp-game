@@ -22,7 +22,6 @@ import (
 	"gomp/pkg/worker"
 	"gomp/stdcomponents"
 	"gomp/vectors"
-	"runtime"
 	"sync"
 	"time"
 )
@@ -64,7 +63,7 @@ type CollisionDetectionBVHSystem struct {
 }
 
 func (s *CollisionDetectionBVHSystem) Init() {
-	s.numWorkers = runtime.NumCPU() - 2
+	s.numWorkers = s.Engine.Pool().NumWorkers()
 	s.collisionEvents = make([]ecs.PagedArray[CollisionEvent], s.numWorkers)
 	for i := range s.numWorkers {
 		s.collisionEvents[i] = ecs.NewPagedArray[CollisionEvent]()

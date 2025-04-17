@@ -17,7 +17,6 @@ package worker
 import (
 	"context"
 	"github.com/negrel/assert"
-	"runtime"
 	"sync"
 )
 
@@ -48,9 +47,6 @@ func (w *Worker) Stop() {
 }
 
 func (w *Worker) run(poolWg *sync.WaitGroup) {
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
-
 	defer poolWg.Done()
 	for {
 		select {
