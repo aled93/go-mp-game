@@ -78,7 +78,7 @@ func (s *CollisionDetectionSystem) setup() {
 	})
 
 	// Accumulate used CollisionLayers
-	var collisionLayerAccumulators = make([]stdcomponents.CollisionLayer, s.numWorkers)
+	var collisionLayerAccumulators = make([]stdcomponents.CollisionLayer, s.Engine.Pool().NumWorkers())
 	s.GenericCollider.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
 		collider := s.GenericCollider.GetUnsafe(entity)
 		assert.NotNil(collider)

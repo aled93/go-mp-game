@@ -263,10 +263,10 @@ func (c *ComponentManager[T]) Each() func(yield func(entity Entity, component *T
 // Iterators Parallel
 // ========================================================
 
-func (c *ComponentManager[T]) EachComponentParallel(numWorkers int) func(yield func(*T, int) bool) {
+func (c *ComponentManager[T]) EachComponentParallel(pool *worker.Pool) func(yield func(*T, worker.WorkerId) bool) {
 	c.assertBegin()
 	defer c.assertEnd()
-	return c.components.EachDataParallel(numWorkers)
+	return c.components.EachDataParallel(pool)
 }
 
 func (c *ComponentManager[T]) EachEntityParallel(pool *worker.Pool) func(yield func(Entity, worker.WorkerId) bool) {

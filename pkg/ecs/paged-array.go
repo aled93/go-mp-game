@@ -15,21 +15,33 @@ import (
 	"sync"
 )
 
+func NewPagedArray[T any]() (a PagedArray[T]) {
+	a.book = make([]ArrayPage[T], 2, initialBookSize)
+	a.edpTasks = make([]EachDataTask[T], 2, initialBookSize)
+	a.edvpTasks = make([]EachDataValueTask[T], 2, initialBookSize)
+
+	return a
+}
+
+type SlicePage[T any] struct {
+	len  int
+	data []T
+}
+
 type PagedArray[T any] struct {
 	book             []ArrayPage[T]
 	currentPageIndex int
 	len              int
 	wg               sync.WaitGroup
-	edvpTasks        []EdvpTask[T]
-	tasks            []worker.AnyTask
+
+	// Cache
+	edvpTasks []EachDataValueTask[T]
+	edpTasks  []EachDataTask[T]
 }
 
-func NewPagedArray[T any]() (a PagedArray[T]) {
-	a.book = make([]ArrayPage[T], 2, initialBookSize)
-	a.edvpTasks = make([]EdvpTask[T], initialBookSize)
-	a.tasks = make([]worker.AnyTask, initialBookSize)
-
-	return a
+type ArrayPage[T any] struct {
+	len  int
+	data [pageSize]T
 }
 
 func (a *PagedArray[T]) Len() int {
@@ -75,10 +87,10 @@ func (a *PagedArray[T]) Append(values ...T) *T {
 		if a.currentPageIndex >= len(a.book) {
 			newBooks := make([]ArrayPage[T], len(a.book)*2)
 			a.book = append(a.book, newBooks...)
-			newEdvpTasks := make([]EdvpTask[T], len(a.edvpTasks)*2)
+			newEdvpTasks := make([]EachDataValueTask[T], len(a.edvpTasks)*2)
 			a.edvpTasks = append(a.edvpTasks, newEdvpTasks...)
-			newTasks := make([]worker.AnyTask, len(a.tasks)*2)
-			a.tasks = append(a.tasks, newTasks...)
+			newEdpTasks := make([]EachDataTask[T], len(a.edpTasks)*2)
+			a.edpTasks = append(a.edpTasks, newEdpTasks...)
 		}
 
 		page := &a.book[a.currentPageIndex]
@@ -88,10 +100,10 @@ func (a *PagedArray[T]) Append(values ...T) *T {
 			if a.currentPageIndex >= len(a.book) {
 				newBooks := make([]ArrayPage[T], len(a.book)*2)
 				a.book = append(a.book, newBooks...)
-				newEdvpTasks := make([]EdvpTask[T], len(a.edvpTasks)*2)
+				newEdvpTasks := make([]EachDataValueTask[T], len(a.edvpTasks)*2)
 				a.edvpTasks = append(a.edvpTasks, newEdvpTasks...)
-				newTasks := make([]worker.AnyTask, len(a.tasks)*2)
-				a.tasks = append(a.tasks, newTasks...)
+				newEdpTasks := make([]EachDataTask[T], len(a.edpTasks)*2)
+				a.edpTasks = append(a.edpTasks, newEdpTasks...)
 			}
 			page = &a.book[a.currentPageIndex]
 		}
@@ -267,12 +279,52 @@ func (a *PagedArray[T]) EachDataValue() func(yield func(T) bool) {
 	}
 }
 
-type EdvpTask[T any] struct {
+func (a *PagedArray[T]) EachDataValueParallel(pool *worker.Pool) func(yield func(T, worker.WorkerId) bool) {
+	return func(yield func(T, worker.WorkerId) bool) {
+		assert.NotNil(pool)
+
+		pool.BeginGroupTasks()
+		for i := a.currentPageIndex; i >= 0; i-- {
+			j := a.currentPageIndex - i
+			a.edvpTasks[j].page = &a.book[i]
+			a.edvpTasks[j].f = yield
+			err := pool.ProcessGroupTask(&a.edvpTasks[j])
+			if err != nil {
+				log.Error(err)
+			}
+		}
+		pool.EndGroupTask()
+	}
+}
+
+func (a *PagedArray[T]) EachDataParallel(pool *worker.Pool) func(yield func(*T, worker.WorkerId) bool) {
+	return func(yield func(*T, worker.WorkerId) bool) {
+		assert.NotNil(pool)
+
+		pool.BeginGroupTasks()
+		for i := a.currentPageIndex; i >= 0; i-- {
+			j := a.currentPageIndex - i
+			a.edpTasks[j].page = &a.book[i]
+			a.edpTasks[j].f = yield
+			err := pool.ProcessGroupTask(&a.edpTasks[j])
+			if err != nil {
+				log.Error(err)
+			}
+		}
+		pool.EndGroupTask()
+	}
+}
+
+// =========================
+// TASKS
+// =========================
+
+type EachDataValueTask[T any] struct {
 	f    func(T, worker.WorkerId) bool
 	page *ArrayPage[T]
 }
 
-func (t *EdvpTask[T]) Run(ctx context.Context, workerId worker.WorkerId) error {
+func (t *EachDataValueTask[T]) Run(ctx context.Context, workerId worker.WorkerId) error {
 	for i := 0; i < t.page.len; i++ {
 		select {
 		case <-ctx.Done():
@@ -286,59 +338,21 @@ func (t *EdvpTask[T]) Run(ctx context.Context, workerId worker.WorkerId) error {
 	return nil
 }
 
-func (a *PagedArray[T]) EachDataValueParallel(pool *worker.Pool) func(yield func(T, worker.WorkerId) bool) {
-	return func(yield func(T, worker.WorkerId) bool) {
-		assert.NotNil(pool)
-		for i := a.currentPageIndex; i >= 0; i-- {
-			j := a.currentPageIndex - i
-			a.edvpTasks[j] = EdvpTask[T]{
-				f:    yield,
-				page: &a.book[i],
+type EachDataTask[T any] struct {
+	f    func(*T, worker.WorkerId) bool
+	page *ArrayPage[T]
+}
+
+func (t *EachDataTask[T]) Run(ctx context.Context, workerId worker.WorkerId) error {
+	for i := 0; i < t.page.len; i++ {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+			if shouldContinue := t.f(&t.page.data[i], workerId); !shouldContinue {
+				return errors.New("loop canceled")
 			}
-			a.tasks[j] = &a.edvpTasks[j]
-		}
-		tasks := a.tasks[:a.currentPageIndex+1]
-		err := pool.ProcessGroupTasks(tasks)
-		if err != nil {
-			log.Error(err)
 		}
 	}
-}
-
-func (a *PagedArray[T]) EachDataParallel(numWorkers int) func(yield func(*T, int) bool) {
-	return func(yield func(*T, int) bool) {
-		assert.True(numWorkers > 0)
-		var chunkSize = a.len / numWorkers
-
-		a.wg.Add(numWorkers)
-		for workedId := 0; workedId < numWorkers; workedId++ {
-			startIndex := workedId * chunkSize
-			endIndex := startIndex + chunkSize - 1
-			if workedId == numWorkers-1 { // have to set endIndex to entities length, if last worker
-				endIndex = a.len
-			}
-			go a.edpTask(yield, startIndex, endIndex, workedId, &a.wg)
-		}
-		a.wg.Wait()
-	}
-}
-
-func (a *PagedArray[T]) edpTask(y func(*T, int) bool, s int, e int, id int, w *sync.WaitGroup) {
-	defer w.Done()
-	r := e - s
-	for i := range r {
-		if !y(a.Get(i+s), id) {
-			return
-		}
-	}
-}
-
-type SlicePage[T any] struct {
-	len  int
-	data []T
-}
-
-type ArrayPage[T any] struct {
-	len  int
-	data [pageSize]T
+	return nil
 }

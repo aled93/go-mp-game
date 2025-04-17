@@ -38,19 +38,19 @@ func (s *TexturePositionSmoothSystem) Init() {
 func (s *TexturePositionSmoothSystem) Run(dt time.Duration) {
 	//DEBUG Temporary, TODO: remove
 	if rl.IsKeyPressed(rl.KeyI) {
-		s.TexturePositionSmooth.EachComponentParallel(s.numWorkers)(func(t *stdcomponents.TexturePositionSmooth, i int) bool {
+		s.TexturePositionSmooth.EachComponentParallel(s.Engine.Pool())(func(t *stdcomponents.TexturePositionSmooth, i worker.WorkerId) bool {
 			*t = stdcomponents.TexturePositionSmoothOff
 			return true
 		})
 	}
 	if rl.IsKeyPressed(rl.KeyO) {
-		s.TexturePositionSmooth.EachComponentParallel(s.numWorkers)(func(t *stdcomponents.TexturePositionSmooth, i int) bool {
+		s.TexturePositionSmooth.EachComponentParallel(s.Engine.Pool())(func(t *stdcomponents.TexturePositionSmooth, i worker.WorkerId) bool {
 			*t = stdcomponents.TexturePositionSmoothLerp
 			return true
 		})
 	}
 	if rl.IsKeyPressed(rl.KeyP) {
-		s.TexturePositionSmooth.EachComponentParallel(s.numWorkers)(func(t *stdcomponents.TexturePositionSmooth, i int) bool {
+		s.TexturePositionSmooth.EachComponentParallel(s.Engine.Pool())(func(t *stdcomponents.TexturePositionSmooth, i worker.WorkerId) bool {
 			*t = stdcomponents.TexturePositionSmoothExpDecay
 			return true
 		})

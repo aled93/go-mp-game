@@ -48,7 +48,7 @@ func (s *CullingSystem) Run(dt time.Duration) {
 		s.accRenderVisibleDelete[i] = s.accRenderVisibleDelete[i][:0]
 	}
 
-	s.Renderables.EachComponentParallel(s.numWorkers)(func(r *stdcomponents.Renderable, i int) bool {
+	s.Renderables.EachComponentParallel(s.Engine.Pool())(func(r *stdcomponents.Renderable, i worker.WorkerId) bool {
 		r.Observed = false
 		return true
 	})

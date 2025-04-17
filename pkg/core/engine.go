@@ -26,7 +26,7 @@ const (
 )
 
 func NewEngine(game AnyGame) Engine {
-	numCpu := max(runtime.NumCPU(), 1)
+	numCpu := max(runtime.NumCPU()-2, 1)
 	engine := Engine{
 		Game: game,
 		pool: worker.NewPool(numCpu),
