@@ -14,10 +14,8 @@ Thank you for your support!
 
 package worker
 
-import "context"
-
 type AnyTask interface {
-	Run(ctx context.Context, workerId WorkerId) error
+	Run(workerId WorkerId) error
 }
 
 type TaskError struct {

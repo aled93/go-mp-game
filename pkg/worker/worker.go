@@ -16,25 +16,26 @@ package worker
 
 import (
 	"context"
-	"github.com/negrel/assert"
 	"sync"
 )
 
 type WorkerId int
 
-func NewWorker(ctx context.Context, id WorkerId) Worker {
+func NewWorker(ctx context.Context, id WorkerId, taskChan <-chan AnyTask, taskWg *sync.WaitGroup) Worker {
 	return Worker{
-		id:             id,
-		ctx:            ctx,
-		groupTasksChan: make(chan groupTasks),
+		id:       id,
+		ctx:      ctx,
+		taskWg:   taskWg,
+		taskChan: taskChan,
 	}
 }
 
 type Worker struct {
-	id             WorkerId
-	ctx            context.Context
-	groupTasksChan chan groupTasks
-	wg             sync.WaitGroup
+	id       WorkerId
+	ctx      context.Context
+	taskChan <-chan AnyTask
+	taskWg   *sync.WaitGroup
+	wg       sync.WaitGroup
 }
 
 func (w *Worker) Start(poolWg *sync.WaitGroup) {
@@ -43,46 +44,23 @@ func (w *Worker) Start(poolWg *sync.WaitGroup) {
 }
 
 func (w *Worker) Stop() {
-	close(w.groupTasksChan)
 }
 
 func (w *Worker) run(poolWg *sync.WaitGroup) {
+	//runtime.LockOSThread()
+	//defer runtime.UnlockOSThread()
 	defer poolWg.Done()
 	for {
 		select {
 		case <-w.ctx.Done():
 			return
-		case job, ok := <-w.groupTasksChan:
-			if !ok {
-				return
+		case task := <-w.taskChan:
+			err := task.Run(w.id)
+			w.taskWg.Done()
+			if err != nil {
+				panic("not implemented")
 			}
-			w.processGroupTasks(job)
 		}
-	}
-}
-
-func (w *Worker) processGroupTasks(job groupTasks) {
-	for {
-		select {
-		case <-w.ctx.Done():
-			return
-		case <-job.ctx.Done():
-			return
-		case task := <-job.taskChan:
-			w.processTask(job, task)
-		}
-	}
-}
-
-func (w *Worker) processTask(job groupTasks, task AnyTask) {
-	defer job.wg.Done()
-	assert.NotNil(job.ctx)
-	assert.NotNil(task)
-
-	err := task.Run(job.ctx, w.id)
-	if err != nil {
-		job.errChan <- TaskError{Err: err, Id: w.id}
-		return
 	}
 }
 

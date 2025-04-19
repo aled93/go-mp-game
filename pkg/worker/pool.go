@@ -13,6 +13,7 @@ Donations during this file development:
 <- thespacetime Donated 10 EUR
 <- Linkwayz Donated 1500 RUB
 <- mitwelve Donated 100 RUB
+<- tema881 Donated 100 RUB
 
 Thank you for your support!
 */
@@ -28,7 +29,6 @@ func NewPool(n int) Pool {
 	return Pool{
 		workers:  make([]Worker, n),
 		taskChan: make(chan AnyTask, n),
-		errChan:  make(chan TaskError),
 	}
 }
 
@@ -39,23 +39,22 @@ type Pool struct {
 	ctxCancel context.CancelFunc
 
 	// Cache
-	taskChan           chan AnyTask
-	errChan            chan TaskError
-	groupTaskWg        sync.WaitGroup
-	groupTaskCtx       context.Context
-	groupTaskCtxCancel context.CancelFunc
+	taskChan    chan AnyTask
+	groupTaskWg *sync.WaitGroup
 }
 
 func (p *Pool) Start() {
 	p.ctx, p.ctxCancel = context.WithCancel(context.Background())
+	p.groupTaskWg = new(sync.WaitGroup)
+	p.wg = sync.WaitGroup{}
 	for i := range p.workers {
-		p.workers[i] = NewWorker(p.ctx, WorkerId(i))
+		p.workers[i] = NewWorker(p.ctx, WorkerId(i), p.taskChan, p.groupTaskWg)
 		p.workers[i].Start(&p.wg)
 	}
 }
 
 func (p *Pool) AddWorker() {
-	p.workers = append(p.workers, NewWorker(p.ctx, WorkerId(len(p.workers))))
+	p.workers = append(p.workers, NewWorker(p.ctx, WorkerId(len(p.workers)), p.taskChan, p.groupTaskWg))
 	p.workers[len(p.workers)-1].Start(&p.wg)
 }
 
@@ -69,43 +68,13 @@ func (p *Pool) Stop() {
 	p.wg.Wait()
 }
 
-type groupTasks struct {
-	taskChan <-chan AnyTask
-	errChan  chan<- TaskError
-	ctx      context.Context
-	wg       *sync.WaitGroup
-}
-
-func (p *Pool) BeginGroupTasks() {
-	p.groupTaskCtx, p.groupTaskCtxCancel = context.WithCancel(p.ctx)
-
-	var job = groupTasks{
-		taskChan: p.taskChan,
-		errChan:  p.errChan,
-		ctx:      p.groupTaskCtx,
-		wg:       &p.groupTaskWg,
-	}
-
-	for i := range p.workers {
-		p.workers[i].groupTasksChan <- job
-	}
-}
-
-func (p *Pool) ProcessGroupTask(task AnyTask) error {
-	p.groupTaskWg.Add(1)
-	select {
-	case err := <-p.errChan:
-		return err
-	default:
-		p.taskChan <- task
-	}
-
-	return nil
-}
-
-func (p *Pool) EndGroupTask() {
-	defer p.groupTaskCtxCancel()
+func (p *Pool) GroupWait() {
 	p.groupTaskWg.Wait()
+}
+
+func (p *Pool) ProcessGroupTask(tasks AnyTask) {
+	p.groupTaskWg.Add(1)
+	p.taskChan <- tasks
 }
 
 func (p *Pool) NumWorkers() int {

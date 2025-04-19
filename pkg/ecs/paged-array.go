@@ -7,9 +7,6 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package ecs
 
 import (
-	"context"
-	"errors"
-	"github.com/labstack/gommon/log"
 	"github.com/negrel/assert"
 	"gomp/pkg/worker"
 	"sync"
@@ -37,6 +34,7 @@ type PagedArray[T any] struct {
 	// Cache
 	edvpTasks []EachDataValueTask[T]
 	edpTasks  []EachDataTask[T]
+	pool      *worker.Pool
 }
 
 type ArrayPage[T any] struct {
@@ -80,17 +78,21 @@ func (a *PagedArray[T]) Set(index int, value T) *T {
 	return &page.data[index]
 }
 
+func (a *PagedArray[T]) extend() {
+	newBooks := make([]ArrayPage[T], len(a.book)*2)
+	a.book = append(a.book, newBooks...)
+	newEdvpTasks := make([]EachDataValueTask[T], len(a.edvpTasks)*2)
+	a.edvpTasks = append(a.edvpTasks, newEdvpTasks...)
+	newEdpTasks := make([]EachDataTask[T], len(a.edpTasks)*2)
+	a.edpTasks = append(a.edpTasks, newEdpTasks...)
+}
+
 func (a *PagedArray[T]) Append(values ...T) *T {
 	var result *T
 	for i := range values {
 		value := values[i]
 		if a.currentPageIndex >= len(a.book) {
-			newBooks := make([]ArrayPage[T], len(a.book)*2)
-			a.book = append(a.book, newBooks...)
-			newEdvpTasks := make([]EachDataValueTask[T], len(a.edvpTasks)*2)
-			a.edvpTasks = append(a.edvpTasks, newEdvpTasks...)
-			newEdpTasks := make([]EachDataTask[T], len(a.edpTasks)*2)
-			a.edpTasks = append(a.edpTasks, newEdpTasks...)
+			a.extend()
 		}
 
 		page := &a.book[a.currentPageIndex]
@@ -98,12 +100,7 @@ func (a *PagedArray[T]) Append(values ...T) *T {
 		if page.len == pageSize {
 			a.currentPageIndex++
 			if a.currentPageIndex >= len(a.book) {
-				newBooks := make([]ArrayPage[T], len(a.book)*2)
-				a.book = append(a.book, newBooks...)
-				newEdvpTasks := make([]EachDataValueTask[T], len(a.edvpTasks)*2)
-				a.edvpTasks = append(a.edvpTasks, newEdvpTasks...)
-				newEdpTasks := make([]EachDataTask[T], len(a.edpTasks)*2)
-				a.edpTasks = append(a.edpTasks, newEdpTasks...)
+				a.extend()
 			}
 			page = &a.book[a.currentPageIndex]
 		}
@@ -176,7 +173,7 @@ func (a *PagedArray[T]) Raw(result []T) []T {
 	result = result[:0]
 	for i := 0; i <= a.currentPageIndex; i++ {
 		page := &a.book[i]
-		result = append(result[:i*1024], append(result[i*1024:], page.data[:page.len]...)...)
+		result = append(result[:i*pageSize], append(result[i*pageSize:], page.data[:page.len]...)...)
 	}
 
 	return result
@@ -280,39 +277,37 @@ func (a *PagedArray[T]) EachDataValue() func(yield func(T) bool) {
 }
 
 func (a *PagedArray[T]) EachDataValueParallel(pool *worker.Pool) func(yield func(T, worker.WorkerId) bool) {
-	return func(yield func(T, worker.WorkerId) bool) {
-		assert.NotNil(pool)
+	a.pool = pool
+	return a.edvpIter
+}
 
-		pool.BeginGroupTasks()
-		for i := a.currentPageIndex; i >= 0; i-- {
-			j := a.currentPageIndex - i
-			a.edvpTasks[j].page = &a.book[i]
-			a.edvpTasks[j].f = yield
-			err := pool.ProcessGroupTask(&a.edvpTasks[j])
-			if err != nil {
-				log.Error(err)
-			}
-		}
-		pool.EndGroupTask()
+func (a *PagedArray[T]) edvpIter(yield func(T, worker.WorkerId) bool) {
+	assert.NotNil(a.pool)
+
+	for i := a.currentPageIndex; i >= 0; i-- {
+		j := a.currentPageIndex - i
+		a.edvpTasks[j].page = &a.book[i]
+		a.edvpTasks[j].f = yield
+		a.pool.ProcessGroupTask(&a.edvpTasks[j])
 	}
+	a.pool.GroupWait()
 }
 
 func (a *PagedArray[T]) EachDataParallel(pool *worker.Pool) func(yield func(*T, worker.WorkerId) bool) {
-	return func(yield func(*T, worker.WorkerId) bool) {
-		assert.NotNil(pool)
+	a.pool = pool
+	return a.edpIter
+}
 
-		pool.BeginGroupTasks()
-		for i := a.currentPageIndex; i >= 0; i-- {
-			j := a.currentPageIndex - i
-			a.edpTasks[j].page = &a.book[i]
-			a.edpTasks[j].f = yield
-			err := pool.ProcessGroupTask(&a.edpTasks[j])
-			if err != nil {
-				log.Error(err)
-			}
-		}
-		pool.EndGroupTask()
+func (a *PagedArray[T]) edpIter(yield func(*T, worker.WorkerId) bool) {
+	assert.NotNil(a.pool)
+
+	for i := a.currentPageIndex; i >= 0; i-- {
+		j := a.currentPageIndex - i
+		a.edpTasks[j].page = &a.book[i]
+		a.edpTasks[j].f = yield
+		a.pool.ProcessGroupTask(&a.edpTasks[j])
 	}
+	a.pool.GroupWait()
 }
 
 // =========================
@@ -324,16 +319,9 @@ type EachDataValueTask[T any] struct {
 	page *ArrayPage[T]
 }
 
-func (t *EachDataValueTask[T]) Run(ctx context.Context, workerId worker.WorkerId) error {
+func (t *EachDataValueTask[T]) Run(workerId worker.WorkerId) error {
 	for i := 0; i < t.page.len; i++ {
-		select {
-		case <-ctx.Done():
-			return nil
-		default:
-			if shouldContinue := t.f(t.page.data[i], workerId); !shouldContinue {
-				return errors.New("loop canceled")
-			}
-		}
+		t.f(t.page.data[i], workerId)
 	}
 	return nil
 }
@@ -343,16 +331,9 @@ type EachDataTask[T any] struct {
 	page *ArrayPage[T]
 }
 
-func (t *EachDataTask[T]) Run(ctx context.Context, workerId worker.WorkerId) error {
+func (t *EachDataTask[T]) Run(workerId worker.WorkerId) error {
 	for i := 0; i < t.page.len; i++ {
-		select {
-		case <-ctx.Done():
-			return nil
-		default:
-			if shouldContinue := t.f(&t.page.data[i], workerId); !shouldContinue {
-				return errors.New("loop canceled")
-			}
-		}
+		t.f(&t.page.data[i], workerId)
 	}
 	return nil
 }

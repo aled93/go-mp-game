@@ -8,7 +8,6 @@ package assets
 
 import (
 	"embed"
-	"fmt"
 	"gomp"
 	"image/png"
 	"log"
@@ -26,7 +25,6 @@ var Textures = gomp.CreateAssetLibrary(
 	func(path string) rl.Texture2D {
 		assert.True(rl.IsWindowReady(), "Window is not initialized")
 
-		fmt.Print()
 		file, err := fs.Open(path)
 		if err != nil {
 			log.Panic("Error opening file")

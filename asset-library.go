@@ -7,8 +7,6 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package gomp
 
 import (
-	"fmt"
-
 	"github.com/negrel/assert"
 )
 
@@ -47,7 +45,7 @@ func (r *AssetLibrary[T]) Get(path string) *T {
 
 func (r *AssetLibrary[T]) Load(path string) {
 	_, ok := r.data[path]
-	assert.False(ok, fmt.Errorf("asset already loaded: %s", path))
+	assert.False(ok, "asset already loaded")
 
 	resource := r.loader(path)
 	r.data[path] = &resource
@@ -68,7 +66,7 @@ func (r *AssetLibrary[T]) LoadAll() {
 
 func (r *AssetLibrary[T]) Unload(path string) {
 	value, ok := r.data[path]
-	assert.True(ok, fmt.Errorf("asset not loaded: %s", path))
+	assert.True(ok, "asset not loaded")
 	r.unloader(path, value)
 	delete(r.data, path)
 }

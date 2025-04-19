@@ -7,7 +7,6 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package stdsystems
 
 import (
-	"fmt"
 	"github.com/felixge/fgprof"
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"log"
@@ -40,7 +39,7 @@ func (s *DebugSystem) Run() {
 	if rl.IsKeyPressed(rl.KeyF9) {
 		if s.pprofEnabled {
 			pprof.StopCPUProfile()
-			fmt.Println("CPU Profile Stopped")
+			log.Println("CPU Profile Stopped")
 
 			// Create a memory profile file
 			memProfileFile, err := os.Create("mem.out")
@@ -53,7 +52,7 @@ func (s *DebugSystem) Run() {
 			if err := pprof.WriteHeapProfile(memProfileFile); err != nil {
 				panic(err)
 			}
-			fmt.Println("Memory profile written to mem.prof")
+			log.Println("Memory profile written to mem.prof")
 		} else {
 			f, err := os.Create("cpu.out")
 			if err != nil {
@@ -64,7 +63,7 @@ func (s *DebugSystem) Run() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			fmt.Println("CPU Profile Started")
+			log.Println("CPU Profile Started")
 		}
 
 		s.pprofEnabled = !s.pprofEnabled
