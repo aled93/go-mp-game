@@ -138,7 +138,7 @@ func (c *ComponentManager[T]) Create(entity Entity, value T) (component *T) {
 }
 
 /*
-GetUnsafe - is not thread safe. DO NOT store the pointer to the value anywhere, because it might be changed anytime with Create or Remove operations.
+GetUnsafe - is not thread safe. DO NOT store the pointer to the value anywhere, because it might be changed anytime with Create or Delete operations.
 */
 func (c *ComponentManager[T]) GetUnsafe(entity Entity) (component *T) {
 	assert.True(c.isInitialized, "ComponentManager should be created with NewComponentManager()")

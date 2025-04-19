@@ -56,19 +56,19 @@ func (s *RenderSystem) Run(dt time.Duration) bool {
 
 	rl.BeginDrawing()
 
-	for _, texture := range s.frames {
-		rl.BeginBlendMode(texture.BlendMode)
-		rl.DrawTexturePro(texture.Texture.Texture,
+	for _, frame := range s.frames {
+		rl.BeginBlendMode(frame.BlendMode)
+		rl.DrawTexturePro(frame.Texture.Texture,
 			rl.Rectangle{
 				X:      0,
 				Y:      0,
-				Width:  float32(texture.Texture.Texture.Width),
-				Height: -float32(texture.Texture.Texture.Height),
+				Width:  float32(frame.Texture.Texture.Width),
+				Height: -float32(frame.Texture.Texture.Height),
 			},
-			texture.Dst,
+			frame.Dst,
 			rl.Vector2{},
-			texture.Rotation,
-			texture.Tint,
+			frame.Rotation,
+			frame.Tint,
 		)
 		rl.EndBlendMode()
 	}
