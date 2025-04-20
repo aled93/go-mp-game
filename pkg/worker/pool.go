@@ -68,13 +68,16 @@ func (p *Pool) Stop() {
 	p.wg.Wait()
 }
 
-func (p *Pool) GroupWait() {
-	p.groupTaskWg.Wait()
+func (p *Pool) GroupAdd(n int) {
+	p.groupTaskWg.Add(n)
 }
 
 func (p *Pool) ProcessGroupTask(tasks AnyTask) {
-	p.groupTaskWg.Add(1)
 	p.taskChan <- tasks
+}
+
+func (p *Pool) GroupWait() {
+	p.groupTaskWg.Wait()
 }
 
 func (p *Pool) NumWorkers() int {

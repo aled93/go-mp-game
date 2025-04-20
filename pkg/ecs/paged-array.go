@@ -276,7 +276,9 @@ func (a *PagedArray[T]) EachDataValue() func(yield func(T) bool) {
 }
 
 func (a *PagedArray[T]) ProcessDataValue(handler func(T, worker.WorkerId), pool *worker.Pool) {
+	assert.NotNil(handler)
 	assert.NotNil(pool)
+	pool.GroupAdd(a.currentPageIndex + 1)
 	for i := a.currentPageIndex; i >= 0; i-- {
 		j := a.currentPageIndex - i
 		a.edvpTasks[j].page = &a.book[i]
@@ -287,8 +289,9 @@ func (a *PagedArray[T]) ProcessDataValue(handler func(T, worker.WorkerId), pool 
 }
 
 func (a *PagedArray[T]) EachDataParallel(handler func(*T, worker.WorkerId), pool *worker.Pool) {
+	assert.NotNil(handler)
 	assert.NotNil(pool)
-
+	pool.GroupAdd(a.currentPageIndex + 1)
 	for i := a.currentPageIndex; i >= 0; i-- {
 		j := a.currentPageIndex - i
 		a.edpTasks[j].page = &a.book[i]
