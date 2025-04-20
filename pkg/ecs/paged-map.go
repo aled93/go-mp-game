@@ -12,8 +12,6 @@ const (
 	initialBookSize = 2 // Starting with a small initial book size
 )
 
-type MapPage[K Entity | SharedComponentInstanceId, V any] map[K]V
-
 type PagedMap[K Entity | SharedComponentInstanceId, V any] struct {
 	len  int
 	book []SlicePage[MapValue[V]]
