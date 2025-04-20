@@ -9,7 +9,7 @@ package ecs
 const (
 	pageSizeShift   = 11
 	pageSize        = 1 << pageSizeShift
-	initialBookSize = 4 // Starting with a small initial book size
+	initialBookSize = 2 // Starting with a small initial book size
 )
 
 type MapPage[K Entity | SharedComponentInstanceId, V any] map[K]V

@@ -13,9 +13,9 @@ import (
 )
 
 func NewPagedArray[T any]() (a PagedArray[T]) {
-	a.book = make([]ArrayPage[T], 2, initialBookSize)
-	a.edpTasks = make([]EachDataTask[T], 2, initialBookSize)
-	a.edvpTasks = make([]EachDataValueTask[T], 2, initialBookSize)
+	a.book = make([]ArrayPage[T], initialBookSize)
+	a.edpTasks = make([]EachDataTask[T], initialBookSize)
+	a.edvpTasks = make([]EachDataValueTask[T], initialBookSize)
 
 	return a
 }
