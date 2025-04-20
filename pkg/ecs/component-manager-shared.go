@@ -253,13 +253,13 @@ func (c *SharedComponentManager[T]) Each() func(yield func(Entity, *T) bool) {
 func (c *SharedComponentManager[T]) ProcessComponents(handler func(*T, worker.WorkerId)) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.components.EachDataParallel(handler)
+	c.components.EachDataParallel(handler, c.pool)
 }
 
 func (c *SharedComponentManager[T]) EachEntityParallel(handler func(Entity, worker.WorkerId)) {
 	c.assertBegin()
 	defer c.assertEnd()
-	c.entities.ProcessDataValue(handler)
+	c.entities.ProcessDataValue(handler, c.pool)
 }
 
 func (c *SharedComponentManager[T]) EachParallel(numWorkers int) func(yield func(Entity, *T, int) bool) {

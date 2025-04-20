@@ -34,7 +34,6 @@ type PagedArray[T any] struct {
 	// Cache
 	edvpTasks []EachDataValueTask[T]
 	edpTasks  []EachDataTask[T]
-	pool      *worker.Pool
 }
 
 type ArrayPage[T any] struct {
@@ -276,27 +275,27 @@ func (a *PagedArray[T]) EachDataValue() func(yield func(T) bool) {
 	}
 }
 
-func (a *PagedArray[T]) ProcessDataValue(handler func(T, worker.WorkerId)) {
-	assert.NotNil(a.pool)
+func (a *PagedArray[T]) ProcessDataValue(handler func(T, worker.WorkerId), pool *worker.Pool) {
+	assert.NotNil(pool)
 	for i := a.currentPageIndex; i >= 0; i-- {
 		j := a.currentPageIndex - i
 		a.edvpTasks[j].page = &a.book[i]
 		a.edvpTasks[j].f = handler
-		a.pool.ProcessGroupTask(&a.edvpTasks[j])
+		pool.ProcessGroupTask(&a.edvpTasks[j])
 	}
-	a.pool.GroupWait()
+	pool.GroupWait()
 }
 
-func (a *PagedArray[T]) EachDataParallel(handler func(*T, worker.WorkerId)) {
-	assert.NotNil(a.pool)
+func (a *PagedArray[T]) EachDataParallel(handler func(*T, worker.WorkerId), pool *worker.Pool) {
+	assert.NotNil(pool)
 
 	for i := a.currentPageIndex; i >= 0; i-- {
 		j := a.currentPageIndex - i
 		a.edpTasks[j].page = &a.book[i]
 		a.edpTasks[j].f = handler
-		a.pool.ProcessGroupTask(&a.edpTasks[j])
+		pool.ProcessGroupTask(&a.edpTasks[j])
 	}
-	a.pool.GroupWait()
+	pool.GroupWait()
 }
 
 // =========================

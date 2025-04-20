@@ -72,6 +72,7 @@ func (w *World[C, S]) injectEntityManagerToComponents() {
 		}
 		entityManager.registerComponent(componentManager)
 		componentManager.registerEntityManager(entityManager)
+		componentManager.registerWorkerPool(w.Engine.Pool())
 	}
 }
 
