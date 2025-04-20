@@ -41,7 +41,7 @@ func (s *TextureRectSystem) Init() {
 
 func (s *TextureRectSystem) Run(dt time.Duration) {
 	// Create shallow copy of texture to draw rectangles
-	s.TextureRect.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, i worker.WorkerId) bool {
+	s.TextureRect.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
 		rect := s.TextureRect.GetUnsafe(entity)
 		assert.NotNil(rect, "rect is nil; entity: %d", entity)
 		texture := s.Textures.GetUnsafe(entity)
@@ -52,7 +52,6 @@ func (s *TextureRectSystem) Run(dt time.Duration) {
 		texture.Rotation = rect.Rotation
 		texture.Origin = rect.Origin
 		texture.Tint = rect.Color
-		return true
 	})
 }
 

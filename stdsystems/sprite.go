@@ -53,7 +53,7 @@ func (s *SpriteSystem) Run() {
 	for i := range s.accRLTexturePros {
 		s.accRLTexturePros[i] = s.accRLTexturePros[i][:0]
 	}
-	s.Sprites.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
+	s.Sprites.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
 		renderOrder := s.RenderOrder.GetUnsafe(entity)
 		if renderOrder == nil {
 			s.accRenderOrder[workerId] = append(s.accRenderOrder[workerId], entity)
@@ -62,7 +62,6 @@ func (s *SpriteSystem) Run() {
 		if tr == nil {
 			s.accRLTexturePros[workerId] = append(s.accRLTexturePros[workerId], entity)
 		}
-		return true
 	})
 	for a := range s.accRenderOrder {
 		for _, entity := range s.accRenderOrder[a] {
@@ -75,7 +74,7 @@ func (s *SpriteSystem) Run() {
 		}
 	}
 
-	s.Sprites.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
+	s.Sprites.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
 		sprite := s.Sprites.GetUnsafe(entity)
 		assert.NotNil(sprite)
 
@@ -102,7 +101,6 @@ func (s *SpriteSystem) Run() {
 		tr.Dest.Width = sprite.Frame.Width
 		tr.Dest.Height = sprite.Frame.Height
 		tr.Tint = sprite.Tint
-		return true
 	})
 }
 func (s *SpriteSystem) Destroy() {}

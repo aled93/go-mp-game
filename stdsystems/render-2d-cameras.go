@@ -152,11 +152,12 @@ func (s *Render2DCamerasSystem) prepareRender(dt time.Duration) {
 }
 
 func (s *Render2DCamerasSystem) prepareAnimations() {
-	s.Textures.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
+	// TODO revert loop to process animations but not a textures?
+	s.Textures.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
 		texturePro := s.Textures.GetUnsafe(entity)
 		animation := s.AnimationPlayers.GetUnsafe(entity)
 		if animation == nil {
-			return true
+			return
 		}
 		frame := &texturePro.Frame
 		if animation.Vertical {
@@ -164,16 +165,15 @@ func (s *Render2DCamerasSystem) prepareAnimations() {
 		} else {
 			frame.X += frame.Width * float32(animation.Current)
 		}
-		return true
 	})
 }
 
 func (s *Render2DCamerasSystem) prepareFlips() {
-	s.Textures.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
+	s.Textures.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
 		texturePro := s.Textures.GetUnsafe(entity)
 		flipped := s.Flips.GetUnsafe(entity)
 		if flipped == nil {
-			return true
+			return
 		}
 		if flipped.X {
 			texturePro.Frame.Width *= -1
@@ -181,66 +181,60 @@ func (s *Render2DCamerasSystem) prepareFlips() {
 		if flipped.Y {
 			texturePro.Frame.Height *= -1
 		}
-		return true
 	})
 }
 
 func (s *Render2DCamerasSystem) preparePositions(dt time.Duration) {
 	//dts := dt.Seconds()
-	s.Textures.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
+	s.Textures.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
 		texturePro := s.Textures.GetUnsafe(entity)
 		position := s.Positions.GetUnsafe(entity)
 		if position == nil {
-			return true
+			return
 		}
 		//decay := 40.0 // DECAY IS TICKRATE DEPENDENT
 		//x := float32(s.expDecay(float64(texturePro.Dest.X), float64(position.XY.X), decay, dts))
 		//y := float32(s.expDecay(float64(texturePro.Dest.Y), float64(position.XY.Y), decay, dts))
 		texturePro.Dest.X = position.XY.X
 		texturePro.Dest.Y = position.XY.Y
-
-		return true
 	})
 }
 
 func (s *Render2DCamerasSystem) prepareRotations() {
-	s.Textures.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
+	s.Textures.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
 		texturePro := s.Textures.GetUnsafe(entity)
 		rotation := s.Rotations.GetUnsafe(entity)
 		if rotation == nil {
-			return true
+			return
 		}
 		texturePro.Rotation = float32(rotation.Degrees())
-		return true
 	})
 }
 
 func (s *Render2DCamerasSystem) prepareScales() {
-	s.Textures.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
+	s.Textures.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
 		texturePro := s.Textures.GetUnsafe(entity)
 		scale := s.Scales.GetUnsafe(entity)
 		if scale == nil {
-			return true
+			return
 		}
 		texturePro.Dest.Width *= scale.XY.X
 		texturePro.Dest.Height *= scale.XY.Y
-		return true
 	})
 }
 
 func (s *Render2DCamerasSystem) prepareTints() {
-	s.Textures.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
+	s.Textures.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
 		tr := s.Textures.GetUnsafe(entity)
 		tint := s.Tints.GetUnsafe(entity)
 		if tint == nil {
-			return true
+			return
 		}
 		trTint := &tr.Tint
 		trTint.A = tint.A
 		trTint.R = tint.R
 		trTint.G = tint.G
 		trTint.B = tint.B
-		return true
 	})
 }
 

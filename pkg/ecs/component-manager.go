@@ -40,11 +40,14 @@ type AnyComponentManagerPtr interface {
 	PatchReset()
 	IsTrackingChanges() bool
 	registerEntityManager(*EntityManager)
+	registerWorkerPool(*worker.Pool)
 }
 
 // ================
 // Service
 // ================
+
+var _ AnyComponentManagerPtr = &ComponentManager[any]{}
 
 func NewComponentManager[T any](id ComponentId) ComponentManager[T] {
 	newManager := ComponentManager[T]{
@@ -74,6 +77,8 @@ type ComponentManager[T any] struct {
 
 	id            ComponentId
 	isInitialized bool
+
+	pool *worker.Pool
 
 	// Patch
 
@@ -110,6 +115,10 @@ func (c *ComponentManager[T]) Id() ComponentId {
 func (c *ComponentManager[T]) registerEntityManager(entityManager *EntityManager) {
 	c.entityManager = entityManager
 	c.entityComponentBitSet = &entityManager.componentBitSet
+}
+
+func (c *ComponentManager[T]) registerWorkerPool(pool *worker.Pool) {
+	c.pool = pool
 }
 
 //=====================================
@@ -263,16 +272,16 @@ func (c *ComponentManager[T]) Each() func(yield func(entity Entity, component *T
 // Iterators Parallel
 // ========================================================
 
-func (c *ComponentManager[T]) EachComponentParallel(pool *worker.Pool) func(yield func(*T, worker.WorkerId) bool) {
+func (c *ComponentManager[T]) ProcessEntities(handler func(Entity, worker.WorkerId)) {
 	c.assertBegin()
 	defer c.assertEnd()
-	return c.components.EachDataParallel(pool)
+	c.entities.ProcessDataValue(handler)
 }
 
-func (c *ComponentManager[T]) EachEntityParallel(pool *worker.Pool) func(yield func(Entity, worker.WorkerId) bool) {
+func (c *ComponentManager[T]) ProcessComponents(handler func(*T, worker.WorkerId)) {
 	c.assertBegin()
 	defer c.assertEnd()
-	return c.entities.EachDataValueParallel(pool)
+	c.components.EachDataParallel(handler)
 }
 
 func (c *ComponentManager[T]) EachParallel(numWorkers int) func(yield func(Entity, *T, int) bool) {

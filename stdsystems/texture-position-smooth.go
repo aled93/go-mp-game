@@ -38,31 +38,28 @@ func (s *TexturePositionSmoothSystem) Init() {
 func (s *TexturePositionSmoothSystem) Run(dt time.Duration) {
 	//DEBUG Temporary, TODO: remove
 	if rl.IsKeyPressed(rl.KeyI) {
-		s.TexturePositionSmooth.EachComponentParallel(s.Engine.Pool())(func(t *stdcomponents.TexturePositionSmooth, i worker.WorkerId) bool {
+		s.TexturePositionSmooth.ProcessComponents(func(t *stdcomponents.TexturePositionSmooth, workerId worker.WorkerId) {
 			*t = stdcomponents.TexturePositionSmoothOff
-			return true
 		})
 	}
 	if rl.IsKeyPressed(rl.KeyO) {
-		s.TexturePositionSmooth.EachComponentParallel(s.Engine.Pool())(func(t *stdcomponents.TexturePositionSmooth, i worker.WorkerId) bool {
+		s.TexturePositionSmooth.ProcessComponents(func(t *stdcomponents.TexturePositionSmooth, workerId worker.WorkerId) {
 			*t = stdcomponents.TexturePositionSmoothLerp
-			return true
 		})
 	}
 	if rl.IsKeyPressed(rl.KeyP) {
-		s.TexturePositionSmooth.EachComponentParallel(s.Engine.Pool())(func(t *stdcomponents.TexturePositionSmooth, i worker.WorkerId) bool {
+		s.TexturePositionSmooth.ProcessComponents(func(t *stdcomponents.TexturePositionSmooth, workerId worker.WorkerId) {
 			*t = stdcomponents.TexturePositionSmoothExpDecay
-			return true
 		})
 	}
 	//END DEBUG
 
-	s.TexturePositionSmooth.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, i worker.WorkerId) bool {
+	s.TexturePositionSmooth.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
 		position := s.Position.GetUnsafe(entity)
 		texture := s.RLTexture.GetUnsafe(entity)
 		smooth := s.TexturePositionSmooth.GetUnsafe(entity)
 		if texture == nil {
-			return true
+			return
 		}
 		assert.Nil(position, "position is nil")
 
@@ -78,9 +75,8 @@ func (s *TexturePositionSmoothSystem) Run(dt time.Duration) {
 			texture.Dest.X = xy.X
 			texture.Dest.Y = xy.Y
 		default:
+			panic("not implemented")
 		}
-
-		return true
 	})
 }
 

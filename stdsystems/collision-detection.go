@@ -66,7 +66,7 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 func (s *CollisionDetectionSystem) Destroy() {}
 func (s *CollisionDetectionSystem) setup() {
 	// Reset grids
-	s.CollisionGridComponentManager.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
+	s.CollisionGridComponentManager.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
 		grid := s.CollisionGridComponentManager.GetUnsafe(entity)
 		assert.NotNil(grid)
 		grid.Entities.Reset()
@@ -74,16 +74,14 @@ func (s *CollisionDetectionSystem) setup() {
 			X: math.MaxFloat32,
 			Y: math.MaxFloat32,
 		}
-		return true
 	})
 
 	// Accumulate used CollisionLayers
 	var collisionLayerAccumulators = make([]stdcomponents.CollisionLayer, s.Engine.Pool().NumWorkers())
-	s.GenericCollider.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
+	s.GenericCollider.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
 		collider := s.GenericCollider.GetUnsafe(entity)
 		assert.NotNil(collider)
 		collisionLayerAccumulators[workerId] |= 1 << collider.Layer
-		return true
 	})
 	collisionLayerAccumulator := stdcomponents.CollisionLayer(0)
 	for _, mask := range collisionLayerAccumulators {
@@ -197,10 +195,9 @@ func (s *CollisionDetectionSystem) setup() {
 		return true
 	})
 
-	s.CollisionChunkComponentManager.EachEntityParallel(s.Engine.Pool())(func(chunkEntity ecs.Entity, workerId worker.WorkerId) bool {
+	s.CollisionChunkComponentManager.ProcessEntities(func(chunkEntity ecs.Entity, workerId worker.WorkerId) {
 		tree := s.BvhTreeComponentManager.GetUnsafe(chunkEntity)
 		assert.NotNil(tree)
 		tree.Build()
-		return true
 	})
 }

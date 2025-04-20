@@ -37,7 +37,7 @@ func (s *VelocitySystem) Init() {
 func (s *VelocitySystem) Run(dt time.Duration) {
 	dtSec := float32(dt.Seconds())
 
-	s.Velocities.EachEntityParallel(s.Engine.Pool())(func(e ecs.Entity, workerId worker.WorkerId) bool {
+	s.Velocities.ProcessEntities(func(e ecs.Entity, workerId worker.WorkerId) {
 		velocity := s.Velocities.GetUnsafe(e)
 		assert.True(s.isVelocityValid(velocity))
 
@@ -46,7 +46,6 @@ func (s *VelocitySystem) Run(dt time.Duration) {
 
 		position.XY.X += velocity.X * dtSec
 		position.XY.Y += velocity.Y * dtSec
-		return true
 	})
 }
 

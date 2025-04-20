@@ -113,14 +113,13 @@ func (s *CollisionDetectionBVHSystem) Run(dt time.Duration) {
 func (s *CollisionDetectionBVHSystem) Destroy() {}
 
 func (s *CollisionDetectionBVHSystem) findEntityCollisions() {
-	s.GenericCollider.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
+	s.GenericCollider.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
 		potentialEntities := s.broadPhase(entity, make([]ecs.Entity, 0, 64))
 		if len(potentialEntities) == 0 {
-			return true
+			return
 		}
 
 		s.narrowPhase(entity, potentialEntities, workerId)
-		return true
 	})
 }
 

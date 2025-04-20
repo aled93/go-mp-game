@@ -39,7 +39,7 @@ func (s *TextureCircleSystem) Init() {
 }
 
 func (s *TextureCircleSystem) Run(dt time.Duration) {
-	s.Circles.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, _ worker.WorkerId) bool {
+	s.Circles.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
 		circle := s.Circles.GetUnsafe(entity)
 		assert.NotNil(circle, "circle is nil; entity: %d", entity)
 		texture := s.Textures.GetUnsafe(entity)
@@ -60,7 +60,6 @@ func (s *TextureCircleSystem) Run(dt time.Duration) {
 		texture.Origin.X = circle.Origin.X + circle.Radius
 		texture.Origin.Y = circle.Origin.Y + circle.Radius
 		texture.Tint = circle.Color
-		return true
 	})
 }
 

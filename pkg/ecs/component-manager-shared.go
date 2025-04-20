@@ -53,6 +53,7 @@ type SharedComponentManager[T any] struct {
 
 	entityManager         *EntityManager
 	entityComponentBitSet *ComponentBitSet
+	pool                  *worker.Pool
 
 	id            ComponentId
 	isInitialized bool
@@ -66,6 +67,10 @@ type SharedComponentManager[T any] struct {
 
 	encoder func([]T) []byte
 	decoder func([]byte) []T
+}
+
+func (c *SharedComponentManager[T]) registerWorkerPool(pool *worker.Pool) {
+	c.pool = pool
 }
 
 func (c *SharedComponentManager[T]) PatchAdd(entity Entity) {
@@ -245,16 +250,16 @@ func (c *SharedComponentManager[T]) Each() func(yield func(Entity, *T) bool) {
 // Iterators Parallel
 // ========================================================
 
-func (c *SharedComponentManager[T]) EachComponentParallel(pool *worker.Pool) func(yield func(*T, worker.WorkerId) bool) {
+func (c *SharedComponentManager[T]) ProcessComponents(handler func(*T, worker.WorkerId)) {
 	c.assertBegin()
 	defer c.assertEnd()
-	return c.components.EachDataParallel(pool)
+	c.components.EachDataParallel(handler)
 }
 
-func (c *SharedComponentManager[T]) EachEntityParallel(pool *worker.Pool) func(yield func(Entity, worker.WorkerId) bool) {
+func (c *SharedComponentManager[T]) EachEntityParallel(handler func(Entity, worker.WorkerId)) {
 	c.assertBegin()
 	defer c.assertEnd()
-	return c.entities.EachDataValueParallel(pool)
+	c.entities.ProcessDataValue(handler)
 }
 
 func (c *SharedComponentManager[T]) EachParallel(numWorkers int) func(yield func(Entity, *T, int) bool) {

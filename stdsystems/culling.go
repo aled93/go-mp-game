@@ -48,16 +48,15 @@ func (s *CullingSystem) Run(dt time.Duration) {
 		s.accRenderVisibleDelete[i] = s.accRenderVisibleDelete[i][:0]
 	}
 
-	s.Renderables.EachComponentParallel(s.Engine.Pool())(func(r *stdcomponents.Renderable, i worker.WorkerId) bool {
+	s.Renderables.ProcessComponents(func(r *stdcomponents.Renderable, workerId worker.WorkerId) {
 		r.Observed = false
-		return true
 	})
 
 	s.Cameras.EachEntity()(func(entity ecs.Entity) bool {
 		camera := s.Cameras.GetUnsafe(entity)
 		cameraRect := camera.Rect()
 
-		s.Renderables.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
+		s.Renderables.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
 			renderable := s.Renderables.GetUnsafe(entity)
 			assert.NotNil(renderable)
 
@@ -69,12 +68,11 @@ func (s *CullingSystem) Run(dt time.Duration) {
 			if s.intersects(cameraRect, textureRect) {
 				renderable.Observed = true
 			}
-			return true
 		})
 		return true
 	})
 
-	s.Renderables.EachEntityParallel(s.Engine.Pool())(func(entity ecs.Entity, workerId worker.WorkerId) bool {
+	s.Renderables.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
 		renderable := s.Renderables.GetUnsafe(entity)
 		assert.NotNil(renderable)
 		if !s.RenderVisible.Has(entity) {
@@ -86,7 +84,6 @@ func (s *CullingSystem) Run(dt time.Duration) {
 				s.accRenderVisibleDelete[workerId] = append(s.accRenderVisibleDelete[workerId], entity)
 			}
 		}
-		return true
 	})
 	for a := range s.accRenderVisibleCreate {
 		for _, entity := range s.accRenderVisibleCreate[a] {
