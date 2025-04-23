@@ -49,6 +49,7 @@ type ComponentList struct {
 	FrameBuffer2D         stdcomponents.FrameBuffer2DComponentManager
 	CollisionGrid         stdcomponents.CollisionGridComponentManager
 	CollisionChunk        stdcomponents.CollisionChunkComponentManager
+	CollisionCell         stdcomponents.CollisionCellComponentManager
 
 	Health               components.HpComponentManager
 	Controller           components.ControllerComponentManager
@@ -98,6 +99,7 @@ func NewComponentList() ComponentList {
 		TexturePositionSmooth: stdcomponents.NewTexturePositionSmoothComponentManager(),
 		CollisionGrid:         stdcomponents.NewCollisionGridComponentManager(),
 		CollisionChunk:        stdcomponents.NewCollisionChunkComponentManager(),
+		CollisionCell:         stdcomponents.NewCollisionCellComponentManager(),
 
 		Health:               components.NewHealthComponentManager(),
 		Controller:           components.NewControllerComponentManager(),

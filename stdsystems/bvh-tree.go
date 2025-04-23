@@ -44,7 +44,8 @@ func (s *BvhTreeSystem) build(t *stdcomponents.BvhTree) {
 	t.AabbLeaves.Reset()
 	t.Codes.Reset()
 
-	var sorted = t.Components.Raw()
+	var sorted []stdcomponents.BvhComponent
+	sorted = t.Components.Raw(sorted)
 
 	slices.SortFunc(sorted, func(a, b stdcomponents.BvhComponent) int {
 		return cmp.Compare(a.Code, b.Code)

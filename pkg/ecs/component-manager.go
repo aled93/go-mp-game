@@ -9,6 +9,7 @@ Donations during this file development:
 
 <- Hininn Donated 2 000 RUB
 <- Сосисочник Паша Donated 77 RUB
+<- mitwelve Donated 1 000 RUB
 
 Thank you for your support!
 */

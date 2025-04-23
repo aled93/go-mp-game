@@ -40,12 +40,21 @@ type BvhComponent struct {
 }
 
 type BvhTree struct {
-	Nodes      ecs.Slice[BvhNode]
-	AabbNodes  ecs.Slice[AABB]
-	Leaves     ecs.Slice[BvhLeaf]
-	AabbLeaves ecs.Slice[AABB]
-	Codes      ecs.Slice[uint64]
-	Components ecs.Slice[BvhComponent]
+	Nodes      ecs.PagedArray[BvhNode]
+	AabbNodes  ecs.PagedArray[AABB]
+	Leaves     ecs.PagedArray[BvhLeaf]
+	AabbLeaves ecs.PagedArray[AABB]
+	Codes      ecs.PagedArray[uint64]
+	Components ecs.PagedArray[BvhComponent]
+}
+
+func (t *BvhTree) Init() {
+	t.Nodes = ecs.NewPagedArray[BvhNode]()
+	t.AabbNodes = ecs.NewPagedArray[AABB]()
+	t.Leaves = ecs.NewPagedArray[BvhLeaf]()
+	t.AabbLeaves = ecs.NewPagedArray[AABB]()
+	t.Codes = ecs.NewPagedArray[uint64]()
+	t.Components = ecs.NewPagedArray[BvhComponent]()
 }
 
 func (t *BvhTree) AddComponent(entity ecs.Entity, aabb AABB) {
@@ -150,7 +159,8 @@ func (t *BvhTree) Build() {
 	t.AabbLeaves.Reset()
 	t.Codes.Reset()
 
-	var sorted = t.Components.Raw()
+	var sorted []BvhComponent
+	sorted = t.Components.Raw(sorted)
 
 	slices.SortFunc(sorted, func(a, b BvhComponent) int {
 		return int(a.Code - b.Code)

@@ -49,6 +49,7 @@ type CollisionDetectionSystem struct {
 	BvhTreeComponentManager            *stdcomponents.BvhTreeComponentManager
 	CollisionGridComponentManager      *stdcomponents.CollisionGridComponentManager
 	CollisionChunkComponentManager     *stdcomponents.CollisionChunkComponentManager
+	CollisionCellComponentManager      *stdcomponents.CollisionCellComponentManager
 
 	gridLookup map[stdcomponents.CollisionLayer]ecs.Entity
 	numWorkers int
@@ -61,7 +62,6 @@ func (s *CollisionDetectionSystem) Init() {
 }
 func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 	s.setup()
-
 }
 func (s *CollisionDetectionSystem) Destroy() {}
 func (s *CollisionDetectionSystem) setup() {
@@ -93,29 +93,87 @@ func (s *CollisionDetectionSystem) setup() {
 		if collisionLayerAccumulator&(1<<i) == 0 {
 			continue
 		}
-		gridEntity, exists := s.gridLookup[stdcomponents.CollisionLayer(i)]
-		if !exists {
-			gridEntity = s.EntityManager.Create()
-			s.gridLookup[stdcomponents.CollisionLayer(i)] = gridEntity
-			s.CollisionGridComponentManager.Create(gridEntity, stdcomponents.CollisionGrid{
-				Layer:       stdcomponents.CollisionLayer(i),
-				Entities:    ecs.NewPagedArray[ecs.Entity](),
-				ChunkLookup: make(map[stdcomponents.SpatialIndex]ecs.Entity),
-				ChunkSize:   0,
-				MinBounds: vectors.Vec2{
-					X: math.MaxFloat32,
-					Y: math.MaxFloat32,
-				},
-			})
+		collisionLayer := stdcomponents.CollisionLayer(i)
+		gridEntity, exists := s.gridLookup[collisionLayer]
+		if exists {
+			continue
+		}
+
+		gridEntity = s.EntityManager.Create()
+		s.gridLookup[collisionLayer] = gridEntity
+		grid := s.CollisionGridComponentManager.Create(gridEntity, stdcomponents.CollisionGrid{
+			Layer:       collisionLayer,
+			Entities:    ecs.NewPagedArray[ecs.Entity](),
+			ChunkLookup: make(map[stdcomponents.SpatialIndex]ecs.Entity),
+			ChunkSize:   0,
+			MinBounds: vectors.Vec2{
+				X: math.MaxFloat32,
+				Y: math.MaxFloat32,
+			},
+		})
+		grid.Init(collisionLayer, s.Engine.Pool())
+	}
+
+	// Calculate cell size for each grid
+	s.BoxColliders.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
+		boxCollider := s.BoxColliders.GetUnsafe(entity)
+		assert.NotNil(boxCollider)
+
+		gridEntity := s.gridLookup[boxCollider.Layer]
+		assert.NotNil(gridEntity)
+
+		grid := s.CollisionGridComponentManager.GetUnsafe(gridEntity)
+		assert.NotNil(grid)
+
+		grid.CellSizeAccumulator[workerId] = min(grid.CellSizeAccumulator[workerId], boxCollider.WH.Length())
+	})
+	s.CircleColliders.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
+		circleCollider := s.CircleColliders.GetUnsafe(entity)
+		assert.NotNil(circleCollider)
+
+		gridEntity := s.gridLookup[circleCollider.Layer]
+		assert.NotNil(gridEntity)
+
+		grid := s.CollisionGridComponentManager.GetUnsafe(gridEntity)
+		assert.NotNil(grid)
+
+		grid.CellSizeAccumulator[workerId] = min(grid.CellSizeAccumulator[workerId], circleCollider.Radius*2)
+	})
+	s.CollisionGridComponentManager.EachEntity()(func(entity ecs.Entity) bool {
+		grid := s.CollisionGridComponentManager.GetUnsafe(entity)
+		assert.NotNil(grid)
+
+		for i := range grid.CellSizeAccumulator {
+			grid.CellSize = min(grid.CellSize, grid.CellSizeAccumulator[i])
+		}
+		grid.CellSize *= 32
+		return true
+	})
+
+	// Create spatial hash components
+	var spatialHashAccumulator = make([][]ecs.Entity, s.Engine.Pool().NumWorkers())
+	s.GenericCollider.ProcessEntities(func(entity ecs.Entity, id worker.WorkerId) {
+		if s.SpatialIndex.Has(entity) {
+			return
+		}
+
+		spatialHashAccumulator[id] = append(spatialHashAccumulator[id], entity)
+	})
+	for i := range spatialHashAccumulator {
+		acc := spatialHashAccumulator[i]
+		for j := range acc {
+			entity := acc[j]
+			s.SpatialIndex.Create(entity, stdcomponents.SpatialIndex{})
 		}
 	}
 
-	// Register all entities in grids
-	s.GenericCollider.EachEntity()(func(entity ecs.Entity) bool {
+	// Calculate spatial index for each entity
+	s.GenericCollider.ProcessEntities(func(entity ecs.Entity, id worker.WorkerId) {
 		collider := s.GenericCollider.GetUnsafe(entity)
 		assert.NotNil(collider)
 
-		gridEntity := s.gridLookup[collider.Layer]
+		gridEntity, ok := s.gridLookup[collider.Layer]
+		assert.True(ok)
 
 		grid := s.CollisionGridComponentManager.GetUnsafe(gridEntity)
 		assert.NotNil(grid)
@@ -123,81 +181,130 @@ func (s *CollisionDetectionSystem) setup() {
 		position := s.Positions.GetUnsafe(entity)
 		assert.NotNil(position)
 
-		aabb := s.AABB.GetUnsafe(entity)
-		assert.NotNil(aabb)
+		spatialIndex := s.SpatialIndex.GetUnsafe(entity)
+		assert.NotNil(spatialIndex)
 
-		grid.RegisterEntity(entity, aabb)
-
-		return true
+		newIndex := grid.GetSpatialIndex(position.XY)
+		spatialIndex.X = newIndex.X
+		spatialIndex.Y = newIndex.Y
 	})
 
-	// Distribute entities in grids
-	s.CollisionGridComponentManager.EachEntity()(func(gridEntity ecs.Entity) bool {
+	s.GenericCollider.ProcessEntities(func(entity ecs.Entity, id worker.WorkerId) {
+		collider := s.GenericCollider.GetUnsafe(entity)
+		assert.NotNil(collider)
+
+		gridEntity, ok := s.gridLookup[collider.Layer]
+		assert.True(ok)
+
 		grid := s.CollisionGridComponentManager.GetUnsafe(gridEntity)
 		assert.NotNil(grid)
 
-		const chunkScaleFactor = 32
-		newChunkSize := grid.MinBounds.Length() * chunkScaleFactor
-		newChunkSize = float32(min(int(1)<<(ecs.FastIntLog2(int(newChunkSize))+1), 65535))
-		if newChunkSize != grid.ChunkSize {
-			for i, c := range grid.ChunkLookup {
-				s.EntityManager.Delete(c)
-				delete(grid.ChunkLookup, i)
-			}
+		spatialIndex := s.SpatialIndex.GetUnsafe(entity)
+		assert.NotNil(spatialIndex)
 
-			grid.ChunkSize = newChunkSize
+		_, exists := grid.CellLookup[*spatialIndex]
+		if exists {
+			return
 		}
 
-		grid.Entities.EachDataValue()(func(entity ecs.Entity) bool {
-			position := s.Positions.GetUnsafe(entity)
-			assert.NotNil(position)
+		grid.CellAccumulator[id][*spatialIndex] = struct{}{}
+	})
 
-			spatialIndex := grid.GetSpatialIndex(position.XY)
-			chunkEntity, exists := grid.ChunkLookup[spatialIndex]
-			if !exists {
-				chunkEntity = s.EntityManager.Create()
-				grid.ChunkLookup[spatialIndex] = chunkEntity
-				s.CollisionChunkComponentManager.Create(chunkEntity, stdcomponents.CollisionChunk{
-					Size:  grid.ChunkSize,
-					Layer: grid.Layer,
+	// Create cells
+	s.CollisionGridComponentManager.ProcessEntities(func(entity ecs.Entity, id worker.WorkerId) {
+		grid := s.CollisionGridComponentManager.GetUnsafe(entity)
+		assert.NotNil(grid)
+
+		for i := range grid.CellAccumulator {
+			for spatialIndex := range grid.CellAccumulator[i] {
+				cellEntity := s.EntityManager.Create()
+				grid.Cells.Append(cellEntity)
+				grid.CellLookup[spatialIndex] = grid.Cells.Len() - 1
+				collisionCell := s.CollisionCellComponentManager.Create(cellEntity, stdcomponents.CollisionCell{})
+				collisionCell.Init(grid.CellSize, grid.Layer, s.Engine.Pool())
+				position := s.Positions.Create(cellEntity, stdcomponents.Position{
+					XY: spatialIndex.ToVec2().Scale(grid.CellSize),
 				})
-				chunkPos := s.Positions.Create(chunkEntity, stdcomponents.Position{
-					XY: spatialIndex.ToVec2().Scale(grid.ChunkSize),
-				})
-				assert.NotNil(chunkPos)
-				s.BvhTreeComponentManager.Create(chunkEntity, stdcomponents.BvhTree{
-					Nodes:      ecs.NewSlice[stdcomponents.BvhNode](64),
-					AabbNodes:  ecs.NewSlice[stdcomponents.AABB](64),
-					Leaves:     ecs.NewSlice[stdcomponents.BvhLeaf](64),
-					AabbLeaves: ecs.NewSlice[stdcomponents.AABB](64),
-					Codes:      ecs.NewSlice[uint64](64),
-					Components: ecs.NewSlice[stdcomponents.BvhComponent](64),
+				assert.NotNil(position)
+				s.BvhTreeComponentManager.Create(cellEntity, stdcomponents.BvhTree{
+					Nodes:      ecs.NewPagedArray[stdcomponents.BvhNode](),
+					AabbNodes:  ecs.NewPagedArray[stdcomponents.AABB](),
+					Leaves:     ecs.NewPagedArray[stdcomponents.BvhLeaf](),
+					AabbLeaves: ecs.NewPagedArray[stdcomponents.AABB](),
+					Codes:      ecs.NewPagedArray[uint64](),
+					Components: ecs.NewPagedArray[stdcomponents.BvhComponent](),
 				})
 				const colorbase int = 120
-				s.Tints.Create(chunkEntity, color.RGBA{
+				s.Tints.Create(cellEntity, color.RGBA{
 					R: uint8(colorbase + rand.Intn(255-colorbase)),
 					G: uint8(colorbase + rand.Intn(255-colorbase)),
 					B: uint8(colorbase + rand.Intn(255-colorbase)),
 					A: 70,
 				})
 			}
-
-			tree := s.BvhTreeComponentManager.GetUnsafe(chunkEntity)
-			assert.NotNil(tree)
-
-			aabb := s.AABB.GetUnsafe(entity)
-			assert.NotNil(aabb)
-
-			tree.AddComponent(entity, *aabb)
-
-			return true
-		})
-		return true
+			grid.CellAccumulator[i] = make(map[stdcomponents.SpatialIndex]struct{})
+		}
 	})
 
-	s.CollisionChunkComponentManager.ProcessEntities(func(chunkEntity ecs.Entity, workerId worker.WorkerId) {
-		tree := s.BvhTreeComponentManager.GetUnsafe(chunkEntity)
-		assert.NotNil(tree)
-		tree.Build()
+	// Distribute entities in grid cells
+	s.GenericCollider.ProcessEntities(func(entity ecs.Entity, id worker.WorkerId) {
+		collider := s.GenericCollider.GetUnsafe(entity)
+		assert.NotNil(collider)
+
+		gridEntity, ok := s.gridLookup[collider.Layer]
+		assert.True(ok)
+
+		grid := s.CollisionGridComponentManager.GetUnsafe(gridEntity)
+		assert.NotNil(grid)
+
+		spatialIndex := s.SpatialIndex.GetUnsafe(entity)
+		assert.NotNil(spatialIndex)
+
+		cellEntityLookup, exists := grid.CellLookup[*spatialIndex]
+		assert.True(exists)
+		cellEntity := grid.Cells.GetValue(cellEntityLookup)
+
+		cell := s.CollisionCellComponentManager.GetUnsafe(cellEntity)
+		assert.NotNil(cell)
+
+		_, exists = cell.MemberLookup.Get(entity)
+		if exists {
+			return
+		}
+		cell.InputAccumulator[id].Append(entity)
 	})
+
+	// Build grid cells
+	s.CollisionCellComponentManager.ProcessComponents(func(cell *stdcomponents.CollisionCell, id worker.WorkerId) {
+		for i := range cell.InputAccumulator {
+			for e := range cell.InputAccumulator[i].EachDataValue() {
+				cell.AddMember(e)
+			}
+			cell.InputAccumulator[i].Reset()
+		}
+	})
+
+	// Build bvh trees
+	//s.CollisionCellComponentManager.ProcessEntities(func(entity ecs.Entity, id worker.WorkerId) {
+	//	cell := s.CollisionCellComponentManager.GetUnsafe(entity)
+	//	assert.NotNil(cell)
+	//
+	//	bvhTree := s.BvhTreeComponentManager.GetUnsafe(entity)
+	//	assert.NotNil(bvhTree)
+	//
+	//	for i := range cell.InputAccumulator {
+	//		for e := range cell.InputAccumulator[i].EachDataValue() {
+	//			aabb := s.AABB.GetUnsafe(e)
+	//			assert.NotNil(aabb)
+	//			bvhTree.AddComponent(e, *aabb)
+	//		}
+	//		cell.InputAccumulator[i].Reset()
+	//	}
+	//})
+	//s.CollisionCellComponentManager.ProcessEntities(func(entity ecs.Entity, id worker.WorkerId) {
+	//	bvhTree := s.BvhTreeComponentManager.GetUnsafe(entity)
+	//	assert.NotNil(bvhTree)
+	//
+	//	bvhTree.Build()
+	//})
 }

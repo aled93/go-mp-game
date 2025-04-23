@@ -7,9 +7,9 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package ecs
 
 const (
-	pageSizeShift   = 11
+	pageSizeShift   = 10
 	pageSize        = 1 << pageSizeShift
-	initialBookSize = 2 // Starting with a small initial book size
+	initialBookSize = 1 // Starting with a small initial book size
 )
 
 type PagedMap[K Entity | SharedComponentInstanceId, V any] struct {

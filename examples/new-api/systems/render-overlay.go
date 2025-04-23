@@ -37,6 +37,7 @@ type RenderOverlaySystem struct {
 	Cameras                            *stdcomponents.CameraComponentManager
 	FrameBuffer2D                      *stdcomponents.FrameBuffer2DComponentManager
 	CollisionChunks                    *stdcomponents.CollisionChunkComponentManager
+	CollisionCells                     *stdcomponents.CollisionCellComponentManager
 	Tints                              *stdcomponents.TintComponentManager
 	BvhTrees                           *stdcomponents.BvhTreeComponentManager
 	Positions                          *stdcomponents.PositionComponentManager
@@ -101,6 +102,54 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 				rl.BeginMode2D(camera.Camera2D)
 
 				cameraRect := camera.Rect()
+				s.CollisionCells.EachEntity()(func(e ecs.Entity) bool {
+					cell := s.CollisionCells.GetUnsafe(e)
+					assert.NotNil(cell)
+
+					if cell.Layer != stdcomponents.CollisionLayer(s.debugLvl) {
+						return true
+					}
+
+					tint := s.Tints.GetUnsafe(e)
+					assert.NotNil(tint)
+
+					position := s.Positions.GetUnsafe(e)
+					assert.NotNil(position)
+
+					tree := s.BvhTrees.GetUnsafe(e)
+					assert.NotNil(tree)
+
+					tree.AabbNodes.EachData()(func(a *stdcomponents.AABB) bool {
+						// Simple AABB culling
+						if s.intersects(cameraRect, a.Rect()) {
+							rl.DrawRectangleRec(rl.Rectangle{
+								X:      a.Min.X,
+								Y:      a.Min.Y,
+								Width:  a.Max.X - a.Min.X,
+								Height: a.Max.Y - a.Min.Y,
+							}, *tint)
+						}
+						return true
+					})
+
+					clr := color.RGBA{
+						R: tint.R,
+						G: tint.G,
+						B: tint.B,
+						A: 255,
+					}
+
+					// Simple AABB culling
+					if s.intersects(cameraRect, vectors.Rectangle{
+						X:      position.XY.X,
+						Y:      position.XY.Y,
+						Width:  cell.Size,
+						Height: cell.Size,
+					}) {
+						rl.DrawRectangleLines(int32(position.XY.X), int32(position.XY.Y), int32(cell.Size), int32(cell.Size), clr)
+					}
+					return true
+				})
 				s.CollisionChunks.EachEntity()(func(e ecs.Entity) bool {
 					chunk := s.CollisionChunks.GetUnsafe(e)
 					assert.NotNil(chunk)

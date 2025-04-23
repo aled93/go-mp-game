@@ -41,6 +41,7 @@ const (
 	RigidBodyComponentId
 	BvhTreeComponentId
 	CollisionGridComponentId
+	CollisionCellComponentId
 	CollisionChunkComponentId
 	FrameBuffer2DComponentId
 	CameraComponentId

@@ -54,12 +54,10 @@ func (s *SpriteSystem) Run() {
 		s.accRLTexturePros[i] = s.accRLTexturePros[i][:0]
 	}
 	s.Sprites.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
-		renderOrder := s.RenderOrder.GetUnsafe(entity)
-		if renderOrder == nil {
+		if !s.RenderOrder.Has(entity) {
 			s.accRenderOrder[workerId] = append(s.accRenderOrder[workerId], entity)
 		}
-		tr := s.RLTexturePros.GetUnsafe(entity)
-		if tr == nil {
+		if !s.RLTexturePros.Has(entity) {
 			s.accRLTexturePros[workerId] = append(s.accRLTexturePros[workerId], entity)
 		}
 	})
@@ -74,33 +72,34 @@ func (s *SpriteSystem) Run() {
 		}
 	}
 
-	s.Sprites.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
-		sprite := s.Sprites.GetUnsafe(entity)
-		assert.NotNil(sprite)
-
-		position := s.Positions.GetUnsafe(entity)
-		assert.NotNil(position)
-
-		scale := s.Scales.GetUnsafe(entity)
-		assert.NotNil(scale)
-
-		renderOrder := s.RenderOrder.GetUnsafe(entity)
-		assert.NotNil(renderOrder)
-
-		tr := s.RLTexturePros.GetUnsafe(entity)
-		assert.NotNil(tr)
-
-		tr.Texture = sprite.Texture
-		tr.Frame = sprite.Frame
-		tr.Origin = rl.Vector2{
-			X: sprite.Origin.X * scale.XY.X,
-			Y: sprite.Origin.Y * scale.XY.Y,
-		}
-		tr.Dest.X = position.XY.X
-		tr.Dest.Y = position.XY.Y
-		tr.Dest.Width = sprite.Frame.Width
-		tr.Dest.Height = sprite.Frame.Height
-		tr.Tint = sprite.Tint
-	})
+	s.Sprites.ProcessEntities(s.updateTextureRender)
 }
 func (s *SpriteSystem) Destroy() {}
+func (s *SpriteSystem) updateTextureRender(entity ecs.Entity, workerId worker.WorkerId) {
+	sprite := s.Sprites.GetUnsafe(entity)
+	assert.NotNil(sprite)
+
+	position := s.Positions.GetUnsafe(entity)
+	assert.NotNil(position)
+
+	scale := s.Scales.GetUnsafe(entity)
+	assert.NotNil(scale)
+
+	renderOrder := s.RenderOrder.GetUnsafe(entity)
+	assert.NotNil(renderOrder)
+
+	tr := s.RLTexturePros.GetUnsafe(entity)
+	assert.NotNil(tr)
+
+	tr.Texture = sprite.Texture
+	tr.Frame = sprite.Frame
+	tr.Origin = rl.Vector2{
+		X: sprite.Origin.X * scale.XY.X,
+		Y: sprite.Origin.Y * scale.XY.Y,
+	}
+	tr.Dest.X = position.XY.X
+	tr.Dest.Y = position.XY.Y
+	tr.Dest.Width = sprite.Frame.Width
+	tr.Dest.Height = sprite.Frame.Height
+	tr.Tint = sprite.Tint
+}
