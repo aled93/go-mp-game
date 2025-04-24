@@ -66,7 +66,7 @@ func (g *Game) Init(engine *core.Engine) {
 
 		systems.ColliderSystem.Init()
 		systems.Velocity.Init()
-		systems.CollisionDetection.Init()
+		systems.CollisionSetup.Init()
 		systems.CollisionDetectionBVH.Init()
 		systems.CollisionResolution.Init()
 		systems.AnimationSpriteMatrix.Init()
@@ -104,8 +104,8 @@ func (g *Game) FixedUpdate(dt time.Duration) {
 
 		systems.Velocity.Run(dt)
 		systems.ColliderSystem.Run(dt)
-		//systems.CollisionDetection.Run(dt)
-		systems.CollisionDetectionBVH.Run(dt)
+		systems.CollisionSetup.Run(dt)
+		//systems.CollisionDetectionBVH.Run(dt)
 		systems.CollisionResolution.Run(dt)
 
 		scene.FixedUpdate(dt)
@@ -145,7 +145,7 @@ func (g *Game) Destroy() {
 		scene.Destroy()
 
 		systems.Velocity.Destroy()
-		systems.CollisionDetection.Destroy()
+		systems.CollisionSetup.Destroy()
 		systems.CollisionDetectionBVH.Destroy()
 		systems.CollisionResolution.Destroy()
 		systems.AnimationSpriteMatrix.Destroy()

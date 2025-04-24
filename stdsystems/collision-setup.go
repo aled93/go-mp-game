@@ -24,15 +24,14 @@ import (
 	"image/color"
 	"math"
 	"math/rand"
-	"runtime"
 	"time"
 )
 
-func NewCollisionDetectionSystem() CollisionDetectionSystem {
-	return CollisionDetectionSystem{}
+func NewCollisionSetupSystem() CollisionSetupSystem {
+	return CollisionSetupSystem{}
 }
 
-type CollisionDetectionSystem struct {
+type CollisionSetupSystem struct {
 	EntityManager                      *ecs.EntityManager
 	Positions                          *stdcomponents.PositionComponentManager
 	Rotations                          *stdcomponents.RotationComponentManager
@@ -52,19 +51,13 @@ type CollisionDetectionSystem struct {
 	CollisionCellComponentManager      *stdcomponents.CollisionCellComponentManager
 
 	gridLookup map[stdcomponents.CollisionLayer]ecs.Entity
-	numWorkers int
 	Engine     *core.Engine
 }
 
-func (s *CollisionDetectionSystem) Init() {
+func (s *CollisionSetupSystem) Init() {
 	s.gridLookup = make(map[stdcomponents.CollisionLayer]ecs.Entity)
-	s.numWorkers = runtime.NumCPU() - 2
 }
-func (s *CollisionDetectionSystem) Run(dt time.Duration) {
-	s.setup()
-}
-func (s *CollisionDetectionSystem) Destroy() {}
-func (s *CollisionDetectionSystem) setup() {
+func (s *CollisionSetupSystem) Run(dt time.Duration) {
 	// Reset grids
 	s.CollisionGridComponentManager.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
 		grid := s.CollisionGridComponentManager.GetUnsafe(entity)
@@ -274,37 +267,40 @@ func (s *CollisionDetectionSystem) setup() {
 		cell.InputAccumulator[id].Append(entity)
 	})
 
-	// Build grid cells
-	s.CollisionCellComponentManager.ProcessComponents(func(cell *stdcomponents.CollisionCell, id worker.WorkerId) {
-		for i := range cell.InputAccumulator {
-			for e := range cell.InputAccumulator[i].EachDataValue() {
-				cell.AddMember(e)
-			}
-			cell.InputAccumulator[i].Reset()
-		}
-	})
-
-	// Build bvh trees
-	//s.CollisionCellComponentManager.ProcessEntities(func(entity ecs.Entity, id worker.WorkerId) {
-	//	cell := s.CollisionCellComponentManager.GetUnsafe(entity)
-	//	assert.NotNil(cell)
-	//
-	//	bvhTree := s.BvhTreeComponentManager.GetUnsafe(entity)
-	//	assert.NotNil(bvhTree)
-	//
+	//Build grid cells
+	//s.CollisionCellComponentManager.ProcessComponents(func(cell *stdcomponents.CollisionCell, id worker.WorkerId) {
 	//	for i := range cell.InputAccumulator {
 	//		for e := range cell.InputAccumulator[i].EachDataValue() {
-	//			aabb := s.AABB.GetUnsafe(e)
-	//			assert.NotNil(aabb)
-	//			bvhTree.AddComponent(e, *aabb)
+	//			cell.AddMember(e)
 	//		}
 	//		cell.InputAccumulator[i].Reset()
 	//	}
 	//})
-	//s.CollisionCellComponentManager.ProcessEntities(func(entity ecs.Entity, id worker.WorkerId) {
-	//	bvhTree := s.BvhTreeComponentManager.GetUnsafe(entity)
-	//	assert.NotNil(bvhTree)
-	//
-	//	bvhTree.Build()
-	//})
+
+	//Build bvh trees
+	s.CollisionCellComponentManager.ProcessEntities(func(entity ecs.Entity, id worker.WorkerId) {
+		cell := s.CollisionCellComponentManager.GetUnsafe(entity)
+		assert.NotNil(cell)
+
+		bvhTree := s.BvhTreeComponentManager.GetUnsafe(entity)
+		assert.NotNil(bvhTree)
+
+		for i := range cell.InputAccumulator {
+			for e := range cell.InputAccumulator[i].EachDataValue() {
+				aabb := s.AABB.GetUnsafe(e)
+				assert.NotNil(aabb)
+				bvhTree.AddComponent(e, *aabb)
+			}
+			cell.InputAccumulator[i].Reset()
+		}
+	})
+	s.CollisionCellComponentManager.ProcessEntities(func(entity ecs.Entity, id worker.WorkerId) {
+		bvhTree := s.BvhTreeComponentManager.GetUnsafe(entity)
+		assert.NotNil(bvhTree)
+
+		bvhTree.Build()
+	})
+}
+func (s *CollisionSetupSystem) Destroy() {
+	s.gridLookup = nil
 }
