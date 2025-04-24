@@ -81,10 +81,10 @@ func (t *BvhTree) Query(aabb AABB, result []ecs.Entity) []ecs.Entity {
 	for stackLen > 0 {
 		stackLen--
 		nodeIndex := int(stack[stackLen])
-		a := t.AabbNodes.GetValue(nodeIndex)
+		a := t.AabbNodes.Get(nodeIndex)
 
 		// Early exit if no AABB overlap
-		if !t.aabbOverlap(a, aabb) {
+		if !t.aabbOverlap(*a, aabb) {
 			continue
 		}
 
@@ -92,8 +92,8 @@ func (t *BvhTree) Query(aabb AABB, result []ecs.Entity) []ecs.Entity {
 		if node.ChildIndex <= 0 {
 			// Is a leaf
 			index := -int(node.ChildIndex)
-			leafAabb := t.AabbLeaves.GetValue(index)
-			if t.aabbOverlap(leafAabb, aabb) {
+			leafAabb := t.AabbLeaves.Get(index)
+			if t.aabbOverlap(*leafAabb, aabb) {
 				result = append(result, t.Leaves.Get(index).Id)
 			}
 			continue
