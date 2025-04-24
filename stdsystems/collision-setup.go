@@ -27,6 +27,10 @@ import (
 	"time"
 )
 
+const (
+	collidersPerCell = 64
+)
+
 func NewCollisionSetupSystem() CollisionSetupSystem {
 	return CollisionSetupSystem{}
 }
@@ -139,7 +143,7 @@ func (s *CollisionSetupSystem) Run(dt time.Duration) {
 		for i := range grid.CellSizeAccumulator {
 			grid.CellSize = min(grid.CellSize, grid.CellSizeAccumulator[i])
 		}
-		grid.CellSize *= 32
+		grid.CellSize *= collidersPerCell
 		return true
 	})
 

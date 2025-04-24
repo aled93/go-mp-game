@@ -22,13 +22,13 @@ import (
 )
 
 type CollisionGrid struct {
-	Layer       CollisionLayer              // Layer of the grid
 	Entities    ecs.PagedArray[ecs.Entity]  // List of Entities in the grid
 	ChunkLookup map[SpatialIndex]ecs.Entity // Pointer to cell
 	ChunkSize   float32
 	MinBounds   vectors.Vec2
 
 	// NEW API
+	Layer               CollisionLayer              // Layer of the grid
 	Cells               ecs.PagedArray[ecs.Entity]  // List of Cells in the grid
 	CellLookup          map[SpatialIndex]int        // Index to cell in Cells
 	CellSizeAccumulator []float32                   // Accumulator for cell size
@@ -47,6 +47,28 @@ func (g *CollisionGrid) Init(collisionLayer CollisionLayer, pool *worker.Pool) {
 		g.CellSizeAccumulator[i] = math.MaxFloat32
 		g.CellAccumulator[i] = make(map[SpatialIndex]struct{})
 	}
+}
+
+// Query returns the EntityIds of Cells that intersect the AABB
+func (g *CollisionGrid) Query(bb AABB, result []ecs.Entity) []ecs.Entity {
+	// get spatial index of aabb
+	minSpatialIndex := g.GetSpatialIndex(bb.Min)
+	maxSpatialIndex := g.GetSpatialIndex(bb.Max)
+	// make a list of all spatial indexes that intersect the aabb
+	// get cells that intersect the aabb by spatial indexes
+	for i := minSpatialIndex.X; i <= maxSpatialIndex.X; i++ {
+		for j := minSpatialIndex.Y; j <= maxSpatialIndex.Y; j++ {
+			spatialIndex := SpatialIndex{X: i, Y: j}
+			cellIndex, exists := g.CellLookup[spatialIndex]
+			if !exists {
+				continue
+
+			}
+			cell := g.Cells.GetValue(cellIndex)
+			result = append(result, cell)
+		}
+	}
+	return result
 }
 
 func (g *CollisionGrid) RegisterEntity(entity ecs.Entity, aabb *AABB) {

@@ -66,7 +66,7 @@ func (t *BvhTree) AddComponent(entity ecs.Entity, aabb AABB) {
 	})
 }
 
-func (t *BvhTree) Query(aabb *AABB, result []ecs.Entity) []ecs.Entity {
+func (t *BvhTree) Query(aabb AABB, result []ecs.Entity) []ecs.Entity {
 	if t.Nodes.Len() == 0 { // Handle empty tree
 		return result
 	}
@@ -79,11 +79,10 @@ func (t *BvhTree) Query(aabb *AABB, result []ecs.Entity) []ecs.Entity {
 	for stackLen > 0 {
 		stackLen--
 		nodeIndex := int(stack[stackLen])
-		a := t.AabbNodes.Get(nodeIndex)
-		b := aabb
+		a := t.AabbNodes.GetValue(nodeIndex)
 
 		// Early exit if no AABB overlap
-		if !t.aabbOverlap(a, b) {
+		if !t.aabbOverlap(a, aabb) {
 			continue
 		}
 
@@ -91,7 +90,7 @@ func (t *BvhTree) Query(aabb *AABB, result []ecs.Entity) []ecs.Entity {
 		if node.ChildIndex <= 0 {
 			// Is a leaf
 			index := -int(node.ChildIndex)
-			leafAabb := t.AabbLeaves.Get(index)
+			leafAabb := t.AabbLeaves.GetValue(index)
 			if t.aabbOverlap(leafAabb, aabb) {
 				result = append(result, t.Leaves.Get(index).Id)
 			}
@@ -108,7 +107,7 @@ func (t *BvhTree) Query(aabb *AABB, result []ecs.Entity) []ecs.Entity {
 }
 
 // go:inline aabbOverlap checks if two AABB intersect
-func (t *BvhTree) aabbOverlap(a, b *AABB) bool {
+func (t *BvhTree) aabbOverlap(a, b AABB) bool {
 	return a.Max.X >= b.Min.X && a.Min.X <= b.Max.X &&
 		a.Max.Y >= b.Min.Y && a.Min.Y <= b.Max.Y
 }

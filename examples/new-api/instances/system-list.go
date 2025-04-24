@@ -35,10 +35,11 @@ func NewSystemList() SystemList {
 		SpriteMatrix:             stdsystems.NewSpriteMatrixSystem(),
 		AssetLib:                 stdsystems.NewAssetLibSystem([]gomp.AnyAssetLibrary{&assets.Textures, &assets.Audio}),
 		YSort:                    stdsystems.NewYSortSystem(),
-		CollisionSetup:           stdsystems.NewCollisionSetupSystem(),
 		CollisionDetectionGrid:   stdsystems.NewCollisionDetectionGridSystem(),
 		CollisionDetectionBVH:    stdsystems.NewCollisionDetectionBVHSystem(),
 		ColliderSystem:           stdsystems.NewColliderSystem(),
+		CollisionSetup:           stdsystems.NewCollisionSetupSystem(),
+		CollisionDetection:       stdsystems.NewCollisionDetectionSystem(),
 		CollisionResolution:      stdsystems.NewCollisionResolutionSystem(),
 		TexturePositionSmooth:    stdsystems.NewTexturePositionSmoothSystem(),
 		RenderCameras:            stdsystems.NewRender2DCamerasSystem(),
@@ -81,6 +82,7 @@ type SystemList struct {
 	CollisionDetectionBVH    stdsystems.CollisionDetectionBVHSystem
 	ColliderSystem           stdsystems.ColliderSystem
 	CollisionSetup           stdsystems.CollisionSetupSystem
+	CollisionDetection       stdsystems.CollisionDetectionSystem
 	CollisionResolution      stdsystems.CollisionResolutionSystem
 	TexturePositionSmooth    stdsystems.TexturePositionSmoothSystem
 	RenderCameras            stdsystems.Render2DCamerasSystem
