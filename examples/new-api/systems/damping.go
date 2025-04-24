@@ -25,15 +25,15 @@ type DampingSystem struct {
 func (s *DampingSystem) Init() {}
 
 func (s *DampingSystem) Run(dt time.Duration) {
-	dampingFactor := float32(0.98) // Damping factor for velocity
+	//dampingFactor := float32(0.98) // Damping factor for velocity
 
 	s.Velocities.EachEntity()(func(e ecs.Entity) bool {
 		velocity := s.Velocities.GetUnsafe(e)
 		rigidbody := s.RigidBodies.GetUnsafe(e)
 
 		if rigidbody != nil && !rigidbody.IsStatic {
-			velocity.X *= dampingFactor
-			velocity.Y *= dampingFactor
+			//velocity.X *= dampingFactor
+			//velocity.Y *= dampingFactor
 			if velocity.X < 0.1 && velocity.X > -0.1 {
 				velocity.X = 0
 			}

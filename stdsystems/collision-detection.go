@@ -57,7 +57,7 @@ type CollisionDetectionSystem struct {
 func (s *CollisionDetectionSystem) Init() {
 	s.gridLookup = make(map[stdcomponents.CollisionLayer]*stdcomponents.CollisionGrid)
 	s.collisionEventAcc = make([]ecs.PagedArray[CollisionEvent], s.Engine.Pool().NumWorkers())
-	for i := 0; i < s.Engine.Pool().NumWorkers(); i++ {
+	for i := 0; i < len(s.collisionEventAcc); i++ {
 		s.collisionEventAcc[i] = ecs.NewPagedArray[CollisionEvent]()
 	}
 	s.activeCollisions = make(map[CollisionPair]ecs.Entity)
@@ -85,6 +85,10 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 
 	s.registerCollisionEvents()
 	s.processExitStates()
+
+	for i := 0; i < len(s.collisionEventAcc); i++ {
+		s.collisionEventAcc[i].Reset()
+	}
 }
 func (s *CollisionDetectionSystem) Destroy() {
 	s.collisionEventAcc = nil

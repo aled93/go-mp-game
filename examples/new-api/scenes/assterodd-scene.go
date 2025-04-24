@@ -93,7 +93,7 @@ func (s *AssteroddScene) Update(dt time.Duration) gomp.SceneId {
 func (s *AssteroddScene) FixedUpdate(dt time.Duration) {
 	s.World.Systems.SpaceshipIntents.Run(dt)
 	s.World.Systems.DampingSystem.Run(dt)
-	s.World.Systems.SpaceSpawner.Run(dt)
+	//s.World.Systems.SpaceSpawner.Run(dt)
 	s.World.Systems.CollisionHandler.Run(dt)
 	s.World.Systems.Hp.Run(dt)
 }

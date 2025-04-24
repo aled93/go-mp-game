@@ -15,6 +15,7 @@ Thank you for your support!
 package stdsystems
 
 import (
+	"github.com/negrel/assert"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"gomp/vectors"
@@ -70,11 +71,9 @@ func (s *CollisionResolutionSystem) Run(dt time.Duration) {
 
 			// Apply impulse resolution
 			velocity1 := s.Velocities.GetUnsafe(collision.E1)
+			assert.NotNil(velocity1)
 			velocity2 := s.Velocities.GetUnsafe(collision.E2)
-
-			if velocity1 == nil || velocity2 == nil {
-				return true
-			}
+			assert.NotNil(velocity2)
 
 			relativeVelocity := velocity2.Vec2().Sub(velocity1.Vec2())
 			velocityAlongNormal := relativeVelocity.Dot(collision.Normal)

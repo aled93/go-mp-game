@@ -164,11 +164,11 @@ func (s *CollisionHandlerSystem) checkBulletCollisionEnter(e1, e2 ecs.Entity) bo
 			bulletHp.Hp -= 1
 			return true
 		}
-		wallTag := s.WallTags.GetUnsafe(e2)
-		if wallTag != nil {
-			bulletHp.Hp = 0
-			return true
-		}
+		//wallTag := s.WallTags.GetUnsafe(e2)
+		//if wallTag != nil {
+		//	bulletHp.Hp = 0
+		//	return true
+		//}
 	} else if e2Tag != nil {
 		// this is a bullet
 		bulletHp := s.Hps.GetUnsafe(e2)

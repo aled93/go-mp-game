@@ -15,14 +15,13 @@ Thank you for your support!
 package stdcomponents
 
 import (
-	"github.com/negrel/assert"
 	"gomp/pkg/ecs"
 	"gomp/pkg/worker"
 )
 
 type CollisionCell struct {
-	Members      ecs.PagedArray[ecs.Entity]
-	MemberLookup ecs.PagedMap[ecs.Entity, int]
+	//Members      ecs.PagedArray[ecs.Entity]
+	//MemberLookup ecs.PagedMap[ecs.Entity, int]
 
 	InputAccumulator []ecs.PagedArray[ecs.Entity]
 	Size             float32
@@ -30,8 +29,8 @@ type CollisionCell struct {
 }
 
 func (c *CollisionCell) Init(size float32, layer CollisionLayer, pool *worker.Pool) {
-	c.Members = ecs.NewPagedArray[ecs.Entity]()
-	c.MemberLookup = ecs.NewPagedMap[ecs.Entity, int]()
+	//c.Members = ecs.NewPagedArray[ecs.Entity]()
+	//c.MemberLookup = ecs.NewPagedMap[ecs.Entity, int]()
 	c.InputAccumulator = make([]ecs.PagedArray[ecs.Entity], pool.NumWorkers())
 	for i := 0; i < pool.NumWorkers(); i++ {
 		c.InputAccumulator[i] = ecs.NewPagedArray[ecs.Entity]()
@@ -40,18 +39,18 @@ func (c *CollisionCell) Init(size float32, layer CollisionLayer, pool *worker.Po
 	c.Layer = layer
 }
 
-func (c *CollisionCell) AddMember(entity ecs.Entity) {
-	c.Members.Append(entity)
-	c.MemberLookup.Set(entity, c.Members.Len()-1)
-}
-
-func (c *CollisionCell) RemoveMember(entity ecs.Entity) {
-	index, ok := c.MemberLookup.Get(entity)
-	assert.True(ok)
-	c.Members.Swap(index, c.Members.Len()-1)
-	c.Members.SoftReduce()
-	c.MemberLookup.Delete(entity)
-}
+//func (c *CollisionCell) AddMember(entity ecs.Entity) {
+//	c.Members.Append(entity)
+//	c.MemberLookup.Set(entity, c.Members.Len()-1)
+//}
+//
+//func (c *CollisionCell) RemoveMember(entity ecs.Entity) {
+//	index, ok := c.MemberLookup.Get(entity)
+//	assert.True(ok)
+//	c.Members.Swap(index, c.Members.Len()-1)
+//	c.Members.SoftReduce()
+//	c.MemberLookup.Delete(entity)
+//}
 
 type CollisionCellComponentManager = ecs.ComponentManager[CollisionCell]
 

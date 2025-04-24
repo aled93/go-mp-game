@@ -169,10 +169,19 @@ func (a *PagedArray[T]) Last() *T {
 }
 
 func (a *PagedArray[T]) Raw(result []T) []T {
-	result = result[:0]
+	totalLen := a.len
+	// Ensure the result has enough capacity and set the correct length.
+	if cap(result) < totalLen {
+		result = make([]T, totalLen)
+	} else {
+		result = result[:totalLen]
+	}
+
+	pos := 0
 	for i := 0; i <= a.currentPageIndex; i++ {
 		page := &a.book[i]
-		result = append(result[:i*pageSize], append(result[i*pageSize:], page.data[:page.len]...)...)
+		n := copy(result[pos:], page.data[:page.len])
+		pos += n
 	}
 
 	return result

@@ -142,7 +142,7 @@ func (c *ComponentManager[T]) Create(entity Entity, value T) (component *T) {
 
 	c.entityComponentBitSet.Set(entity, c.id)
 
-	c.createdEntities.Append(entity)
+	//c.createdEntities.Append(entity)
 
 	return component
 }
@@ -221,7 +221,7 @@ func (c *ComponentManager[T]) Delete(entity Entity) {
 	c.lookup.Delete(entity)
 	c.entityComponentBitSet.Unset(entity, c.id)
 
-	c.deletedEntities.Append(entity)
+	//c.deletedEntities.Append(entity)
 }
 
 func (c *ComponentManager[T]) Has(entity Entity) bool {

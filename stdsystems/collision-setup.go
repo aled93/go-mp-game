@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	collidersPerCell = 64
+	collidersPerCell = 32
 )
 
 func NewCollisionSetupSystem() CollisionSetupSystem {
@@ -264,10 +264,10 @@ func (s *CollisionSetupSystem) Run(dt time.Duration) {
 		cell := s.CollisionCellComponentManager.GetUnsafe(cellEntity)
 		assert.NotNil(cell)
 
-		_, exists = cell.MemberLookup.Get(entity)
-		if exists {
-			return
-		}
+		//_, exists = cell.MemberLookup.Get(entity)
+		//if exists {
+		//	return
+		//}
 		cell.InputAccumulator[id].Append(entity)
 	})
 

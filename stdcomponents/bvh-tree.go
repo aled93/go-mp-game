@@ -46,6 +46,8 @@ type BvhTree struct {
 	AabbLeaves ecs.PagedArray[AABB]
 	Codes      ecs.PagedArray[uint64]
 	Components ecs.PagedArray[BvhComponent]
+
+	sorted []BvhComponent
 }
 
 func (t *BvhTree) Init() {
@@ -158,21 +160,25 @@ func (t *BvhTree) Build() {
 	t.AabbLeaves.Reset()
 	t.Codes.Reset()
 
-	var sorted []BvhComponent
-	sorted = t.Components.Raw(sorted)
+	if cap(t.sorted) < t.Components.Len() {
+		t.sorted = make([]BvhComponent, 0, t.Components.Len())
+	}
 
-	slices.SortFunc(sorted, func(a, b BvhComponent) int {
+	t.sorted = t.Components.Raw(t.sorted)
+
+	slices.SortFunc(t.sorted, func(a, b BvhComponent) int {
 		return int(a.Code - b.Code)
 	})
 
 	// Add leaves
-	for i := range sorted {
-		component := sorted[i]
+	for i := range t.sorted {
+		component := t.sorted[i]
 		t.Leaves.Append(BvhLeaf{Id: component.Entity})
 		t.AabbLeaves.Append(component.Aabb)
 		t.Codes.Append(component.Code)
 	}
 	t.Components.Reset()
+	t.sorted = t.sorted[:0]
 
 	if t.Leaves.Len() == 0 {
 		return

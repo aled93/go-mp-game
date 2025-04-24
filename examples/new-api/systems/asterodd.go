@@ -104,6 +104,7 @@ func (s *AssteroddSystem) Init() {
 		WallTags:      s.WallTags,
 		RigidBodies:   s.RigidBodies,
 		Renderables:   s.Renderables,
+		Velocities:    s.Velocities,
 	}
 	entities.CreateWall(&wallManager, 0, -1000, 0, 5000, 1000)
 	entities.CreateWall(&wallManager, 0, 5000, 0, 5000, 1000)
@@ -115,6 +116,9 @@ func (s *AssteroddSystem) Init() {
 			X: float32(rand.Intn(5000)) + float32(rand.Intn(1000))/10000,
 			Y: float32(rand.Intn(5000)) + float32(rand.Intn(1000))/10000,
 		}
+
+		randVelX := float32(rand.Intn(200)) - 100 + float32(rand.Intn(1000))/10000
+		randVelY := float32(rand.Intn(200)) - 100 + float32(rand.Intn(1000))/10000
 
 		entities.CreateBullet(entities.CreateBulletManagers{
 			EntityManager:   s.EntityManager,
@@ -128,7 +132,7 @@ func (s *AssteroddSystem) Init() {
 			BulletTags:      s.BulletTags,
 			Hps:             s.Hps,
 			Renderables:     s.Renderables,
-		}, randPos.X, randPos.Y, 0, 0, 0)
+		}, randPos.X, randPos.Y, 0, randVelX, randVelY)
 
 		// bug case
 		//entities.CreateBullet(entities.CreateBulletManagers{

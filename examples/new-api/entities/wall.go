@@ -35,6 +35,7 @@ type CreateWallManagers struct {
 	Sprites       *stdcomponents.SpriteComponentManager
 	RigidBodies   *stdcomponents.RigidBodyComponentManager
 	Renderables   *stdcomponents.RenderableComponentManager
+	Velocities    *stdcomponents.VelocityComponentManager
 	WallTags      *components.WallTagComponentManager
 }
 
@@ -73,6 +74,10 @@ func CreateWall(
 	props.RigidBodies.Create(entity, stdcomponents.RigidBody{
 		IsStatic: true,
 		Mass:     math.MaxFloat32,
+	})
+	props.Velocities.Create(entity, stdcomponents.Velocity{
+		X: 0,
+		Y: 0,
 	})
 	props.Sprites.Create(entity, stdcomponents.Sprite{
 		Texture: assets.Textures.Get("wall.png"),
