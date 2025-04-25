@@ -60,11 +60,11 @@ type EntityManager struct {
 	lastId Entity
 	size   uint32
 
-	groups           map[string][]Entity
-	components       map[ComponentId]AnyComponentManagerPtr
-	deletedEntityIDs []Entity
-	componentBitSet  ComponentBitSet
-	mx               sync.Mutex
+	groups            map[string][]Entity
+	components        map[ComponentId]AnyComponentManagerPtr
+	deletedEntityIDs  []Entity
+	componentBitTable ComponentBitTable
+	mx                sync.Mutex
 
 	patch Patch
 }
@@ -84,7 +84,7 @@ func (e *EntityManager) Create() Entity {
 func (e *EntityManager) Delete(entity Entity) {
 	e.mx.Lock()
 	defer e.mx.Unlock()
-	e.componentBitSet.AllSet(entity, func(id ComponentId) bool {
+	e.componentBitTable.AllSet(entity, func(id ComponentId) bool {
 		e.components[id].Delete(entity)
 		return true
 	})
@@ -155,7 +155,7 @@ func (e *EntityManager) PatchReset() {
 }
 
 func (e *EntityManager) init() {
-	e.componentBitSet = NewComponentBitSet()
+	e.componentBitTable = NewComponentBitTable(len(e.components))
 	e.patch = make(Patch, len(e.components))
 }
 

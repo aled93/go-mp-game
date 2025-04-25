@@ -51,9 +51,9 @@ type SharedComponentManager[T any] struct {
 	references PagedArray[SharedComponentInstanceId]
 	lookup     PagedMap[Entity, int]
 
-	entityManager         *EntityManager
-	entityComponentBitSet *ComponentBitSet
-	pool                  *worker.Pool
+	entityManager           *EntityManager
+	entityComponentBitTable *ComponentBitTable
+	pool                    *worker.Pool
 
 	id            ComponentId
 	isInitialized bool
@@ -99,7 +99,7 @@ func (c *SharedComponentManager[T]) Id() ComponentId {
 
 func (c *SharedComponentManager[T]) registerEntityManager(entityManager *EntityManager) {
 	c.entityManager = entityManager
-	c.entityComponentBitSet = &entityManager.componentBitSet
+	c.entityComponentBitTable = &entityManager.componentBitTable
 }
 
 //=====================================
@@ -115,8 +115,8 @@ func (c *SharedComponentManager[T]) Create(instanceId SharedComponentInstanceId,
 	defer c.assertEnd()
 
 	componentIndex := c.components.Len()
-	component := c.components.Append(value)
-	c.instances.Append(instanceId)
+	component := c.components.AppendOne(value)
+	c.instances.AppendOne(instanceId)
 	c.instanceToComponent.Set(instanceId, componentIndex)
 
 	return component
@@ -159,14 +159,14 @@ func (c *SharedComponentManager[T]) Set(entity Entity, instanceId SharedComponen
 		c.references.Set(index, instanceId)
 	} else {
 		newIndex := c.entities.Len()
-		c.entities.Append(entity)
-		c.references.Append(instanceId)
+		c.entities.AppendOne(entity)
+		c.references.AppendOne(instanceId)
 		c.lookup.Set(entity, newIndex)
 	}
 	componentIndex, _ := c.instanceToComponent.Get(instanceId)
 	c.entityToComponent.Set(entity, componentIndex)
-	c.patchedEntities.Append(entity)
-	c.entityComponentBitSet.Set(entity, c.id)
+	c.patchedEntities.AppendOne(entity)
+	c.entityComponentBitTable.Set(entity, c.id)
 	return c.components.Get(componentIndex)
 }
 
@@ -196,9 +196,9 @@ func (c *SharedComponentManager[T]) Delete(entity Entity) {
 
 	c.lookup.Delete(entity)
 	c.entityToComponent.Delete(entity)
-	c.entityComponentBitSet.Unset(entity, c.id)
+	c.entityComponentBitTable.Unset(entity, c.id)
 
-	c.deletedEntities.Append(entity)
+	c.deletedEntities.AppendOne(entity)
 }
 
 func (c *SharedComponentManager[T]) Has(entity Entity) bool {

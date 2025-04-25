@@ -86,7 +86,29 @@ func (a *PagedArray[T]) extend() {
 	a.edpTasks = append(a.edpTasks, newEdpTasks...)
 }
 
-func (a *PagedArray[T]) Append(values ...T) *T {
+func (a *PagedArray[T]) AppendOne(value T) *T {
+	var result *T
+	if a.currentPageIndex >= len(a.book) {
+		a.extend()
+	}
+
+	page := &a.book[a.currentPageIndex]
+
+	if page.len == pageSize {
+		a.currentPageIndex++
+		if a.currentPageIndex >= len(a.book) {
+			a.extend()
+		}
+		page = &a.book[a.currentPageIndex]
+	}
+	page.data[page.len] = value
+	result = &page.data[page.len]
+	page.len++
+	a.len++
+	return result
+}
+
+func (a *PagedArray[T]) AppendMany(values ...T) *T {
 	var result *T
 	for i := range values {
 		value := values[i]

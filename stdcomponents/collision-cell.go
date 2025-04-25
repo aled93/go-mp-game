@@ -40,7 +40,7 @@ func (c *CollisionCell) Init(size float32, layer CollisionLayer, pool *worker.Po
 }
 
 //func (c *CollisionCell) AddMember(entity ecs.Entity) {
-//	c.Members.Append(entity)
+//	c.Members.AppendOne(entity)
 //	c.MemberLookup.Set(entity, c.Members.Len()-1)
 //}
 //

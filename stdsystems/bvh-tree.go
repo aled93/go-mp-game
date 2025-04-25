@@ -54,9 +54,9 @@ func (s *BvhTreeSystem) build(t *stdcomponents.BvhTree) {
 	// Add leaves
 	for i := range sorted {
 		component := sorted[i]
-		t.Leaves.Append(stdcomponents.BvhLeaf{Id: component.Entity})
-		t.AabbLeaves.Append(component.Aabb)
-		t.Codes.Append(component.Code)
+		t.Leaves.AppendOne(stdcomponents.BvhLeaf{Id: component.Entity})
+		t.AabbLeaves.AppendOne(component.Aabb)
+		t.Codes.AppendOne(component.Code)
 	}
 	t.Components.Reset()
 
@@ -65,8 +65,8 @@ func (s *BvhTreeSystem) build(t *stdcomponents.BvhTree) {
 	}
 
 	// Add root node
-	t.Nodes.Append(stdcomponents.BvhNode{-1})
-	t.AabbNodes.Append(stdcomponents.AABB{})
+	t.Nodes.AppendOne(stdcomponents.BvhNode{-1})
+	t.AabbNodes.AppendOne(stdcomponents.AABB{})
 
 	type buildTask struct {
 		parentIndex     int
@@ -96,8 +96,10 @@ func (s *BvhTreeSystem) build(t *stdcomponents.BvhTree) {
 
 			// Create left and right nodes
 			leftIndex := t.Nodes.Len()
-			t.Nodes.Append(stdcomponents.BvhNode{-1}, stdcomponents.BvhNode{-1})
-			t.AabbNodes.Append(stdcomponents.AABB{}, stdcomponents.AABB{})
+			t.Nodes.AppendOne(stdcomponents.BvhNode{-1})
+			t.Nodes.AppendOne(stdcomponents.BvhNode{-1})
+			t.AabbNodes.AppendOne(stdcomponents.AABB{})
+			t.AabbNodes.AppendOne(stdcomponents.AABB{})
 
 			// Set parent's childIndex to leftIndex
 			t.Nodes.Get(task.parentIndex).ChildIndex = int32(leftIndex)

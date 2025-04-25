@@ -65,7 +65,7 @@ type Tree struct {
 
 func (t *Tree) AddComponent(entity ecs.Entity, aabb stdcomponents.AABB) {
 	code := t.morton2D(&aabb)
-	t.components.Append(component{
+	t.components.AppendOne(component{
 		entity: entity,
 		aabb:   aabb,
 		code:   code,
@@ -94,9 +94,9 @@ func (t *Tree) Build() {
 	// Add leaves
 	for i := range t.componentsSlice {
 		component := &t.componentsSlice[i]
-		t.leaves.Append(leaf{id: component.entity})
-		t.AabbLeaves.Append(component.aabb)
-		t.codes.Append(component.code)
+		t.leaves.AppendOne(leaf{id: component.entity})
+		t.AabbLeaves.AppendOne(component.aabb)
+		t.codes.AppendOne(component.code)
 	}
 	t.components.Reset()
 
@@ -105,8 +105,8 @@ func (t *Tree) Build() {
 	}
 
 	// Add root node
-	t.nodes.Append(node{-1})
-	t.AabbNodes.Append(stdcomponents.AABB{})
+	t.nodes.AppendOne(node{-1})
+	t.AabbNodes.AppendOne(stdcomponents.AABB{})
 
 	type buildTask struct {
 		parentIndex     int
@@ -137,8 +137,10 @@ func (t *Tree) Build() {
 
 			// Create left and right nodes
 			leftIndex := t.nodes.Len()
-			t.nodes.Append(node{-1}, node{-1})
-			t.AabbNodes.Append(stdcomponents.AABB{}, stdcomponents.AABB{})
+			t.nodes.AppendOne(node{-1})
+			t.nodes.AppendOne(node{-1})
+			t.AabbNodes.AppendOne(stdcomponents.AABB{})
+			t.AabbNodes.AppendOne(stdcomponents.AABB{})
 
 			// Set parent's childIndex to leftIndex
 			t.nodes.Get(task.parentIndex).childIndex = int32(leftIndex)

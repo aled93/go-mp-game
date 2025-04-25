@@ -73,8 +73,8 @@ type ComponentManager[T any] struct {
 	entities   PagedArray[Entity]
 	lookup     PagedMap[Entity, int]
 
-	entityManager         *EntityManager
-	entityComponentBitSet *ComponentBitSet
+	entityManager           *EntityManager
+	entityComponentBitTable *ComponentBitTable
 
 	id            ComponentId
 	isInitialized bool
@@ -115,7 +115,7 @@ func (c *ComponentManager[T]) Id() ComponentId {
 
 func (c *ComponentManager[T]) registerEntityManager(entityManager *EntityManager) {
 	c.entityManager = entityManager
-	c.entityComponentBitSet = &entityManager.componentBitSet
+	c.entityComponentBitTable = &entityManager.componentBitTable
 }
 
 func (c *ComponentManager[T]) registerWorkerPool(pool *worker.Pool) {
@@ -137,12 +137,12 @@ func (c *ComponentManager[T]) Create(entity Entity, value T) (component *T) {
 	var index = c.components.Len()
 
 	c.lookup.Set(entity, index)
-	c.entities.Append(entity)
-	component = c.components.Append(value)
+	c.entities.AppendOne(entity)
+	component = c.components.AppendOne(value)
 
-	c.entityComponentBitSet.Set(entity, c.id)
+	c.entityComponentBitTable.Set(entity, c.id)
 
-	//c.createdEntities.Append(entity)
+	//c.createdEntities.AppendOne(entity)
 
 	return component
 }
@@ -188,7 +188,7 @@ func (c *ComponentManager[T]) Set(entity Entity, value T) *T {
 
 	component := c.components.Set(index, value)
 
-	c.patchedEntities.Append(entity)
+	c.patchedEntities.AppendOne(entity)
 
 	return component
 }
@@ -219,9 +219,9 @@ func (c *ComponentManager[T]) Delete(entity Entity) {
 	c.entities.SoftReduce()
 
 	c.lookup.Delete(entity)
-	c.entityComponentBitSet.Unset(entity, c.id)
+	c.entityComponentBitTable.Unset(entity, c.id)
 
-	//c.deletedEntities.Append(entity)
+	//c.deletedEntities.AppendOne(entity)
 }
 
 func (c *ComponentManager[T]) Has(entity Entity) bool {
@@ -304,7 +304,7 @@ func (c *ComponentManager[T]) EachParallel(numWorkers int) func(yield func(Entit
 
 func (c *ComponentManager[T]) PatchAdd(entity Entity) {
 	assert.True(c.TrackChanges)
-	c.patchedEntities.Append(entity)
+	c.patchedEntities.AppendOne(entity)
 }
 
 func (c *ComponentManager[T]) PatchGet() ComponentPatch {
