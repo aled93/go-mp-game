@@ -7,7 +7,8 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 Donations during this file development:
 -===-===-===-===-===-===-===-===-===-===
 
-none :)
+<- SeniorOverflow Donated 500 RUB
+<- SeniorOverflow Donated 1 000 RUB
 
 Thank you for your support!
 */
@@ -28,7 +29,7 @@ import (
 )
 
 const (
-	collidersPerCell = 32
+	collidersPerCell = 8
 )
 
 func NewCollisionSetupSystem() CollisionSetupSystem {

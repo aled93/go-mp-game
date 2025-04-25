@@ -19,7 +19,7 @@ import (
 	"image/color"
 )
 
-type Tint = color.RGBA
+type Tint = color.RGBA // TODO: remove type alias
 
 type TintComponentManager = ecs.ComponentManager[Tint]
 

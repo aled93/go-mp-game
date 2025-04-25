@@ -143,12 +143,59 @@ func (s *Render2DCamerasSystem) Destroy() {
 }
 
 func (s *Render2DCamerasSystem) prepareRender(dt time.Duration) {
-	s.prepareAnimations()
-	s.prepareFlips()
-	s.preparePositions(dt)
-	s.prepareRotations()
-	s.prepareScales()
-	s.prepareTints()
+	s.Textures.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
+		texturePro := s.Textures.GetUnsafe(entity)
+		assert.NotNil(texturePro)
+
+		animation := s.AnimationPlayers.GetUnsafe(entity)
+		if animation != nil {
+			frame := &texturePro.Frame
+			if animation.Vertical {
+				frame.Y += frame.Height * float32(animation.Current)
+			} else {
+				frame.X += frame.Width * float32(animation.Current)
+			}
+		}
+
+		flipped := s.Flips.GetUnsafe(entity)
+		if flipped != nil {
+			if flipped.X {
+				texturePro.Frame.Width *= -1
+			}
+			if flipped.Y {
+				texturePro.Frame.Height *= -1
+			}
+		}
+
+		position := s.Positions.GetUnsafe(entity)
+		if position != nil {
+			//decay := 40.0 // DECAY IS TICKRATE DEPENDENT
+			//x := float32(s.expDecay(float64(texturePro.Dest.X), float64(position.XY.X), decay, dts))
+			//y := float32(s.expDecay(float64(texturePro.Dest.Y), float64(position.XY.Y), decay, dts))
+			texturePro.Dest.X = position.XY.X
+			texturePro.Dest.Y = position.XY.Y
+		}
+
+		rotation := s.Rotations.GetUnsafe(entity)
+		if rotation != nil {
+			texturePro.Rotation = float32(rotation.Degrees())
+		}
+
+		scale := s.Scales.GetUnsafe(entity)
+		if scale != nil {
+			texturePro.Dest.Width *= scale.XY.X
+			texturePro.Dest.Height *= scale.XY.Y
+		}
+
+		tint := s.Tints.GetUnsafe(entity)
+		if tint != nil {
+			trTint := &texturePro.Tint
+			trTint.A = tint.A
+			trTint.R = tint.R
+			trTint.G = tint.G
+			trTint.B = tint.B
+		}
+	})
 }
 
 func (s *Render2DCamerasSystem) prepareAnimations() {
