@@ -14,6 +14,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"runtime/pprof"
+	"runtime/trace"
 )
 
 const gpprof = false
@@ -24,6 +25,8 @@ func NewDebugSystem() DebugSystem {
 
 type DebugSystem struct {
 	pprofEnabled bool
+	traceEnabled bool
+	traceCounter int
 }
 
 func (s *DebugSystem) Init() {
@@ -67,6 +70,33 @@ func (s *DebugSystem) Run() {
 		}
 
 		s.pprofEnabled = !s.pprofEnabled
+	}
+
+	if rl.IsKeyPressed(rl.KeyF10) {
+		if !s.traceEnabled {
+			f, err := os.Create("trace.out")
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			err = trace.Start(f)
+			if err != nil {
+				log.Fatal(err)
+			}
+			log.Println("Trace Profile Started")
+
+			s.traceEnabled = true
+		}
+	}
+
+	if s.traceEnabled {
+		s.traceCounter++
+		if s.traceCounter == 10 {
+			trace.Stop()
+			s.traceEnabled = false
+			s.traceCounter = 0
+			log.Println("Trace Profile Stopped")
+		}
 	}
 }
 func (s *DebugSystem) Destroy() {}

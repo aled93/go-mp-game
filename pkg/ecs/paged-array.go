@@ -134,6 +134,7 @@ func (a *PagedArray[T]) AppendMany(values ...T) *T {
 	return result
 }
 
+// SoftReduce - removes the last element of the array
 func (a *PagedArray[T]) SoftReduce() {
 	assert.True(a.len > 0, "Len is already 0")
 
@@ -148,6 +149,7 @@ func (a *PagedArray[T]) SoftReduce() {
 	}
 }
 
+// Reset - resets the array to its initial state
 func (a *PagedArray[T]) Reset() {
 	for i := 0; i <= a.currentPageIndex; i++ {
 		page := &a.book[i]
@@ -212,6 +214,10 @@ func (a *PagedArray[T]) Raw(result []T) []T {
 func (a *PagedArray[T]) getPageIdAndIndex(index int) (int, int) {
 	return index >> pageSizeShift, index % pageSize
 }
+
+// =========================
+// Iterators
+// =========================
 
 func (a *PagedArray[T]) Each() func(yield func(int, *T) bool) {
 	return func(yield func(int, *T) bool) {

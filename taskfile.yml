@@ -46,7 +46,7 @@ tasks:
 
   pprof-trace:
     cmds:
-      - go tool trace trace.out
+      - go tool trace -http='127.0.0.1:8002' ./trace.out
 
   build-sdl:
     env:

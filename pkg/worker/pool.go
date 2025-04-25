@@ -28,7 +28,7 @@ import (
 func NewPool(n int) Pool {
 	return Pool{
 		workers:  make([]Worker, n),
-		taskChan: make(chan AnyTask, n),
+		taskChan: make(chan AnyTask, n*4),
 	}
 }
 
