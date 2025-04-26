@@ -4,7 +4,7 @@ import "testing"
 
 func TestComponentByteTable_SetAndTest(t *testing.T) {
 	// ...existing code...
-	table := NewComponentByteTable(10)
+	table := NewComponentBoolTable(10)
 	entity := Entity(1)
 	table.Set(entity, ComponentId(3))
 	if !table.Test(entity, ComponentId(3)) {
@@ -14,7 +14,7 @@ func TestComponentByteTable_SetAndTest(t *testing.T) {
 
 func TestComponentByteTable_Unset(t *testing.T) {
 	// ...existing code...
-	table := NewComponentByteTable(10)
+	table := NewComponentBoolTable(10)
 	entity := Entity(2)
 	table.Set(entity, ComponentId(5))
 	if !table.Test(entity, ComponentId(5)) {
@@ -28,7 +28,7 @@ func TestComponentByteTable_Unset(t *testing.T) {
 
 func TestComponentByteTable_AllSet(t *testing.T) {
 	// ...existing code...
-	table := NewComponentByteTable(10)
+	table := NewComponentBoolTable(10)
 	entity := Entity(3)
 	components := []ComponentId{2, 4, 7}
 	for _, id := range components {
@@ -48,7 +48,7 @@ func TestComponentByteTable_AllSet(t *testing.T) {
 
 func TestComponentByteTable_MultipleEntities(t *testing.T) {
 	// ...existing code...
-	table := NewComponentByteTable(10)
+	table := NewComponentBoolTable(10)
 	for i := 1; i <= 5; i++ {
 		e := Entity(i)
 		table.Set(e, ComponentId(i))
