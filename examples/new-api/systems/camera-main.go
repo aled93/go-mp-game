@@ -82,6 +82,11 @@ func (s *MainCameraSystem) Run(dt time.Duration) {
 	// or other game events.
 	// This is just a placeholder for the actual camera logic.
 
+	scroll := rl.GetMouseWheelMove()
+	if scroll != 0.0 {
+		s.Cameras.GetUnsafe(s.mainCamera).Zoom += scroll
+	}
+
 	// Follow player for main camera and minimap camera
 	if rl.IsKeyPressed(rl.KeyR) {
 		s.shouldRotate = !s.shouldRotate
