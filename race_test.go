@@ -15,15 +15,14 @@ Thank you for your support!
 package gomp
 
 import (
-	"runtime"
 	"sync"
 	"testing"
 )
 
 func TestRaceCondition(t *testing.T) {
 	var (
-		numGoroutines = runtime.NumCPU() // Количество горутин
-		sliceSize     = runtime.NumCPU() // Размер слайса (меньше numGoroutines)
+		numGoroutines = 10000 // Количество горутин
+		sliceSize     = 10000 // Размер слайса (меньше numGoroutines)
 	)
 	slice := make([]float32, sliceSize)
 
@@ -39,13 +38,19 @@ func TestRaceCondition(t *testing.T) {
 	}
 
 	wg.Wait()
+	for i := 0; i < sliceSize; i++ {
+		if slice[i] != float32(i) {
+			t.Errorf("slice[%d] = %f, want %f", i, slice[i], float32(i))
+		}
+	}
+	t.Log(slice)
 }
 
 // СТЕНА ПОЗОРА MaxHero90@twitch - 15 лет опыта работы гофером и все псу под нос
 func TestRaceConditionMaxHero90(t *testing.T) {
 	var (
-		numGoroutines = 2  // Количество горутин
-		sliceSize     = 16 // Размер слайса (меньше numGoroutines)
+		numGoroutines = 2      // Количество горутин
+		sliceSize     = 100000 // Размер слайса (меньше numGoroutines)
 	)
 	slice := make([]float32, sliceSize)
 
@@ -62,5 +67,10 @@ func TestRaceConditionMaxHero90(t *testing.T) {
 	}
 
 	wg.Wait()
+	for i := 0; i < sliceSize; i++ {
+		if slice[i] != float32(i%2) {
+			t.Errorf("slice[%d] = %f, want %f", i, slice[i], float32(i))
+		}
+	}
 	t.Log(slice)
 }
