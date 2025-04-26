@@ -51,9 +51,9 @@ type SharedComponentManager[T any] struct {
 	references PagedArray[SharedComponentInstanceId]
 	lookup     PagedMap[Entity, int]
 
-	entityManager         *EntityManager
-	entityComponentBitSet *ComponentBitSet
-	pool                  *worker.Pool
+	entityManager           *EntityManager
+	entityComponentBitTable *ComponentBitTable
+	pool                    *worker.Pool
 
 	id            ComponentId
 	isInitialized bool
@@ -99,7 +99,7 @@ func (c *SharedComponentManager[T]) Id() ComponentId {
 
 func (c *SharedComponentManager[T]) registerEntityManager(entityManager *EntityManager) {
 	c.entityManager = entityManager
-	c.entityComponentBitSet = &entityManager.componentBitSet
+	c.entityComponentBitTable = &entityManager.componentBitTable
 }
 
 //=====================================
@@ -166,7 +166,7 @@ func (c *SharedComponentManager[T]) Set(entity Entity, instanceId SharedComponen
 	componentIndex, _ := c.instanceToComponent.Get(instanceId)
 	c.entityToComponent.Set(entity, componentIndex)
 	c.patchedEntities.Append(entity)
-	c.entityComponentBitSet.Set(entity, c.id)
+	c.entityComponentBitTable.Set(entity, c.id)
 	return c.components.Get(componentIndex)
 }
 
@@ -196,7 +196,7 @@ func (c *SharedComponentManager[T]) Delete(entity Entity) {
 
 	c.lookup.Delete(entity)
 	c.entityToComponent.Delete(entity)
-	c.entityComponentBitSet.Unset(entity, c.id)
+	c.entityComponentBitTable.Unset(entity, c.id)
 
 	c.deletedEntities.Append(entity)
 }

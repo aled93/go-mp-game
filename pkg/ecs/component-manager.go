@@ -73,8 +73,8 @@ type ComponentManager[T any] struct {
 	entities   PagedArray[Entity]
 	lookup     PagedMap[Entity, int]
 
-	entityManager         *EntityManager
-	entityComponentBitSet *ComponentBitSet
+	entityManager           *EntityManager
+	entityComponentBitTable *ComponentBitTable
 
 	id            ComponentId
 	isInitialized bool
@@ -115,7 +115,7 @@ func (c *ComponentManager[T]) Id() ComponentId {
 
 func (c *ComponentManager[T]) registerEntityManager(entityManager *EntityManager) {
 	c.entityManager = entityManager
-	c.entityComponentBitSet = &entityManager.componentBitSet
+	c.entityComponentBitTable = &entityManager.componentBitTable
 }
 
 func (c *ComponentManager[T]) registerWorkerPool(pool *worker.Pool) {
@@ -140,7 +140,7 @@ func (c *ComponentManager[T]) Create(entity Entity, value T) (component *T) {
 	c.entities.Append(entity)
 	component = c.components.Append(value)
 
-	c.entityComponentBitSet.Set(entity, c.id)
+	c.entityComponentBitTable.Set(entity, c.id)
 
 	//c.createdEntities.Append(entity)
 
@@ -219,7 +219,7 @@ func (c *ComponentManager[T]) Delete(entity Entity) {
 	c.entities.SoftReduce()
 
 	c.lookup.Delete(entity)
-	c.entityComponentBitSet.Unset(entity, c.id)
+	c.entityComponentBitTable.Unset(entity, c.id)
 
 	//c.deletedEntities.Append(entity)
 }

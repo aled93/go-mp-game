@@ -137,8 +137,10 @@ func (t *Tree) Build() {
 
 			// Create left and right nodes
 			leftIndex := t.nodes.Len()
-			t.nodes.Append(node{-1}, node{-1})
-			t.AabbNodes.Append(stdcomponents.AABB{}, stdcomponents.AABB{})
+			t.nodes.Append(node{-1})
+			t.nodes.Append(node{-1})
+			t.AabbNodes.Append(stdcomponents.AABB{})
+			t.AabbNodes.Append(stdcomponents.AABB{})
 
 			// Set parent's childIndex to leftIndex
 			t.nodes.Get(task.parentIndex).childIndex = int32(leftIndex)

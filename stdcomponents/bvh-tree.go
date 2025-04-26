@@ -217,8 +217,10 @@ func (t *BvhTree) Build() {
 
 			// Create left and right nodes
 			leftIndex := t.Nodes.Len()
-			t.Nodes.Append(BvhNode{-1}, BvhNode{-1})
-			t.AabbNodes.Append(AABB{}, AABB{})
+			t.Nodes.Append(BvhNode{-1})
+			t.Nodes.Append(BvhNode{-1})
+			t.AabbNodes.Append(AABB{})
+			t.AabbNodes.Append(AABB{})
 
 			// Set parent's childIndex to leftIndex
 			t.Nodes.Get(task.parentIndex).ChildIndex = int32(leftIndex)
