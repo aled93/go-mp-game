@@ -19,15 +19,17 @@ import (
 	"math/bits"
 )
 
-const ComponentBitTablePreallocate = 1024
-const chunkBaseSize = ComponentBitTablePreallocate
-const chunkPreallocate = 2
+//const (
+//	pageSizeShift   = 10
+//	pageSize        = 1 << pageSizeShift
+//	initialBookSize = 1 // Starting with a small initial book size
+//)
 
 func NewComponentBitTable(maxComponentsLen int) ComponentBitTable {
 	bitsetSize := ((maxComponentsLen - 1) / bits.UintSize) + 1
 	return ComponentBitTable{
-		bits:       make([][]uint, 0, chunkPreallocate),
-		lookup:     make(map[Entity]int, ComponentBitTablePreallocate),
+		bits:       make([][]uint, 0, initialBookSize),
+		lookup:     make(map[Entity]int, pageSize),
 		bitsetSize: bitsetSize,
 	}
 }
@@ -39,6 +41,16 @@ type ComponentBitTable struct {
 	bitsetSize int
 }
 
+func (b *ComponentBitTable) Create(entity Entity) {
+	bitsId, ok := b.lookup[entity]
+	if !ok {
+		b.extend()
+		bitsId = b.length
+		b.lookup[entity] = bitsId
+		b.length += b.bitsetSize
+	}
+}
+
 // Set sets the bit at the given index to 1.
 func (b *ComponentBitTable) Set(entity Entity, componentId ComponentId) {
 	bitsId, ok := b.lookup[entity]
@@ -48,9 +60,8 @@ func (b *ComponentBitTable) Set(entity Entity, componentId ComponentId) {
 		b.lookup[entity] = bitsId
 		b.length += b.bitsetSize
 	}
-
-	chunkId := bitsId / chunkBaseSize
-	bitsetId := bitsId % chunkBaseSize
+	chunkId := bitsId >> pageSizeShift
+	bitsetId := bitsId % pageSize
 	offset := int(componentId / bits.UintSize)
 	b.bits[chunkId][bitsetId+offset] |= 1 << (componentId % bits.UintSize)
 }
@@ -59,8 +70,8 @@ func (b *ComponentBitTable) Set(entity Entity, componentId ComponentId) {
 func (b *ComponentBitTable) Unset(entity Entity, componentId ComponentId) {
 	bitsId, ok := b.lookup[entity]
 	assert.True(ok, "entity not found")
-	chunkId := bitsId / chunkBaseSize
-	bitsetId := bitsId % chunkBaseSize
+	chunkId := bitsId >> pageSizeShift
+	bitsetId := bitsId % pageSize
 	offset := int(componentId / bits.UintSize)
 	b.bits[chunkId][bitsetId+offset] &= ^(1 << (componentId % bits.UintSize))
 }
@@ -70,16 +81,16 @@ func (b *ComponentBitTable) Test(entity Entity, componentId ComponentId) bool {
 	if !ok {
 		return false
 	}
-	chunkId := bitsId / chunkBaseSize
-	bitsetId := bitsId % chunkBaseSize
+	chunkId := bitsId >> pageSizeShift
+	bitsetId := bitsId % pageSize
 	offset := int(componentId / bits.UintSize)
 	return (b.bits[chunkId][bitsetId+offset] & (1 << (componentId % bits.UintSize))) != 0
 }
 
 func (b *ComponentBitTable) extend() {
-	lastChunkId := b.length / chunkBaseSize
-	if lastChunkId == len(b.bits) && b.length%chunkBaseSize == 0 {
-		b.bits = append(b.bits, make([]uint, b.bitsetSize*chunkBaseSize))
+	lastChunkId := b.length >> pageSizeShift
+	if lastChunkId == len(b.bits) && b.length%pageSize == 0 {
+		b.bits = append(b.bits, make([]uint, b.bitsetSize*pageSize))
 	}
 }
 
@@ -88,8 +99,8 @@ func (b *ComponentBitTable) AllSet(entity Entity, yield func(ComponentId) bool) 
 	if !ok {
 		return
 	}
-	chunkId := bitsId / chunkBaseSize
-	bitsetId := bitsId % chunkBaseSize
+	chunkId := bitsId >> pageSizeShift
+	bitsetId := bitsId % pageSize
 	for i := 0; i < b.bitsetSize; i++ {
 		for j := 0; j < bits.UintSize; j++ {
 			if (b.bits[chunkId][bitsetId+i]>>j)&1 == 1 {

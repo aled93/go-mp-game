@@ -137,12 +137,12 @@ func (c *ComponentManager[T]) Create(entity Entity, value T) (component *T) {
 	var index = c.components.Len()
 
 	c.lookup.Set(entity, index)
-	c.entities.AppendOne(entity)
-	component = c.components.AppendOne(value)
+	c.entities.Append(entity)
+	component = c.components.Append(value)
 
 	c.entityComponentBitTable.Set(entity, c.id)
 
-	//c.createdEntities.AppendOne(entity)
+	//c.createdEntities.Append(entity)
 
 	return component
 }
@@ -188,7 +188,7 @@ func (c *ComponentManager[T]) Set(entity Entity, value T) *T {
 
 	component := c.components.Set(index, value)
 
-	c.patchedEntities.AppendOne(entity)
+	c.patchedEntities.Append(entity)
 
 	return component
 }
@@ -221,7 +221,7 @@ func (c *ComponentManager[T]) Delete(entity Entity) {
 	c.lookup.Delete(entity)
 	c.entityComponentBitTable.Unset(entity, c.id)
 
-	//c.deletedEntities.AppendOne(entity)
+	//c.deletedEntities.Append(entity)
 }
 
 func (c *ComponentManager[T]) Has(entity Entity) bool {
@@ -304,7 +304,7 @@ func (c *ComponentManager[T]) EachParallel(numWorkers int) func(yield func(Entit
 
 func (c *ComponentManager[T]) PatchAdd(entity Entity) {
 	assert.True(c.TrackChanges)
-	c.patchedEntities.AppendOne(entity)
+	c.patchedEntities.Append(entity)
 }
 
 func (c *ComponentManager[T]) PatchGet() ComponentPatch {

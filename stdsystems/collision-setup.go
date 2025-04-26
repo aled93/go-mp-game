@@ -216,7 +216,7 @@ func (s *CollisionSetupSystem) Run(dt time.Duration) {
 		for i := range grid.CellAccumulator {
 			for spatialIndex := range grid.CellAccumulator[i] {
 				cellEntity := s.EntityManager.Create()
-				grid.Cells.AppendOne(cellEntity)
+				grid.Cells.Append(cellEntity)
 				grid.CellLookup[spatialIndex] = grid.Cells.Len() - 1
 				collisionCell := s.CollisionCellComponentManager.Create(cellEntity, stdcomponents.CollisionCell{})
 				collisionCell.Init(grid.CellSize, grid.Layer, s.Engine.Pool())
@@ -269,7 +269,7 @@ func (s *CollisionSetupSystem) Run(dt time.Duration) {
 		//if exists {
 		//	return
 		//}
-		cell.InputAccumulator[id].AppendOne(entity)
+		cell.InputAccumulator[id].Append(entity)
 	})
 
 	//Build grid cells

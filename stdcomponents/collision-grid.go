@@ -72,7 +72,7 @@ func (g *CollisionGrid) Query(bb AABB, result []ecs.Entity) []ecs.Entity {
 }
 
 func (g *CollisionGrid) RegisterEntity(entity ecs.Entity, aabb *AABB) {
-	g.Entities.AppendOne(entity)
+	g.Entities.Append(entity)
 
 	l := aabb.Max.Sub(aabb.Min)
 

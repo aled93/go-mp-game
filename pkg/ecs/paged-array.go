@@ -86,7 +86,7 @@ func (a *PagedArray[T]) extend() {
 	a.edpTasks = append(a.edpTasks, newEdpTasks...)
 }
 
-func (a *PagedArray[T]) AppendOne(value T) *T {
+func (a *PagedArray[T]) Append(value T) *T {
 	var result *T
 	if a.currentPageIndex >= len(a.book) {
 		a.extend()

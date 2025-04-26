@@ -221,7 +221,7 @@ func (s *CollisionDetectionBVHSystem) narrowPhase(entityA ecs.Entity, potentialE
 			radiusA := circleA.Radius * scaleA.XY.X
 			radiusB := circleB.Radius * scaleB.XY.X
 			if transformA.Position.Distance(transformB.Position) < radiusA+radiusB {
-				s.collisionEvents[workerId].AppendOne(CollisionEvent{
+				s.collisionEvents[workerId].Append(CollisionEvent{
 					entityA:  entityA,
 					entityB:  entityB,
 					position: transformA.Position,
@@ -244,7 +244,7 @@ func (s *CollisionDetectionBVHSystem) narrowPhase(entityA ecs.Entity, potentialE
 		// If collision detected, get penetration details using EPA
 		normal, depth := test.EPA(colA, colB, transformA, transformB)
 		position := posA.XY.Add(posB.XY.Sub(posA.XY))
-		s.collisionEvents[workerId].AppendOne(CollisionEvent{
+		s.collisionEvents[workerId].Append(CollisionEvent{
 			entityA:  entityA,
 			entityB:  entityB,
 			position: position,

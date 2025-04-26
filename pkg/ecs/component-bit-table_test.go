@@ -41,8 +41,8 @@ func TestNewComponentBitTable(t *testing.T) {
 				t.Errorf("Expected bitsetSize %d, got %d", tt.expectedBitsetSize, table.bitsetSize)
 			}
 
-			if cap(table.bits) != chunkPreallocate {
-				t.Errorf("Expected %d preallocated chunks, got %d", chunkPreallocate, cap(table.bits))
+			if cap(table.bits) != initialBookSize {
+				t.Errorf("Expected %d preallocated chunks, got %d", initialBookSize, cap(table.bits))
 			}
 		})
 	}
@@ -61,8 +61,8 @@ func TestComponentBitTable_Set(t *testing.T) {
 		t.Fatalf("Entity %d not found in lookup", entity1)
 	}
 
-	chunkId := bitsId / chunkBaseSize
-	bitsetId := bitsId % chunkBaseSize
+	chunkId := bitsId / pageSize
+	bitsetId := bitsId % pageSize
 	offset := int(ComponentId(5) / bits.UintSize)
 	mask := uint(1 << (ComponentId(5) % bits.UintSize))
 
@@ -91,8 +91,8 @@ func TestComponentBitTable_Unset(t *testing.T) {
 
 	// Verify bit was unset
 	bitsId := table.lookup[entity]
-	chunkId := bitsId / chunkBaseSize
-	bitsetId := bitsId % chunkBaseSize
+	chunkId := bitsId / pageSize
+	bitsetId := bitsId % pageSize
 	offset := int(ComponentId(5) / bits.UintSize)
 	mask := uint(1 << (ComponentId(5) % bits.UintSize))
 
@@ -208,7 +208,7 @@ func TestComponentBitTable_extend(t *testing.T) {
 	// Create a table with a small chunk size for testing
 	table := NewComponentBitTable(20)
 	// Set bits to force extension
-	for i := 0; i < chunkBaseSize*table.bitsetSize; i++ {
+	for i := 0; i < pageSize*table.bitsetSize; i++ {
 		table.Set(Entity(i), ComponentId(1))
 	}
 
@@ -216,13 +216,13 @@ func TestComponentBitTable_extend(t *testing.T) {
 		t.Errorf("Expected table to be not extended, got %d chunks", len(table.bits))
 	}
 
-	table.Set(Entity(chunkBaseSize*table.bitsetSize), ComponentId(1))
+	table.Set(Entity(pageSize*table.bitsetSize), ComponentId(1))
 
 	if len(table.bits) != 2 {
 		t.Errorf("Expected table to extend up to 2 chunks, got %d chunks", len(table.bits))
 	}
 
-	for i := chunkBaseSize * table.bitsetSize; i < chunkBaseSize*table.bitsetSize*2; i++ {
+	for i := pageSize * table.bitsetSize; i < pageSize*table.bitsetSize*2; i++ {
 		table.Set(Entity(i), ComponentId(1))
 	}
 
@@ -230,7 +230,7 @@ func TestComponentBitTable_extend(t *testing.T) {
 		t.Errorf("Expected table to extend up to 2 chunks, got %d chunks", len(table.bits))
 	}
 
-	table.Set(Entity(chunkBaseSize*table.bitsetSize*2), ComponentId(1))
+	table.Set(Entity(pageSize*table.bitsetSize*2), ComponentId(1))
 
 	if len(table.bits) != 3 {
 		t.Errorf("Expected table to extend up to 3 chunks, got %d chunks", len(table.bits))

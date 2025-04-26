@@ -115,8 +115,8 @@ func (c *SharedComponentManager[T]) Create(instanceId SharedComponentInstanceId,
 	defer c.assertEnd()
 
 	componentIndex := c.components.Len()
-	component := c.components.AppendOne(value)
-	c.instances.AppendOne(instanceId)
+	component := c.components.Append(value)
+	c.instances.Append(instanceId)
 	c.instanceToComponent.Set(instanceId, componentIndex)
 
 	return component
@@ -159,13 +159,13 @@ func (c *SharedComponentManager[T]) Set(entity Entity, instanceId SharedComponen
 		c.references.Set(index, instanceId)
 	} else {
 		newIndex := c.entities.Len()
-		c.entities.AppendOne(entity)
-		c.references.AppendOne(instanceId)
+		c.entities.Append(entity)
+		c.references.Append(instanceId)
 		c.lookup.Set(entity, newIndex)
 	}
 	componentIndex, _ := c.instanceToComponent.Get(instanceId)
 	c.entityToComponent.Set(entity, componentIndex)
-	c.patchedEntities.AppendOne(entity)
+	c.patchedEntities.Append(entity)
 	c.entityComponentBitTable.Set(entity, c.id)
 	return c.components.Get(componentIndex)
 }
@@ -198,7 +198,7 @@ func (c *SharedComponentManager[T]) Delete(entity Entity) {
 	c.entityToComponent.Delete(entity)
 	c.entityComponentBitTable.Unset(entity, c.id)
 
-	c.deletedEntities.AppendOne(entity)
+	c.deletedEntities.Append(entity)
 }
 
 func (c *SharedComponentManager[T]) Has(entity Entity) bool {
