@@ -32,8 +32,8 @@ type RLTexturePro struct {
 
 func (t *RLTexturePro) Rect() vectors.Rectangle {
 	return vectors.Rectangle{
-		X:      t.Dest.X + t.Origin.X,
-		Y:      t.Dest.Y + t.Origin.Y,
+		X:      t.Dest.X - t.Origin.X,
+		Y:      t.Dest.Y - t.Origin.Y,
 		Width:  t.Dest.Width,
 		Height: t.Dest.Height,
 	}

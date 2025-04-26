@@ -84,7 +84,11 @@ func (s *MainCameraSystem) Run(dt time.Duration) {
 
 	scroll := rl.GetMouseWheelMove()
 	if scroll != 0.0 {
-		s.Cameras.GetUnsafe(s.mainCamera).Zoom += scroll
+		c := s.Cameras.GetUnsafe(s.mainCamera)
+		c.Zoom += scroll
+		if c.Zoom < 0.1 {
+			c.Zoom = 0.1
+		}
 	}
 
 	// Follow player for main camera and minimap camera
