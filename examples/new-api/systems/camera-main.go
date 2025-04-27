@@ -85,7 +85,7 @@ func (s *MainCameraSystem) Run(dt time.Duration) {
 	scroll := rl.GetMouseWheelMove()
 	if scroll != 0.0 {
 		c := s.Cameras.GetUnsafe(s.mainCamera)
-		c.Zoom += scroll
+		c.Zoom += scroll * float32(dt.Seconds())
 		if c.Zoom < 0.1 {
 			c.Zoom = 0.1
 		}
