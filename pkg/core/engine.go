@@ -15,9 +15,11 @@ Thank you for your support!
 package core
 
 import (
+	"gomp/pkg/draw"
 	"gomp/pkg/worker"
 	"log"
 	"runtime"
+	"sync"
 	"time"
 )
 
@@ -28,15 +30,17 @@ const (
 func NewEngine(game AnyGame) Engine {
 	numCpu := max(runtime.NumCPU(), 1)
 	engine := Engine{
-		Game: game,
-		pool: worker.NewPool(numCpu),
+		Game:         game,
+		pool:         worker.NewPool(numCpu),
+		swapBufferMx: new(sync.Mutex),
 	}
 	return engine
 }
 
 type Engine struct {
-	Game AnyGame
-	pool worker.Pool
+	Game         AnyGame
+	pool         worker.Pool
+	swapBufferMx *sync.Mutex
 }
 
 func (e *Engine) Run(tickrate uint, framerate uint) {
@@ -48,40 +52,66 @@ func (e *Engine) Run(tickrate uint, framerate uint) {
 		defer renderTicker.Stop()
 	}
 
-	e.Game.Init(e)
-	defer e.Game.Destroy()
+	var drawingMx sync.Mutex
+	jobChan := make(chan draw.Job)
+	exitChan := make(chan struct{})
 
-	var lastUpdateAt = time.Now() // TODO: REMOVE?
-	var nextFixedUpdateAt = time.Now()
-	var dt = time.Since(lastUpdateAt)
+	draw.SetJobProcessor(jobChan)
 
-	e.pool.Start()
+	go func() {
+		e.Game.Init(e)
 
-	for !e.Game.ShouldDestroy() {
-		if renderTicker != nil {
-			<-renderTicker.C
+		var lastUpdateAt = time.Now() // TODO: REMOVE?
+		var nextFixedUpdateAt = time.Now()
+		var dt = time.Since(lastUpdateAt)
+
+		e.pool.Start()
+
+		for !e.Game.ShouldDestroy() {
+			if renderTicker != nil {
+				<-renderTicker.C
+			}
+			dt = time.Since(lastUpdateAt)
+			lastUpdateAt = time.Now()
+
+			// Update
+			e.Game.Update(dt)
+
+			// Fixed Update
+			loops := 0
+			// TODO: Refactor to work without for loop
+			for nextFixedUpdateAt.Compare(time.Now()) == -1 && loops < MaxFrameSkips {
+				e.Game.FixedUpdate(fixedUpdDuration)
+				nextFixedUpdateAt = nextFixedUpdateAt.Add(fixedUpdDuration)
+				loops++
+			}
+			if loops >= MaxFrameSkips {
+				nextFixedUpdateAt = time.Now()
+				log.Println("Too many updates detected")
+			}
+
+			draw.BeginDrawing()
+			e.Game.Render(dt)
+			draw.EndDrawing()
 		}
-		dt = time.Since(lastUpdateAt)
-		lastUpdateAt = time.Now()
 
-		// Update
-		e.Game.Update(dt)
+		e.Game.Destroy()
 
-		// Fixed Update
-		loops := 0
-		// TODO: Refactor to work without for loop
-		for nextFixedUpdateAt.Compare(time.Now()) == -1 && loops < MaxFrameSkips {
-			e.Game.FixedUpdate(fixedUpdDuration)
-			nextFixedUpdateAt = nextFixedUpdateAt.Add(fixedUpdDuration)
-			loops++
+		draw.SetJobProcessor(nil)
+		exitChan <- struct{}{}
+	}()
+
+loop:
+	for {
+		select {
+		case job := <-jobChan:
+			drawingMx.Lock()
+			job.Execute()
+			drawingMx.Unlock()
+
+		case <-exitChan:
+			break loop
 		}
-		if loops >= MaxFrameSkips {
-			nextFixedUpdateAt = time.Now()
-			log.Println("Too many updates detected")
-		}
-
-		// RenderAssterodd
-		e.Game.Render(dt)
 	}
 }
 
