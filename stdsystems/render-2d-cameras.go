@@ -8,9 +8,8 @@ package stdsystems
 
 import (
 	"cmp"
-	rl "github.com/gen2brain/raylib-go/raylib"
-	"github.com/negrel/assert"
 	"gomp/pkg/core"
+	"gomp/pkg/draw"
 	"gomp/pkg/ecs"
 	"gomp/pkg/worker"
 	"gomp/stdcomponents"
@@ -18,6 +17,8 @@ import (
 	"runtime"
 	"slices"
 	"time"
+
+	"github.com/negrel/assert"
 )
 
 func NewRender2DCamerasSystem() Render2DCamerasSystem {
@@ -117,20 +118,20 @@ func (s *Render2DCamerasSystem) Run(dt time.Duration) {
 		assert.NotNil(renderTexture)
 
 		// Draw render objects
-		rl.BeginTextureMode(renderTexture.Texture)
-		rl.BeginMode2D(camera.Camera2D)
-		rl.ClearBackground(camera.BGColor)
+		draw.BeginTextureMode(renderTexture.Texture)
+		draw.BeginMode2D(camera.Camera2D)
+		draw.ClearBackground(camera.BGColor)
 
 		for i := range s.renderObjects {
 			obj := &s.renderObjects[i]
 			if camera.Layer&obj.mask == 0 {
 				continue
 			}
-			rl.DrawTexturePro(*obj.texture.Texture, obj.texture.Frame, obj.texture.Dest, obj.texture.Origin, obj.texture.Rotation, obj.texture.Tint)
+			draw.Texture(*obj.texture.Texture, obj.texture.Frame, obj.texture.Dest, obj.texture.Origin, obj.texture.Rotation, obj.texture.Tint)
 		}
 
-		rl.EndMode2D()
-		rl.EndTextureMode()
+		draw.EndMode2D()
+		draw.EndTextureMode()
 
 		return true
 	})

@@ -16,15 +16,17 @@ package systems
 
 import (
 	"fmt"
-	rl "github.com/gen2brain/raylib-go/raylib"
-	"github.com/negrel/assert"
 	"gomp/examples/new-api/components"
 	"gomp/examples/new-api/config"
+	"gomp/pkg/draw"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"gomp/vectors"
 	"image/color"
 	"time"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
+	"github.com/negrel/assert"
 )
 
 func NewRenderOverlaySystem() RenderOverlaySystem {
@@ -59,7 +61,7 @@ func (s *RenderOverlaySystem) Init() {
 	s.frameBuffer = s.EntityManager.Create()
 	s.FrameBuffer2D.Create(s.frameBuffer, stdcomponents.FrameBuffer2D{
 		Frame:     rl.Rectangle{X: 0, Y: 0, Width: float32(s.monitorWidth), Height: float32(s.monitorHeight)},
-		Texture:   rl.LoadRenderTexture(int32(s.monitorWidth), int32(s.monitorHeight)),
+		Texture:   draw.CreateRenderTexture(int32(s.monitorWidth), int32(s.monitorHeight)),
 		Layer:     config.DebugLayer,
 		BlendMode: rl.BlendAlpha,
 		Tint:      rl.White,
@@ -94,12 +96,12 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 		switch frame.Layer {
 		case config.MainCameraLayer:
 			overlayFrame := s.FrameBuffer2D.GetUnsafe(s.frameBuffer)
-			rl.BeginTextureMode(overlayFrame.Texture)
-			rl.ClearBackground(rl.Blank)
+			draw.BeginTextureMode(overlayFrame.Texture)
+			draw.ClearBackground(rl.Blank)
 
 			// Debug mode: BVH tree and dots
 			if s.debug {
-				rl.BeginMode2D(camera.Camera2D)
+				draw.BeginMode2D(camera.Camera2D)
 
 				cameraRect := camera.Rect()
 				s.CollisionCells.EachEntity()(func(e ecs.Entity) bool {
@@ -122,12 +124,13 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 					tree.AabbNodes.EachData()(func(a *stdcomponents.AABB) bool {
 						// Simple AABB culling
 						if s.intersects(cameraRect, a.Rect()) {
-							rl.DrawRectangleRec(rl.Rectangle{
-								X:      a.Min.X,
-								Y:      a.Min.Y,
-								Width:  a.Max.X - a.Min.X,
-								Height: a.Max.Y - a.Min.Y,
-							}, *tint)
+							draw.RectFill(
+								int32(a.Min.X),
+								int32(a.Min.Y),
+								int32(a.Max.X-a.Min.X),
+								int32(a.Max.Y-a.Min.Y),
+								*tint,
+							)
 						}
 						return true
 					})
@@ -146,7 +149,7 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 						Width:  cell.Size,
 						Height: cell.Size,
 					}) {
-						rl.DrawRectangleLines(int32(position.XY.X), int32(position.XY.Y), int32(cell.Size), int32(cell.Size), clr)
+						draw.RectLine(int32(position.XY.X), int32(position.XY.Y), int32(cell.Size), int32(cell.Size), clr)
 					}
 					return true
 				})
@@ -170,12 +173,13 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 					tree.AabbNodes.EachData()(func(a *stdcomponents.AABB) bool {
 						// Simple AABB culling
 						if s.intersects(cameraRect, a.Rect()) {
-							rl.DrawRectangleRec(rl.Rectangle{
-								X:      a.Min.X,
-								Y:      a.Min.Y,
-								Width:  a.Max.X - a.Min.X,
-								Height: a.Max.Y - a.Min.Y,
-							}, *tint)
+							draw.RectFill(
+								int32(a.Min.X),
+								int32(a.Min.Y),
+								int32(a.Max.X-a.Min.X),
+								int32(a.Max.Y-a.Min.Y),
+								*tint,
+							)
 						}
 						return true
 					})
@@ -194,7 +198,7 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 						Width:  chunk.Size,
 						Height: chunk.Size,
 					}) {
-						rl.DrawRectangleLines(int32(position.XY.X), int32(position.XY.Y), int32(chunk.Size), int32(chunk.Size), clr)
+						draw.RectLine(int32(position.XY.X), int32(position.XY.Y), int32(chunk.Size), int32(chunk.Size), clr)
 					}
 					return true
 				})
@@ -206,57 +210,58 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 						clr = rl.Blue
 					}
 					if s.intersects(cameraRect, aabb.Rect()) {
-						rl.DrawRectangleLinesEx(rl.Rectangle{
-							X:      aabb.Min.X,
-							Y:      aabb.Min.Y,
-							Width:  aabb.Max.X - aabb.Min.X,
-							Height: aabb.Max.Y - aabb.Min.Y,
-						}, 1, clr)
+						draw.RectLine(
+							int32(aabb.Min.X),
+							int32(aabb.Min.Y),
+							int32(aabb.Max.X-aabb.Min.X),
+							int32(aabb.Max.Y-aabb.Min.Y),
+							clr,
+						)
 					}
 					return true
 				})
 				s.Collisions.EachEntity()(func(entity ecs.Entity) bool {
 					pos := s.Positions.GetUnsafe(entity)
-					rl.DrawRectangle(int32(pos.XY.X-8), int32(pos.XY.Y-8), 16, 16, rl.Red)
+					draw.RectFill(int32(pos.XY.X-8), int32(pos.XY.Y-8), 16, 16, rl.Red)
 					return true
 				})
 				s.Textures.EachComponent()(func(r *stdcomponents.RLTexturePro) bool {
-					rl.DrawRectanglePro(rl.Rectangle{
-						X:      r.Dest.X - 2,
-						Y:      r.Dest.Y - 2,
-						Width:  4,
-						Height: 4,
-					}, rl.Vector2{}, r.Rotation, rl.Red)
+					draw.RectFillAngled(
+						int32(r.Dest.X-2),
+						int32(r.Dest.Y-2),
+						4,
+						4,
+						r.Rotation, rl.Red,
+					)
 					return true
 				})
-				rl.EndMode2D()
+				draw.EndMode2D()
 			}
 
 			// Print stats
-			rl.DrawRectangleRec(rl.Rectangle{Height: 120, Width: 200}, rl.Black)
-			rl.DrawFPS(10, 10)
-			rl.DrawText(fmt.Sprintf("%d entities", s.EntityManager.Size()), 10, 70, 20, rl.RayWhite)
-			rl.DrawText(fmt.Sprintf("%d debugLvl", s.debugLvl), 10, 90, 20, rl.RayWhite)
+			draw.RectFill(0, 0, 120, 200, rl.Black)
+			draw.Text(fmt.Sprintf("FPS: %d", rl.GetFPS()), 10, 10, 20, rl.RayWhite)
+			draw.Text(fmt.Sprintf("%d entities", s.EntityManager.Size()), 10, 70, 20, rl.RayWhite)
+			draw.Text(fmt.Sprintf("%d debugLvl", s.debugLvl), 10, 90, 20, rl.RayWhite)
 			// Game over
 			s.SceneManager.EachComponent()(func(a *components.AsteroidSceneManager) bool {
-				rl.DrawText(fmt.Sprintf("Player HP: %d", a.PlayerHp), 10, 30, 20, rl.RayWhite)
-				rl.DrawText(fmt.Sprintf("Score: %d", a.PlayerScore), 10, 50, 20, rl.RayWhite)
+				draw.Text(fmt.Sprintf("Player HP: %d", a.PlayerHp), 10, 30, 20, rl.RayWhite)
+				draw.Text(fmt.Sprintf("Score: %d", a.PlayerScore), 10, 50, 20, rl.RayWhite)
 				if a.PlayerHp <= 0 {
 					text := "Game Over"
 					textSize := rl.MeasureTextEx(rl.GetFontDefault(), text, 96, 0)
 					x := (s.monitorWidth - int(textSize.X)) / 2
 					y := (s.monitorHeight - int(textSize.Y)) / 2
-					rl.DrawText(text, int32(x), int32(y), 96, rl.Red)
-
+					draw.Text(text, int32(x), int32(y), 96, rl.Red)
 				}
 				return false
 			})
-			rl.EndTextureMode()
+			draw.EndTextureMode()
 
 		case config.MinimapCameraLayer:
-			rl.BeginTextureMode(frame.Texture)
-			rl.DrawRectangleLines(1, 1, frame.Texture.Texture.Width-1, frame.Texture.Texture.Height-1, rl.Green)
-			rl.EndTextureMode()
+			draw.BeginTextureMode(frame.Texture)
+			draw.RectLine(1, 1, frame.Texture.Texture.Width-1, frame.Texture.Texture.Height-1, rl.Green)
+			draw.EndTextureMode()
 		}
 
 		return true

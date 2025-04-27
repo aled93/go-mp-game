@@ -16,11 +16,13 @@ Thank you for your support!
 package stdsystems
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
+	"gomp/pkg/draw"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"slices"
 	"time"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 func NewRenderSystem() RenderSystem {
@@ -54,11 +56,9 @@ func (s *RenderSystem) Run(dt time.Duration) bool {
 		return int(a.Layer - b.Layer)
 	})
 
-	rl.BeginDrawing()
-
 	for _, frame := range s.frames {
-		rl.BeginBlendMode(frame.BlendMode)
-		rl.DrawTexturePro(frame.Texture.Texture,
+		draw.BeginBlendMode(frame.BlendMode)
+		draw.Texture(frame.Texture.Texture,
 			rl.Rectangle{
 				X:      0,
 				Y:      0,
@@ -70,10 +70,8 @@ func (s *RenderSystem) Run(dt time.Duration) bool {
 			frame.Rotation,
 			frame.Tint,
 		)
-		rl.EndBlendMode()
+		draw.EndBlendMode()
 	}
-
-	rl.EndDrawing()
 
 	s.frames = s.frames[:0]
 	return false

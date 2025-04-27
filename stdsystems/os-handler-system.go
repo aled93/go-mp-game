@@ -7,8 +7,10 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package stdsystems
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
+	"gomp/pkg/draw"
 	"time"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 func NewOSHandlerSystem() OSHandlerSystem {
@@ -19,7 +21,7 @@ type OSHandlerSystem struct{}
 
 func (s *OSHandlerSystem) Init() {
 	// TODO: pass parameters, resize or reinit.
-	rl.InitWindow(1280, 720, "GOMP")
+	draw.InitWindow(1280, 720, "GOMP")
 }
 
 func (s *OSHandlerSystem) Run(dt time.Duration) bool {
@@ -33,5 +35,5 @@ func (s *OSHandlerSystem) Run(dt time.Duration) bool {
 }
 
 func (s *OSHandlerSystem) Destroy() {
-	rl.CloseWindow()
+	draw.DestroyWindow()
 }

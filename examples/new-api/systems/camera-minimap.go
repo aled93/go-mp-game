@@ -1,14 +1,16 @@
 package systems
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/examples/new-api/components"
 	"gomp/examples/new-api/config"
+	"gomp/pkg/draw"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"gomp/vectors"
 	"image/color"
 	"time"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 func NewMinimapSystem() MinimapSystem {
@@ -53,7 +55,7 @@ func (s *MinimapSystem) Init() {
 	s.FrameBuffer2D.Create(s.minimapCamera, stdcomponents.FrameBuffer2D{
 		Position:  rl.Vector2{},
 		Frame:     rl.NewRectangle(0, 0, float32(width), float32(height)),
-		Texture:   rl.LoadRenderTexture(int32(width), int32(height)),
+		Texture:   draw.CreateRenderTexture(int32(width), int32(height)),
 		Layer:     config.MinimapCameraLayer,
 		BlendMode: rl.BlendAlpha,
 		Rotation:  0,

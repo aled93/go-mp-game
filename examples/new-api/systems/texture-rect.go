@@ -7,15 +7,17 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package systems
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
-	"github.com/negrel/assert"
 	"gomp/examples/new-api/components"
 	"gomp/pkg/core"
+	"gomp/pkg/draw"
 	"gomp/pkg/ecs"
 	"gomp/pkg/worker"
 	"gomp/stdcomponents"
 	"runtime"
 	"time"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
+	"github.com/negrel/assert"
 )
 
 func NewTextureRectSystem() TextureRectSystem {
@@ -31,10 +33,10 @@ type TextureRectSystem struct {
 }
 
 func (s *TextureRectSystem) Init() {
-	var texture = rl.LoadRenderTexture(1, 1) // :)
-	rl.BeginTextureMode(texture)
-	rl.ClearBackground(rl.White)
-	rl.EndTextureMode()
+	var texture = draw.CreateRenderTexture(1, 1) // :)
+	draw.BeginTextureMode(texture)
+	draw.ClearBackground(rl.White)
+	draw.EndTextureMode()
 	s.texture = texture
 	s.numWorkers = runtime.NumCPU() - 2
 }
@@ -56,5 +58,5 @@ func (s *TextureRectSystem) Run(dt time.Duration) {
 }
 
 func (s *TextureRectSystem) Destroy() {
-	rl.UnloadRenderTexture(s.texture)
+	draw.DestroyRenderTexture(s.texture)
 }

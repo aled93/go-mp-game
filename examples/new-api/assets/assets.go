@@ -9,6 +9,7 @@ package assets
 import (
 	"embed"
 	"gomp"
+	"gomp/pkg/draw"
 	"image/png"
 	"log"
 	"strings"
@@ -37,7 +38,7 @@ var Textures = gomp.CreateAssetLibrary(
 		}
 
 		rlImg := rl.NewImageFromImage(img)
-		return rl.LoadTextureFromImage(rlImg)
+		return draw.CreateTextureFromImage(rlImg)
 	},
 	func(path string, asset *rl.Texture2D) {
 		assert.True(rl.IsWindowReady(), "Window is not initialized")

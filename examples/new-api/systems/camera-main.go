@@ -15,15 +15,17 @@ Thank you for your support!
 package systems
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/examples/new-api/components"
 	"gomp/examples/new-api/config"
+	"gomp/pkg/draw"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
 	"gomp/vectors"
 	"image/color"
 	"math"
 	"time"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 // MainCameraSystem is simple system responsible for managing the camera entities in the game.
@@ -67,7 +69,7 @@ func (s *MainCameraSystem) Init() {
 	s.FrameBuffer2D.Create(s.mainCamera, stdcomponents.FrameBuffer2D{
 		Position:  rl.Vector2{},
 		Frame:     rl.Rectangle{X: 0, Y: 0, Width: float32(width), Height: float32(height)},
-		Texture:   rl.LoadRenderTexture(int32(width), int32(height)),
+		Texture:   draw.CreateRenderTexture(int32(width), int32(height)),
 		Layer:     config.MainCameraLayer,
 		BlendMode: rl.BlendColor,
 		Rotation:  0,

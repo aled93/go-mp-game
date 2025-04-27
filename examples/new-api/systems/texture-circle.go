@@ -7,14 +7,16 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package systems
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
-	"github.com/negrel/assert"
 	"gomp/examples/new-api/components"
 	"gomp/pkg/core"
+	"gomp/pkg/draw"
 	"gomp/pkg/ecs"
 	"gomp/pkg/worker"
 	"gomp/stdcomponents"
 	"time"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
+	"github.com/negrel/assert"
 )
 
 func NewTextureCircleSystem() TextureCircleSystem {
@@ -31,10 +33,10 @@ type TextureCircleSystem struct {
 
 func (s *TextureCircleSystem) Init() {
 	const circleRadius = 128
-	var texture = rl.LoadRenderTexture(circleRadius*2, circleRadius*2)
-	rl.BeginTextureMode(texture)
-	rl.DrawCircle(circleRadius, circleRadius, circleRadius, rl.White)
-	rl.EndTextureMode()
+	var texture = draw.CreateRenderTexture(circleRadius*2, circleRadius*2)
+	draw.BeginTextureMode(texture)
+	draw.CircleFill(circleRadius, circleRadius, circleRadius, rl.White)
+	draw.EndTextureMode()
 	s.texture = texture
 }
 
@@ -64,5 +66,5 @@ func (s *TextureCircleSystem) Run(dt time.Duration) {
 }
 
 func (s *TextureCircleSystem) Destroy() {
-	rl.UnloadRenderTexture(s.texture)
+	draw.DestroyRenderTexture(s.texture)
 }
