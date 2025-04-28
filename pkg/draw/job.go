@@ -111,5 +111,6 @@ func (job *Job) Execute() {
 		}
 	}
 
-	rl.EndDrawing()
+	rl.DrawRenderBatchActive()
+	rl.SwapScreenBuffer()
 }

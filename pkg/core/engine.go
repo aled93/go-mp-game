@@ -21,6 +21,8 @@ import (
 	"runtime"
 	"sync"
 	"time"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 const (
@@ -54,6 +56,8 @@ func (e *Engine) Run(tickrate uint, framerate uint) {
 
 	jobChan := make(chan draw.Job, 1)
 	exitChan := make(chan struct{})
+	processInputChan := make(chan struct{})
+	processedInputChan := make(chan struct{})
 
 	draw.SetJobProcessor(jobChan)
 
@@ -92,6 +96,9 @@ func (e *Engine) Run(tickrate uint, framerate uint) {
 			draw.BeginDrawing()
 			e.Game.Render(dt)
 			draw.EndDrawing()
+
+			processInputChan <- struct{}{}
+			<-processedInputChan
 		}
 
 		e.Game.Destroy()
@@ -108,6 +115,10 @@ loop:
 
 		case <-exitChan:
 			break loop
+
+		case <-processInputChan:
+			rl.PollInputEvents()
+			processedInputChan <- struct{}{}
 		}
 	}
 }
