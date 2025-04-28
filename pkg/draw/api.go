@@ -8,8 +8,12 @@ import (
 )
 
 var (
-	activeJob    *Job = new(Job)
-	nextJob      *Job = new(Job)
+	activeJob *Job = &Job{
+		commands: make([]drawCommand, 0, 0xFFFF),
+	}
+	nextJob *Job = &Job{
+		commands: make([]drawCommand, 0, 0xFFFF),
+	}
 	jobProcessor chan<- Job
 )
 
