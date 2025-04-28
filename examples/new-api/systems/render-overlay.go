@@ -125,10 +125,10 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 						// Simple AABB culling
 						if s.intersects(cameraRect, a.Rect()) {
 							draw.RectFill(
-								int32(a.Min.X),
-								int32(a.Min.Y),
-								int32(a.Max.X-a.Min.X),
-								int32(a.Max.Y-a.Min.Y),
+								a.Min.X,
+								a.Min.Y,
+								a.Max.X-a.Min.X,
+								a.Max.Y-a.Min.Y,
 								*tint,
 							)
 						}
@@ -149,7 +149,7 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 						Width:  cell.Size,
 						Height: cell.Size,
 					}) {
-						draw.RectLine(int32(position.XY.X), int32(position.XY.Y), int32(cell.Size), int32(cell.Size), clr)
+						draw.RectLine(position.XY.X, position.XY.Y, cell.Size, cell.Size, 1.0, clr)
 					}
 					return true
 				})
@@ -174,10 +174,10 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 						// Simple AABB culling
 						if s.intersects(cameraRect, a.Rect()) {
 							draw.RectFill(
-								int32(a.Min.X),
-								int32(a.Min.Y),
-								int32(a.Max.X-a.Min.X),
-								int32(a.Max.Y-a.Min.Y),
+								a.Min.X,
+								a.Min.Y,
+								a.Max.X-a.Min.X,
+								a.Max.Y-a.Min.Y,
 								*tint,
 							)
 						}
@@ -198,7 +198,7 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 						Width:  chunk.Size,
 						Height: chunk.Size,
 					}) {
-						draw.RectLine(int32(position.XY.X), int32(position.XY.Y), int32(chunk.Size), int32(chunk.Size), clr)
+						draw.RectLine(position.XY.X, position.XY.Y, chunk.Size, chunk.Size, 1.0, clr)
 					}
 					return true
 				})
@@ -211,24 +211,24 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 					}
 					if s.intersects(cameraRect, aabb.Rect()) {
 						draw.RectLine(
-							int32(aabb.Min.X),
-							int32(aabb.Min.Y),
-							int32(aabb.Max.X-aabb.Min.X),
-							int32(aabb.Max.Y-aabb.Min.Y),
-							clr,
+							aabb.Min.X,
+							aabb.Min.Y,
+							aabb.Max.X-aabb.Min.X,
+							aabb.Max.Y-aabb.Min.Y,
+							1.0, clr,
 						)
 					}
 					return true
 				})
 				s.Collisions.EachEntity()(func(entity ecs.Entity) bool {
 					pos := s.Positions.GetUnsafe(entity)
-					draw.RectFill(int32(pos.XY.X-8), int32(pos.XY.Y-8), 16, 16, rl.Red)
+					draw.RectFill(pos.XY.X-8, pos.XY.Y-8, 16, 16, rl.Red)
 					return true
 				})
 				s.Textures.EachComponent()(func(r *stdcomponents.RLTexturePro) bool {
 					draw.RectFillAngled(
-						int32(r.Dest.X-2),
-						int32(r.Dest.Y-2),
+						r.Dest.X-2,
+						r.Dest.Y-2,
 						4,
 						4,
 						r.Rotation, rl.Red,
@@ -240,19 +240,19 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 
 			// Print stats
 			draw.RectFill(0, 0, 120, 200, rl.Black)
-			draw.Text(fmt.Sprintf("FPS: %d", rl.GetFPS()), 10, 10, 20, rl.RayWhite)
-			draw.Text(fmt.Sprintf("%d entities", s.EntityManager.Size()), 10, 70, 20, rl.RayWhite)
-			draw.Text(fmt.Sprintf("%d debugLvl", s.debugLvl), 10, 90, 20, rl.RayWhite)
+			draw.Text(fmt.Sprintf("FPS: %d", rl.GetFPS()), 10, 10, 20, 0, rl.RayWhite)
+			draw.Text(fmt.Sprintf("%d entities", s.EntityManager.Size()), 10, 70, 20, 0, rl.RayWhite)
+			draw.Text(fmt.Sprintf("%d debugLvl", s.debugLvl), 10, 90, 20, 0, rl.RayWhite)
 			// Game over
 			s.SceneManager.EachComponent()(func(a *components.AsteroidSceneManager) bool {
-				draw.Text(fmt.Sprintf("Player HP: %d", a.PlayerHp), 10, 30, 20, rl.RayWhite)
-				draw.Text(fmt.Sprintf("Score: %d", a.PlayerScore), 10, 50, 20, rl.RayWhite)
+				draw.Text(fmt.Sprintf("Player HP: %d", a.PlayerHp), 10, 30, 20, 0, rl.RayWhite)
+				draw.Text(fmt.Sprintf("Score: %d", a.PlayerScore), 10, 50, 20, 0, rl.RayWhite)
 				if a.PlayerHp <= 0 {
 					text := "Game Over"
 					textSize := rl.MeasureTextEx(rl.GetFontDefault(), text, 96, 0)
-					x := (s.monitorWidth - int(textSize.X)) / 2
-					y := (s.monitorHeight - int(textSize.Y)) / 2
-					draw.Text(text, int32(x), int32(y), 96, rl.Red)
+					x := (float32(s.monitorWidth) - textSize.X) * 0.5
+					y := (float32(s.monitorHeight) - textSize.Y) * 0.5
+					draw.Text(text, x, y, 96, 0, rl.Red)
 				}
 				return false
 			})
@@ -260,7 +260,7 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 
 		case config.MinimapCameraLayer:
 			draw.BeginTextureMode(frame.Texture)
-			draw.RectLine(1, 1, frame.Texture.Texture.Width-1, frame.Texture.Texture.Height-1, rl.Green)
+			draw.RectLine(1, 1, float32(frame.Texture.Texture.Width-1), float32(frame.Texture.Texture.Height-1), 1.0, rl.Green)
 			draw.EndTextureMode()
 		}
 

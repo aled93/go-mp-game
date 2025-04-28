@@ -160,79 +160,82 @@ func DestroyTexture(tex rl.Texture2D) {
 	})
 }
 
-func Line(x0, y0, x1, y1 int32, color color.RGBA) {
+func Line(x0, y0, x1, y1, thickness float32, color color.RGBA) {
 	assert.NotNil(activeJob, "drawing didn't started")
 
 	activeJob.commands = append(activeJob.commands, drawCommand{
 		kind: drawCmd_Line,
-		i0:   x0,
-		i1:   y0,
-		i2:   x1,
-		i3:   y1,
+		f0:   x0,
+		f1:   y0,
+		f2:   x1,
+		f3:   y1,
+		f4:   thickness,
 		clr:  color,
 	})
 }
 
-func RectLine(x, y, w, h int32, color color.RGBA) {
+func RectLine(x, y, w, h, thickness float32, color color.RGBA) {
 	assert.NotNil(activeJob, "drawing didn't started")
 
 	activeJob.commands = append(activeJob.commands, drawCommand{
 		kind: drawCmd_RectLine,
-		i0:   x,
-		i1:   y,
-		i2:   w,
-		i3:   h,
+		f0:   x,
+		f1:   y,
+		f2:   w,
+		f3:   h,
+		f4:   thickness,
 		clr:  color,
 	})
 }
 
-func RectFill(x, y, w, h int32, color color.RGBA) {
+func RectFill(x, y, w, h float32, color color.RGBA) {
 	assert.NotNil(activeJob, "drawing didn't started")
 
 	activeJob.commands = append(activeJob.commands, drawCommand{
 		kind: drawCmd_RectFill,
-		i0:   x,
-		i1:   y,
-		i2:   w,
-		i3:   h,
+		f0:   x,
+		f1:   y,
+		f2:   w,
+		f3:   h,
 		clr:  color,
 	})
 }
 
-func RectFillAngled(x, y, w, h int32, ang float32, color color.RGBA) {
+func RectFillAngled(x, y, w, h float32, ang float32, color color.RGBA) {
 	assert.NotNil(activeJob, "drawing didn't started")
 
 	activeJob.commands = append(activeJob.commands, drawCommand{
 		kind: drawCmd_RectFillRot,
-		i0:   x,
-		i1:   y,
-		i2:   w,
-		i3:   h,
-		f0:   ang,
+		f0:   x,
+		f1:   y,
+		f2:   w,
+		f3:   h,
+		f4:   ang,
 		clr:  color,
 	})
 }
 
-func CircleFill(x, y int32, r float32, color color.RGBA) {
+func CircleFill(x, y, r float32, color color.RGBA) {
 	assert.NotNil(activeJob, "drawing didn't started")
 
 	activeJob.commands = append(activeJob.commands, drawCommand{
 		kind: drawCmd_CircleFill,
-		i0:   x,
-		i1:   y,
-		f0:   r,
+		f0:   x,
+		f1:   y,
+		f2:   r,
 		clr:  color,
 	})
 }
 
-func Text(text string, x, y, fontSize int32, color color.RGBA) {
+func Text(text string, x, y, fontSize, spacing float32, color color.RGBA) {
 	assert.NotNil(activeJob, "drawing didn't started")
 
 	activeJob.commands = append(activeJob.commands, drawCommand{
 		kind: drawCmd_Text,
-		i0:   x,
-		i1:   y,
-		i2:   fontSize,
+		f0:   x,
+		f1:   y,
+		f2:   fontSize,
+		f3:   spacing,
 		clr:  color,
 		str:  text,
 	})

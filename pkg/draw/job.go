@@ -82,13 +82,13 @@ func (job *Job) Execute() {
 			rl.EndBlendMode()
 
 		case drawCmd_Line:
-			rl.DrawLine(cmd.i0, cmd.i1, cmd.i2, cmd.i3, cmd.clr)
+			rl.DrawLineEx(rl.NewVector2(cmd.f0, cmd.f1), rl.NewVector2(cmd.f2, cmd.f3), cmd.f4, cmd.clr)
 
 		case drawCmd_RectLine:
-			rl.DrawRectangleLines(cmd.i0, cmd.i1, cmd.i2, cmd.i3, cmd.clr)
+			rl.DrawRectangleLinesEx(rl.NewRectangle(cmd.f0, cmd.f1, cmd.f2, cmd.f3), cmd.f4, cmd.clr)
 
 		case drawCmd_RectFill:
-			rl.DrawRectangle(cmd.i0, cmd.i1, cmd.i2, cmd.i3, cmd.clr)
+			rl.DrawRectangleRec(rl.NewRectangle(cmd.f0, cmd.f1, cmd.f2, cmd.f3), cmd.clr)
 
 		case drawCmd_RectFillRot:
 			rl.DrawRectanglePro(
@@ -97,10 +97,10 @@ func (job *Job) Execute() {
 			)
 
 		case drawCmd_CircleFill:
-			rl.DrawCircle(cmd.i0, cmd.i1, cmd.f0, cmd.clr)
+			rl.DrawCircleV(rl.NewVector2(cmd.f0, cmd.f1), cmd.f3, cmd.clr)
 
 		case drawCmd_Text:
-			rl.DrawText(cmd.str, cmd.i0, cmd.i1, cmd.i2, cmd.clr)
+			rl.DrawTextEx(rl.GetFontDefault(), cmd.str, rl.NewVector2(cmd.f0, cmd.f1), cmd.f2, cmd.f3, cmd.clr)
 
 		case drawCmd_Texture:
 			rl.DrawTexturePro(cmd.tex,

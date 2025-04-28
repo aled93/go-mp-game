@@ -34,17 +34,17 @@ const (
 	drawCmd_CreateTextureFromImage
 	// u0: texDefferedId
 	drawCmd_DestroyTexture
-	// i0: srcX, i1: srcY, i2: dstX, i3: dstY, clr: color
+	// f0: srcX, f1: srcY, f2: dstX, f3: dstY, f4: thikness, clr: color
 	drawCmd_Line
-	// i0: posX, i1: posY, i2: width, i3: height, clr: color
+	// f0: posX, f1: posY, f2: width, f3: height, f4: thikness, clr: color
 	drawCmd_RectLine
-	// i0: posX, i1: posY, i2: width, i3: height, clr: color
+	// f0: posX, f1: posY, f2: width, f3: height, clr: color
 	drawCmd_RectFill
-	// i0: posX, i1: posY, i2: width, i3: height, f0: rotation, clr: color
+	// f0: posX, f1: posY, f2: width, f3: height, f4: rotation, clr: color
 	drawCmd_RectFillRot
-	// i0: posX, i1: posY, f0: radius, clr: color
+	// f0: posX, f1: posY, f3: radius, clr: color
 	drawCmd_CircleFill
-	// i0: posX, i1: posY, i2: fontSize, clr: color, str: text
+	// f0: posX, f1: posY, f2: fontSize, f3: spacing, clr: color, str: text
 	drawCmd_Text
 	// f0-f3: srcRect, f4-f7: dstRect, f8: rotation, str: texture, clr: tint
 	drawCmd_Texture
