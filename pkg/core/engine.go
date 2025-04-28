@@ -52,8 +52,7 @@ func (e *Engine) Run(tickrate uint, framerate uint) {
 		defer renderTicker.Stop()
 	}
 
-	var drawingMx sync.Mutex
-	jobChan := make(chan draw.Job)
+	jobChan := make(chan draw.Job, 1)
 	exitChan := make(chan struct{})
 
 	draw.SetJobProcessor(jobChan)
@@ -105,9 +104,7 @@ loop:
 	for {
 		select {
 		case job := <-jobChan:
-			drawingMx.Lock()
 			job.Execute()
-			drawingMx.Unlock()
 
 		case <-exitChan:
 			break loop
