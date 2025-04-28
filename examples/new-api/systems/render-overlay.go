@@ -240,19 +240,19 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 
 			// Print stats
 			draw.RectFill(0, 0, 120, 200, rl.Black)
-			draw.Text(fmt.Sprintf("FPS: %d", rl.GetFPS()), 10, 10, 20, 0, rl.RayWhite)
-			draw.Text(fmt.Sprintf("%d entities", s.EntityManager.Size()), 10, 70, 20, 0, rl.RayWhite)
-			draw.Text(fmt.Sprintf("%d debugLvl", s.debugLvl), 10, 90, 20, 0, rl.RayWhite)
+			draw.Text(fmt.Sprintf("FPS: %d", rl.GetFPS()), 10, 10, 20, 2, rl.RayWhite)
+			draw.Text(fmt.Sprintf("%d entities", s.EntityManager.Size()), 10, 70, 20, 2, rl.RayWhite)
+			draw.Text(fmt.Sprintf("%d debugLvl", s.debugLvl), 10, 90, 20, 2, rl.RayWhite)
 			// Game over
 			s.SceneManager.EachComponent()(func(a *components.AsteroidSceneManager) bool {
-				draw.Text(fmt.Sprintf("Player HP: %d", a.PlayerHp), 10, 30, 20, 0, rl.RayWhite)
-				draw.Text(fmt.Sprintf("Score: %d", a.PlayerScore), 10, 50, 20, 0, rl.RayWhite)
+				draw.Text(fmt.Sprintf("Player HP: %d", a.PlayerHp), 10, 30, 20, 2, rl.RayWhite)
+				draw.Text(fmt.Sprintf("Score: %d", a.PlayerScore), 10, 50, 20, 2, rl.RayWhite)
 				if a.PlayerHp <= 0 {
 					text := "Game Over"
-					textSize := rl.MeasureTextEx(rl.GetFontDefault(), text, 96, 0)
+					textSize := rl.MeasureTextEx(rl.GetFontDefault(), text, 96, 2)
 					x := (float32(s.monitorWidth) - textSize.X) * 0.5
 					y := (float32(s.monitorHeight) - textSize.Y) * 0.5
-					draw.Text(text, x, y, 96, 0, rl.Red)
+					draw.Text(text, x, y, 96, 2, rl.Red)
 				}
 				return false
 			})
