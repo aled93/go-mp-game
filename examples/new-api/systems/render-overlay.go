@@ -240,7 +240,7 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 
 			// Print stats
 			draw.RectFill(0, 0, 120, 200, rl.Black)
-			draw.Text(fmt.Sprintf("FPS: %d", rl.GetFPS()), 10, 10, 20, 2, rl.RayWhite)
+			draw.Text(fmt.Sprintf("FPS: %d", draw.GetFPS()), 10, 10, 20, 2, rl.RayWhite)
 			draw.Text(fmt.Sprintf("%d entities", s.EntityManager.Size()), 10, 70, 20, 2, rl.RayWhite)
 			draw.Text(fmt.Sprintf("%d debugLvl", s.debugLvl), 10, 90, 20, 2, rl.RayWhite)
 			// Game over

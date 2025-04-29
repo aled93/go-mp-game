@@ -2,6 +2,8 @@ package draw
 
 import (
 	"image/color"
+	"sync/atomic"
+	"time"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/negrel/assert"
@@ -9,13 +11,44 @@ import (
 
 var (
 	activeJob *Job = &Job{
-		commands: make([]drawCommand, 0, 0xFFFF),
+		commands:    make([]drawCommand, 0, 0xFFFF),
+		drawEndChan: frameEndTimeChan,
 	}
 	nextJob *Job = &Job{
-		commands: make([]drawCommand, 0, 0xFFFF),
+		commands:    make([]drawCommand, 0, 0xFFFF),
+		drawEndChan: frameEndTimeChan,
 	}
 	jobProcessor chan<- Job
+
+	frameEndTimeChan      = make(chan time.Time, 1)
+	frameEndFirst         time.Time
+	frameDrawnNum         int
+	fpsSmoothed           atomic.Int64
+	fpsSmoothedLastUpdate time.Time
 )
+
+func init() {
+	go func() {
+		for frameEnd := range frameEndTimeChan {
+			if frameDrawnNum == 0 {
+				frameEndFirst = frameEnd
+			}
+			frameDrawnNum++
+
+			// update every second
+			if time.Since(fpsSmoothedLastUpdate) < time.Second {
+				continue
+			}
+			fpsSmoothedLastUpdate = time.Now()
+
+			timeRange := frameEnd.Sub(frameEndFirst)
+			fps := int64(float64(frameDrawnNum) / timeRange.Seconds())
+			fpsSmoothed.Store(fps)
+
+			frameDrawnNum = 0
+		}
+	}()
+}
 
 func runCommandSync(cmd drawCommand) drawCommand {
 	resultChan := make(chan drawCommand)
@@ -62,6 +95,10 @@ func DestroyWindow() {
 	runCommandSync(drawCommand{
 		kind: drawCmd_DestroyWindow,
 	})
+}
+
+func GetFPS() int64 {
+	return fpsSmoothed.Load()
 }
 
 func ClearBackground(color color.RGBA) {

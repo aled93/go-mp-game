@@ -2,12 +2,14 @@ package draw
 
 import (
 	"log"
+	"time"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type Job struct {
-	commands []drawCommand
+	commands    []drawCommand
+	drawEndChan chan<- time.Time
 	// some commands better be called synchronously to avoid complicating api
 	immediateCommand    drawCommand
 	immediateResultChan chan drawCommand
@@ -113,4 +115,6 @@ func (job *Job) Execute() {
 
 	rl.DrawRenderBatchActive()
 	rl.SwapScreenBuffer()
+
+	job.drawEndChan <- time.Now()
 }
