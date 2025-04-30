@@ -56,10 +56,10 @@ func BenchmarkComponentBitTable_AllSet(b *testing.B) {
 	for i := 0; i < testEntitiesLen; i++ {
 		entity := Entity(i)
 		table.Create(entity)
-		// Give each entity 3 components
-		table.Set(entity, ComponentId(i%maxComponentsLen))
-		table.Set(entity, ComponentId((i+1)%maxComponentsLen))
-		table.Set(entity, ComponentId((i+2)%maxComponentsLen))
+		// Give each entity 100 components
+		for j := 0; j < 100; j++ {
+			table.Set(entity, ComponentId(j%maxComponentsLen))
+		}
 	}
 
 	b.ReportAllocs()
@@ -72,7 +72,7 @@ func BenchmarkComponentBitTable_AllSet(b *testing.B) {
 				count++
 				return true
 			})
-			if count != 3 {
+			if count != 100 {
 				b.Fatalf("Expected 3 components, got %d", count)
 			}
 		}

@@ -21,20 +21,6 @@ import (
 
 const uintShift = 7 - 64/bits.UintSize
 
-// nextPowerOf2 rounds up to the next power of 2.
-// For example: 5 -> 8, 17 -> 32, 32 -> 32
-func nextPowerOf2(v int) int {
-	v--
-	v |= v >> 1
-	v |= v >> 2
-	v |= v >> 4
-	v |= v >> 8
-	v |= v >> 16
-	v |= v >> 32
-	v++
-	return v
-}
-
 func NewComponentBitTable(maxComponentsLen int) ComponentBitTable {
 	bitsetSize := ((maxComponentsLen - 1) / bits.UintSize) + 1 + 1 // 1 entry for the entity
 	return ComponentBitTable{
@@ -132,12 +118,16 @@ func (b *ComponentBitTable) AllSet(entity Entity, yield func(ComponentId) bool) 
 	chunkId := bitsId / b.pageSize
 	bitsetId := bitsId % b.pageSize
 	for i := 1; i < b.bitsetSize; i++ { // i := 1 Skip the first entry (Entity)
-		for j := 0; j < bits.UintSize; j++ {
-			if (b.bits[chunkId][bitsetId+i]>>j)&1 == 1 {
+		set := b.bits[chunkId][bitsetId+i]
+		j := 0
+		for set != 0 {
+			if set&1 == 1 {
 				if !yield(ComponentId((i-1)*bits.UintSize + j)) {
 					return
 				}
 			}
+			set >>= 1
+			j++
 		}
 	}
 }
