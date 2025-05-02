@@ -12,6 +12,10 @@ import (
 	"sync"
 )
 
+/*
+Go Slice tips and tricks - https://ueokande.github.io/go-slice-tricks/
+*/
+
 func NewPagedArray[T any]() (a PagedArray[T]) {
 	a.book = make([]ArrayPage[T], initialBookSize)
 	a.edpTasks = make([]EachDataTask[T], initialBookSize)
