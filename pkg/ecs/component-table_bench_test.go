@@ -2,7 +2,7 @@ package ecs
 
 import "testing"
 
-const testEntitiesLen = 100_000
+const testEntitiesLen Entity = 100_000
 const maxComponentsLen = 1024
 
 func BenchmarkComponentBitTable_SetAndTest(b *testing.B) {
@@ -10,14 +10,43 @@ func BenchmarkComponentBitTable_SetAndTest(b *testing.B) {
 	table := NewComponentBitTable(maxComponentsLen)
 	b.ReportAllocs()
 	for b.Loop() {
-		for i := 0; i < testEntitiesLen; i++ {
-			entity := Entity(i)
+		for i := Entity(0); i < testEntitiesLen; i++ {
 			comp := ComponentId(i % maxComponentsLen)
-			table.Create(entity)
-			table.Set(entity, comp)
-			if !table.Test(entity, comp) {
-				b.Fatalf("BitTable: expected entity %d to have component %d set", entity, comp)
+			table.Create(i)
+			table.Set(i, comp)
+			if !table.Test(i, comp) {
+				b.Fatalf("BitTable: expected entity %d to have component %d set", i, comp)
 			}
+		}
+		b.StopTimer()
+		for i := Entity(0); i < testEntitiesLen; i++ {
+			table.Delete(i)
+		}
+		b.StartTimer()
+	}
+}
+
+func BenchmarkComponentBitTable_SetTestDelete(b *testing.B) {
+	table := NewComponentBitTable(maxComponentsLen)
+	//for i := Entity(1); i < testEntitiesLen; i++ {
+	//	table.Create(Entity(i))
+	//}
+	// using a fixed maximum components length
+	b.ReportAllocs()
+	for b.Loop() {
+		b.StopTimer()
+		for i := Entity(0); i < testEntitiesLen; i++ {
+			table.Create(i)
+		}
+		b.StartTimer()
+
+		for i := Entity(0); i < testEntitiesLen; i++ {
+			comp := ComponentId(i % maxComponentsLen)
+			table.Set(i, comp)
+			if !table.Test(i, comp) {
+				b.Fatalf("BitTable: expected entity %d to have component %d set", i, comp)
+			}
+			table.Delete(i)
 		}
 	}
 }
@@ -26,7 +55,7 @@ func BenchmarkComponentBitTable_Delete(b *testing.B) {
 	// using a fixed maximum components length
 	table := NewComponentBitTable(maxComponentsLen)
 	// Setup - create and set components for all entities
-	for i := 0; i < testEntitiesLen; i++ {
+	for i := Entity(0); i < testEntitiesLen; i++ {
 		entity := Entity(i)
 		table.Create(entity)
 		table.Set(entity, ComponentId(i%maxComponentsLen))
@@ -36,13 +65,13 @@ func BenchmarkComponentBitTable_Delete(b *testing.B) {
 	b.ResetTimer()
 	for b.Loop() {
 		// Delete all entities
-		for i := 0; i < testEntitiesLen; i++ {
+		for i := Entity(0); i < testEntitiesLen; i++ {
 			entity := Entity(i)
 			table.Delete(entity)
 		}
 
 		// Recreate for next iteration
-		for i := 0; i < testEntitiesLen; i++ {
+		for i := Entity(0); i < testEntitiesLen; i++ {
 			entity := Entity(i)
 			table.Create(entity)
 			table.Set(entity, ComponentId(i%maxComponentsLen))
@@ -53,7 +82,7 @@ func BenchmarkComponentBitTable_Delete(b *testing.B) {
 func BenchmarkComponentBitTable_AllSet(b *testing.B) {
 	table := NewComponentBitTable(maxComponentsLen)
 	// Prepare entities with multiple components each
-	for i := 0; i < testEntitiesLen; i++ {
+	for i := Entity(0); i < testEntitiesLen; i++ {
 		entity := Entity(i)
 		table.Create(entity)
 		// Give each entity 100 components
@@ -65,7 +94,7 @@ func BenchmarkComponentBitTable_AllSet(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for b.Loop() {
-		for i := 0; i < testEntitiesLen; i++ {
+		for i := Entity(0); i < testEntitiesLen; i++ {
 			entity := Entity(i)
 			count := 0
 			table.AllSet(entity, func(id ComponentId) bool {

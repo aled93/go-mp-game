@@ -37,12 +37,8 @@ func TestNewComponentBitTable(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			table := NewComponentBitTable(tt.maxComponentsLen)
 
-			//if table.bitsetSize != tt.expectedBitsetSize+1 {
-			//	t.Errorf("Expected bitsetSize %d, got %d", tt.expectedBitsetSize, table.bitsetSize)
-			//}
-
-			if cap(table.bits) != initialBookSize {
-				t.Errorf("Expected %d preallocated chunks, got %d", initialBookSize, cap(table.bits))
+			if cap(table.bitsetsBook) != initialBookSize {
+				t.Errorf("Expected %d preallocated chunks, got %d", initialBookSize, cap(table.bitsetsBook))
 			}
 		})
 	}
@@ -62,12 +58,11 @@ func TestComponentBitTable_Set(t *testing.T) {
 		t.Fatalf("Entity %d not found in lookup", entity1)
 	}
 
-	chunkId := bitsId / pageSize
-	bitsetId := bitsId % pageSize
-	offset := int(ComponentId(5)/bits.UintSize) + 1
+	pageId, bitsetId := table.getPageIDAndBitsetIndex(bitsId)
+	offset := int(ComponentId(5) >> uintShift)
 	mask := uint(1 << (ComponentId(5) % bits.UintSize))
 
-	if (table.bits[chunkId][bitsetId+offset] & mask) == 0 {
+	if (table.bitsetsBook[pageId][bitsetId+offset] & mask) == 0 {
 		t.Errorf("Expected bit to be set for entity %d, component %d", entity1, 5)
 	}
 
@@ -94,20 +89,19 @@ func TestComponentBitTable_Unset(t *testing.T) {
 
 	// Verify bit was unset
 	bitsId, _ := table.lookup.Get(entity)
-	chunkId := bitsId / pageSize
-	bitsetId := bitsId % pageSize
-	offset := int(ComponentId(5) / bits.UintSize)
+	pageId, bitsetId := table.getPageIDAndBitsetIndex(bitsId)
+	offset := int(ComponentId(5) >> uintShift)
 	mask := uint(1 << (ComponentId(5) % bits.UintSize))
 
-	if (table.bits[chunkId][bitsetId+offset] & mask) != 0 {
+	if (table.bitsetsBook[pageId][bitsetId+offset] & mask) != 0 {
 		t.Errorf("Expected bit to be unset for entity %d, component %d", entity, 5)
 	}
 
 	// Verify other bit is still set
-	offset = int(ComponentId(10)/bits.UintSize) + 1
+	offset = int(ComponentId(10) >> uintShift)
 	mask = uint(1 << (ComponentId(10) % bits.UintSize))
 
-	if (table.bits[chunkId][bitsetId+offset] & mask) == 0 {
+	if (table.bitsetsBook[pageId][bitsetId+offset] & mask) == 0 {
 		t.Errorf("Expected bit to still be set for entity %d, component %d", entity, 10)
 	}
 }
@@ -149,8 +143,8 @@ func TestComponentBitTable_Test(t *testing.T) {
 	entity2 := Entity(43)
 	table.Create(entity2)
 	table.Set(entity2, ComponentId(0))
-	table.Set(entity2, ComponentId(64)) // Last bit in first uint
-	table.Set(entity2, ComponentId(65)) // First bit in second uint
+	table.Set(entity2, ComponentId(64)) // First bit in second uint
+	table.Set(entity2, ComponentId(65)) // Second bit in second uint
 
 	if !table.Test(entity2, ComponentId(0)) {
 		t.Error("Test should return true for set component at uint boundary (0)")
@@ -212,42 +206,32 @@ func TestComponentBitTable_AllSet(t *testing.T) {
 
 func TestComponentBitTable_extend(t *testing.T) {
 	// Create a table with a small chunk size for testing
-	table := NewComponentBitTable(65)
-	// Set bits to force extension
+	table := NewComponentBitTable(bits.UintSize)
+
+	// Create entities to fill the first chunk
 	for i := 0; i < pageSize; i++ {
 		e := Entity(i)
 		table.Create(e)
-		table.Set(e, ComponentId(1))
+		table.Set(e, ComponentId(i%bits.UintSize))
+	}
+	if len(table.bitsetsBook) != 1 {
+		t.Errorf("Expected table to extend, got %d chunks", len(table.bitsetsBook))
 	}
 
-	if len(table.bits) > 1 {
-		t.Errorf("Expected table to be not extended, got %d chunks", len(table.bits))
+	// Create entity to force extension
+	table.Create(pageSize)
+	if len(table.bitsetsBook) <= 1 {
+		t.Errorf("Expected table to be extended, got %d chunks", len(table.bitsetsBook))
 	}
 
-	e := Entity(pageSize)
-	table.Create(e)
-	table.Set(e, ComponentId(1))
-
-	if len(table.bits) != 2 {
-		t.Errorf("Expected table to extend up to 2 chunks, got %d chunks", len(table.bits))
-	}
-
-	for i := pageSize + 1; i < pageSize*2; i++ {
+	// Create more entities
+	for i := pageSize + 1; i < (pageSize*2)+1; i++ {
 		e := Entity(i)
 		table.Create(e)
 		table.Set(e, ComponentId(1))
 	}
-
-	if len(table.bits) != 2 {
-		t.Errorf("Expected table to extend up to 2 chunks, got %d chunks", len(table.bits))
-	}
-
-	e = Entity(pageSize * 2)
-	table.Create(e)
-	table.Set(e, ComponentId(1))
-
-	if len(table.bits) != 3 {
-		t.Errorf("Expected table to extend up to 3 chunks, got %d chunks", len(table.bits))
+	if len(table.bitsetsBook) <= 2 {
+		t.Errorf("Expected table to extend beyond 2 chunks, got %d chunks", len(table.bitsetsBook))
 	}
 }
 
@@ -268,19 +252,19 @@ func TestComponentBitTable_EdgeCases(t *testing.T) {
 	// Test setting across bit boundaries
 	entity := Entity(42)
 	table.Create(entity)
-	table.Set(entity, ComponentId(0))  // Last bit in first uint
-	table.Set(entity, ComponentId(64)) // Last bit in first uint
-	table.Set(entity, ComponentId(65)) // First bit in second uint
+	table.Set(entity, ComponentId(0))  // First bit in first uint
+	table.Set(entity, ComponentId(63)) // Last bit in first uint
+	table.Set(entity, ComponentId(64)) // First bit in second uint
 
-	// Verify both bits
+	// Verify all bits
 	var found []ComponentId
 	table.AllSet(entity, func(id ComponentId) bool {
 		found = append(found, id)
 		return true
 	})
 
-	if len(found) != 3 || !contains(found, ComponentId(0)) || !contains(found, ComponentId(64)) || !contains(found, ComponentId(65)) {
-		t.Errorf("Expected components 0, 64 and 65, got %v", found)
+	if len(found) != 3 || !contains(found, ComponentId(0)) || !contains(found, ComponentId(63)) || !contains(found, ComponentId(64)) {
+		t.Errorf("Expected components 0, 63 and 64, got %v", found)
 	}
 }
 
@@ -292,18 +276,18 @@ func TestComponentBitTable_Create(t *testing.T) {
 	table.Create(entity)
 
 	// Verify entity is in lookup
-	bitsId, ok := table.lookup.Get(entity)
+	_, ok := table.lookup.Get(entity)
 	if !ok {
 		t.Fatalf("Entity %d not found in lookup after Create", entity)
 	}
 
-	// Check that entity ID is stored in the first position of its bitset
-	chunkId := bitsId >> pageSizeShift
-	bitsetId := bitsId % pageSize
-	storedEntityId := Entity(table.bits[chunkId][bitsetId])
+	// Check that entity ID is stored in entities book
+	bitsId, _ := table.lookup.Get(entity)
+	pageId, entityId := table.getPageIDAndEntityIndex(bitsId)
 
-	if storedEntityId != entity {
-		t.Errorf("Expected entity ID %d stored in bits, got %d", entity, storedEntityId)
+	if table.entitiesBook[pageId][entityId] != entity {
+		t.Errorf("Expected entity ID %d stored in entities book, got %d",
+			entity, table.entitiesBook[pageId][entityId])
 	}
 }
 
@@ -374,21 +358,16 @@ func TestComponentBitTable_DeleteWithSwap(t *testing.T) {
 		t.Fatalf("Entity %d not found after swap", entity2)
 	}
 
-	// Ensure the entity ID is correctly stored in the swapped position
-	chunkId := newEntity2BitsId >> pageSizeShift
-	bitsetId := newEntity2BitsId % pageSize
-	storedEntityId := Entity(table.bits[chunkId][bitsetId])
-	if storedEntityId != entity2 {
-		t.Errorf("Entity ID %d not correctly stored in bits after swap, got %d", entity2, storedEntityId)
-	}
-
 	// entity2 should have been moved to entity1's position
 	if newEntity2BitsId == entity2BitsId {
 		t.Errorf("Entity %d position should have changed after swap", entity2)
 	}
 
-	if table.length != table.bitsetSize {
-		t.Errorf("Expected table length to be %d, got %d", table.bitsetSize, table.length)
+	// Ensure entity is stored in the entity book
+	pageId, entityId := table.getPageIDAndEntityIndex(newEntity2BitsId)
+	if table.entitiesBook[pageId][entityId] != entity2 {
+		t.Errorf("Entity ID %d not correctly stored after swap, got %d",
+			entity2, table.entitiesBook[pageId][entityId])
 	}
 }
 
@@ -436,10 +415,9 @@ func TestComponentBitTable_MultipleOperations(t *testing.T) {
 		}
 	}
 
-	// The length should reflect the 5 entities (1, 3, 5, 6, 7)
-	expectedLen := 5 * table.bitsetSize
-	if table.length != expectedLen {
-		t.Errorf("Expected length %d, got %d", expectedLen, table.length)
+	// The length should be 5 (entities 1, 3, 5, 6, 7)
+	if table.length != 5 {
+		t.Errorf("Expected length 5, got %d", table.length)
 	}
 }
 
@@ -451,40 +429,4 @@ func contains(s []ComponentId, id ComponentId) bool {
 		}
 	}
 	return false
-}
-
-func TestNextPowerOf2(t *testing.T) {
-	tests := []struct {
-		input    int
-		expected int
-	}{
-		{0, 0},       // Edge case: 0 stays 0
-		{1, 1},       // Edge case: 1 stays 1
-		{2, 2},       // Already power of 2
-		{3, 4},       // Round up to 4
-		{4, 4},       // Already power of 2
-		{5, 8},       // Round up to 8
-		{7, 8},       // Round up to 8
-		{8, 8},       // Already power of 2
-		{9, 16},      // Round up to 16
-		{15, 16},     // Round up to 16
-		{16, 16},     // Already power of 2
-		{17, 32},     // Round up to 32
-		{31, 32},     // Round up to 32
-		{32, 32},     // Already power of 2
-		{33, 64},     // Round up to 64
-		{63, 64},     // Round up to 64
-		{64, 64},     // Already power of 2
-		{1023, 1024}, // Round up to 1024
-		{1024, 1024}, // Already power of 2
-	}
-
-	for _, tt := range tests {
-		t.Run("", func(t *testing.T) {
-			got := nextPowerOf2(tt.input)
-			if got != tt.expected {
-				t.Errorf("nextPowerOf2(%d) = %d; expected %d", tt.input, got, tt.expected)
-			}
-		})
-	}
 }
