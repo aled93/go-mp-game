@@ -19,95 +19,135 @@ import (
 	"math/bits"
 )
 
-//const (
-//	pageSizeShift   = 10
-//	pageSize        = 1 << pageSizeShift
-//	initialBookSize = 1 // Starting with a small initial book size
-//)
+const (
+	uintShift    = 7 - 64/bits.UintSize
+	pageSizeMask = pageSize - 1
+)
 
 func NewComponentBitTable(maxComponentsLen int) ComponentBitTable {
 	bitsetSize := ((maxComponentsLen - 1) / bits.UintSize) + 1
 	return ComponentBitTable{
-		bits:       make([][]uint, 0, initialBookSize),
-		lookup:     make(map[Entity]int, pageSize),
-		bitsetSize: bitsetSize,
+		bitsetsBook:  make([][]uint, 0, initialBookSize),
+		entitiesBook: make([][]Entity, 0, initialBookSize),
+		lookup:       NewPagedMap[Entity, int](),
+		bitsetSize:   bitsetSize,
+		pageSize:     bitsetSize * pageSize,
 	}
 }
 
 type ComponentBitTable struct {
-	bits       [][]uint
-	lookup     map[Entity]int
-	length     int
-	bitsetSize int
+	bitsetsBook  [][]uint
+	entitiesBook [][]Entity
+	lookup       PagedMap[Entity, int]
+	length       int
+	bitsetSize   int
+	pageSize     int
 }
 
 func (b *ComponentBitTable) Create(entity Entity) {
-	bitsId, ok := b.lookup[entity]
-	if !ok {
-		b.extend()
-		bitsId = b.length
-		b.lookup[entity] = bitsId
-		b.length += b.bitsetSize
+	assert.False(b.lookup.Has(entity), "entity already exists")
+
+	b.extend()
+	bitsId := b.length
+	b.lookup.Set(entity, bitsId)
+	pageId, entityId := b.getPageIDAndEntityIndex(bitsId)
+	b.entitiesBook[pageId][entityId] = entity
+	b.length++
+}
+
+func (b *ComponentBitTable) Delete(entity Entity) {
+	bitsetIndex, ok := b.lookup.Get(entity)
+	assert.True(ok, "entity not found")
+
+	// Get the index of the last entity
+	lastIndex := b.length - 1
+
+	// If this is not the last entity, swap with the last one
+	if bitsetIndex != lastIndex {
+		lastPageId, lastEntityId := b.getPageIDAndEntityIndex(lastIndex)
+		lastBitsetId := lastEntityId * b.bitsetSize
+		deletePageId, deleteEntityId := b.getPageIDAndEntityIndex(bitsetIndex)
+		deleteBitsetId := deleteEntityId * b.bitsetSize
+
+		// Copy bitset from last entity to the deleted entity's position
+		for i := 0; i < b.bitsetSize; i++ {
+			b.bitsetsBook[deletePageId][deleteBitsetId+i] = b.bitsetsBook[lastPageId][lastBitsetId+i]
+			b.bitsetsBook[lastPageId][lastBitsetId+i] = 0
+		}
+
+		// Get the last entity and update its position in lookup
+		lastEntity := b.entitiesBook[lastPageId][lastEntityId]
+		b.entitiesBook[deletePageId][deleteEntityId] = lastEntity
+		b.lookup.Set(lastEntity, bitsetIndex)
 	}
+
+	b.lookup.Delete(entity)
+	b.length--
 }
 
 // Set sets the bit at the given index to 1.
 func (b *ComponentBitTable) Set(entity Entity, componentId ComponentId) {
-	bitsId, ok := b.lookup[entity]
-	if !ok {
-		b.extend()
-		bitsId = b.length
-		b.lookup[entity] = bitsId
-		b.length += b.bitsetSize
-	}
-	chunkId := bitsId >> pageSizeShift
-	bitsetId := bitsId % pageSize
-	offset := int(componentId / bits.UintSize)
-	b.bits[chunkId][bitsetId+offset] |= 1 << (componentId % bits.UintSize)
+	bitsId, ok := b.lookup.Get(entity)
+	assert.True(ok, "entity not found")
+
+	pageId, bitsetId := b.getPageIDAndBitsetIndex(bitsId)
+	offset := int(componentId) >> uintShift
+	b.bitsetsBook[pageId][bitsetId+offset] |= 1 << (componentId % bits.UintSize)
 }
 
 // Unset clears the bit at the given index (sets it to 0).
 func (b *ComponentBitTable) Unset(entity Entity, componentId ComponentId) {
-	bitsId, ok := b.lookup[entity]
+	bitsId, ok := b.lookup.Get(entity)
 	assert.True(ok, "entity not found")
-	chunkId := bitsId >> pageSizeShift
-	bitsetId := bitsId % pageSize
-	offset := int(componentId / bits.UintSize)
-	b.bits[chunkId][bitsetId+offset] &= ^(1 << (componentId % bits.UintSize))
+
+	pageId, bitsetId := b.getPageIDAndBitsetIndex(bitsId)
+	offset := int(componentId) >> uintShift
+	b.bitsetsBook[pageId][bitsetId+offset] &= ^(1 << (componentId % bits.UintSize))
 }
 
 func (b *ComponentBitTable) Test(entity Entity, componentId ComponentId) bool {
-	bitsId, ok := b.lookup[entity]
+	bitsId, ok := b.lookup.Get(entity)
 	if !ok {
 		return false
 	}
-	chunkId := bitsId >> pageSizeShift
-	bitsetId := bitsId % pageSize
-	offset := int(componentId / bits.UintSize)
-	return (b.bits[chunkId][bitsetId+offset] & (1 << (componentId % bits.UintSize))) != 0
-}
-
-func (b *ComponentBitTable) extend() {
-	lastChunkId := b.length >> pageSizeShift
-	if lastChunkId == len(b.bits) && b.length%pageSize == 0 {
-		b.bits = append(b.bits, make([]uint, b.bitsetSize*pageSize))
-	}
+	pageId, bitsetId := b.getPageIDAndBitsetIndex(bitsId)
+	offset := int(componentId) >> uintShift
+	return (b.bitsetsBook[pageId][bitsetId+offset] & (1 << (componentId % bits.UintSize))) != 0
 }
 
 func (b *ComponentBitTable) AllSet(entity Entity, yield func(ComponentId) bool) {
-	bitsId, ok := b.lookup[entity]
+	bitsId, ok := b.lookup.Get(entity)
 	if !ok {
 		return
 	}
-	chunkId := bitsId >> pageSizeShift
-	bitsetId := bitsId % pageSize
+	pageId, bitsetId := b.getPageIDAndBitsetIndex(bitsId)
 	for i := 0; i < b.bitsetSize; i++ {
-		for j := 0; j < bits.UintSize; j++ {
-			if (b.bits[chunkId][bitsetId+i]>>j)&1 == 1 {
+		set := b.bitsetsBook[pageId][bitsetId+i]
+		j := 0
+		for set != 0 {
+			if set&1 == 1 {
 				if !yield(ComponentId(i*bits.UintSize + j)) {
 					return
 				}
 			}
+			set >>= 1
+			j++
 		}
 	}
+}
+
+func (b *ComponentBitTable) extend() {
+	lastChunkId, lastEntityId := b.getPageIDAndEntityIndex(b.length)
+	if lastChunkId == len(b.bitsetsBook) && lastEntityId == 0 {
+		b.bitsetsBook = append(b.bitsetsBook, make([]uint, b.pageSize))
+		b.entitiesBook = append(b.entitiesBook, make([]Entity, pageSize))
+	}
+}
+
+func (b *ComponentBitTable) getPageIDAndBitsetIndex(index int) (int, int) {
+	return index >> pageSizeShift, (index & pageSizeMask) * b.bitsetSize
+}
+
+func (b *ComponentBitTable) getPageIDAndEntityIndex(index int) (int, int) {
+	return index >> pageSizeShift, index & pageSizeMask
 }

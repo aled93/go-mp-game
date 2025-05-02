@@ -75,6 +75,7 @@ func (e *EntityManager) Create() Entity {
 	e.mx.Lock()
 	defer e.mx.Unlock()
 	var newId = e.generateEntityID()
+	e.componentBitTable.Create(newId)
 
 	e.size++
 
@@ -88,6 +89,7 @@ func (e *EntityManager) Delete(entity Entity) {
 		e.components[id].Delete(entity)
 		return true
 	})
+	e.componentBitTable.Delete(entity)
 
 	e.deletedEntityIDs = append(e.deletedEntityIDs, entity)
 	e.size--

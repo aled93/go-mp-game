@@ -74,6 +74,18 @@ func (m *PagedMap[K, V]) Delete(key K) {
 	}
 }
 
+func (m *PagedMap[K, V]) Has(key K) bool {
+	pageID, index := m.getPageIDAndIndex(key)
+	if pageID >= len(m.book) {
+		return false
+	}
+	page := &m.book[pageID]
+	if page.data == nil {
+		return false
+	}
+	return page.data[index].ok
+}
+
 func (m *PagedMap[K, V]) getPageIDAndIndex(key K) (pageID int, index int) {
 	return int(uint64(key) >> pageSizeShift), int(uint64(key) % pageSize)
 }
