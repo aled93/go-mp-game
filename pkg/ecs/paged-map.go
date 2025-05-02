@@ -88,7 +88,7 @@ func (m *PagedMap[K, V]) Has(key K) bool {
 }
 
 func (m *PagedMap[K, V]) getPageIDAndIndex(key K) (pageID int, index int) {
-	return int(uint64(key) >> pageSizeShift), int(uint64(key) % pageSize)
+	return int(key) >> pageSizeShift, int(key) & pageSizeMask
 }
 
 func (m *PagedMap[K, V]) expandBook(minLen int) {
