@@ -17,10 +17,12 @@ Go Slice tips and tricks - https://ueokande.github.io/go-slice-tricks/
 */
 
 func NewPagedArray[T any]() (a PagedArray[T]) {
-	a.book = make([]ArrayPage[T], initialBookSize)
+	a.book = make([]*ArrayPage[T], initialBookSize)
+	for i := 0; i < initialBookSize; i++ {
+		a.book[i] = &ArrayPage[T]{}
+	}
 	a.edpTasks = make([]EachDataTask[T], initialBookSize)
 	a.edvpTasks = make([]EachDataValueTask[T], initialBookSize)
-
 	return a
 }
 
@@ -30,7 +32,7 @@ type SlicePage[T any] struct {
 }
 
 type PagedArray[T any] struct {
-	book             []ArrayPage[T]
+	book             []*ArrayPage[T]
 	currentPageIndex int
 	len              int
 	wg               sync.WaitGroup
@@ -54,7 +56,7 @@ func (a *PagedArray[T]) Get(index int) *T {
 	assert.True(index < a.len, "index out of range")
 
 	pageId, index := a.getPageIdAndIndex(index)
-	page := &a.book[pageId]
+	page := a.book[pageId]
 
 	return &(page.data[index])
 }
@@ -64,9 +66,9 @@ func (a *PagedArray[T]) GetValue(index int) T {
 	assert.True(index < a.len, "index out of range")
 
 	pageId, index := a.getPageIdAndIndex(index)
-	page := &a.book[pageId]
+	page := a.book[pageId]
 
-	return (page.data[index])
+	return page.data[index]
 }
 
 func (a *PagedArray[T]) Set(index int, value T) *T {
@@ -74,7 +76,7 @@ func (a *PagedArray[T]) Set(index int, value T) *T {
 	assert.True(index < a.len, "index out of range")
 
 	pageId, index := a.getPageIdAndIndex(index)
-	page := &a.book[pageId]
+	page := a.book[pageId]
 
 	page.data[index] = value
 
@@ -82,12 +84,22 @@ func (a *PagedArray[T]) Set(index int, value T) *T {
 }
 
 func (a *PagedArray[T]) extend() {
-	newBooks := make([]ArrayPage[T], len(a.book)*2)
-	a.book = append(a.book, newBooks...)
-	newEdvpTasks := make([]EachDataValueTask[T], len(a.edvpTasks)*2)
-	a.edvpTasks = append(a.edvpTasks, newEdvpTasks...)
-	newEdpTasks := make([]EachDataTask[T], len(a.edpTasks)*2)
-	a.edpTasks = append(a.edpTasks, newEdpTasks...)
+	oldLen := len(a.book)
+	newLen := oldLen * 2
+	newBooks := make([]*ArrayPage[T], newLen)
+	copy(newBooks, a.book)
+	for i := oldLen; i < newLen; i++ {
+		newBooks[i] = &ArrayPage[T]{}
+	}
+	a.book = newBooks
+
+	newEdvpTasks := make([]EachDataValueTask[T], newLen)
+	copy(newEdvpTasks, a.edvpTasks)
+	a.edvpTasks = newEdvpTasks
+
+	newEdpTasks := make([]EachDataTask[T], newLen)
+	copy(newEdpTasks, a.edpTasks)
+	a.edpTasks = newEdpTasks
 }
 
 func (a *PagedArray[T]) Append(value T) *T {
@@ -96,14 +108,14 @@ func (a *PagedArray[T]) Append(value T) *T {
 		a.extend()
 	}
 
-	page := &a.book[a.currentPageIndex]
+	page := a.book[a.currentPageIndex]
 
 	if page.len == pageSize {
 		a.currentPageIndex++
 		if a.currentPageIndex >= len(a.book) {
 			a.extend()
 		}
-		page = &a.book[a.currentPageIndex]
+		page = a.book[a.currentPageIndex]
 	}
 	page.data[page.len] = value
 	result = &page.data[page.len]
@@ -120,14 +132,14 @@ func (a *PagedArray[T]) AppendMany(values ...T) *T {
 			a.extend()
 		}
 
-		page := &a.book[a.currentPageIndex]
+		page := a.book[a.currentPageIndex]
 
 		if page.len == pageSize {
 			a.currentPageIndex++
 			if a.currentPageIndex >= len(a.book) {
 				a.extend()
 			}
-			page = &a.book[a.currentPageIndex]
+			page = a.book[a.currentPageIndex]
 		}
 		page.data[page.len] = value
 		result = &page.data[page.len]
@@ -142,7 +154,7 @@ func (a *PagedArray[T]) AppendMany(values ...T) *T {
 func (a *PagedArray[T]) SoftReduce() {
 	assert.True(a.len > 0, "Len is already 0")
 
-	page := &a.book[a.currentPageIndex]
+	page := a.book[a.currentPageIndex]
 	assert.True(page.len > 0, "Len is already 0")
 
 	page.len--
@@ -156,7 +168,7 @@ func (a *PagedArray[T]) SoftReduce() {
 // Reset - resets the array to its initial state
 func (a *PagedArray[T]) Reset() {
 	for i := 0; i <= a.currentPageIndex; i++ {
-		page := &a.book[i]
+		page := a.book[i]
 		page.len = 0
 	}
 
@@ -207,7 +219,7 @@ func (a *PagedArray[T]) Raw(result []T) []T {
 
 	pos := 0
 	for i := 0; i <= a.currentPageIndex; i++ {
-		page := &a.book[i]
+		page := a.book[i]
 		n := copy(result[pos:], page.data[:page.len])
 		pos += n
 	}
@@ -216,7 +228,7 @@ func (a *PagedArray[T]) Raw(result []T) []T {
 }
 
 func (a *PagedArray[T]) getPageIdAndIndex(index int) (int, int) {
-	return index >> pageSizeShift, index % pageSize
+	return index >> pageSizeShift, index & pageSizeMask
 }
 
 // =========================
@@ -226,7 +238,7 @@ func (a *PagedArray[T]) getPageIdAndIndex(index int) (int, int) {
 func (a *PagedArray[T]) Each() func(yield func(int, *T) bool) {
 	return func(yield func(int, *T) bool) {
 		var page *ArrayPage[T]
-		var index_offset int
+		var indexOffset int
 
 		book := a.book
 
@@ -235,11 +247,11 @@ func (a *PagedArray[T]) Each() func(yield func(int, *T) bool) {
 		}
 
 		for i := a.currentPageIndex; i >= 0; i-- {
-			page = &book[i]
-			index_offset = i << pageSizeShift
+			page = book[i]
+			indexOffset = i << pageSizeShift
 
 			for j := page.len - 1; j >= 0; j-- {
-				if !yield(index_offset+j, &page.data[j]) {
+				if !yield(indexOffset+j, &page.data[j]) {
 					return
 				}
 			}
@@ -284,7 +296,7 @@ func (a *PagedArray[T]) EachData() func(yield func(*T) bool) {
 		}
 
 		for i := a.currentPageIndex; i >= 0; i-- {
-			page = &book[i]
+			page = book[i]
 
 			for j := page.len - 1; j >= 0; j-- {
 				if !yield(&page.data[j]) {
@@ -305,7 +317,7 @@ func (a *PagedArray[T]) EachDataValue() func(yield func(T) bool) {
 		}
 
 		for i := a.currentPageIndex; i >= 0; i-- {
-			page = &book[i]
+			page = book[i]
 
 			for j := page.len - 1; j >= 0; j-- {
 				if !yield(page.data[j]) {
@@ -322,7 +334,7 @@ func (a *PagedArray[T]) ProcessDataValue(handler func(T, worker.WorkerId), pool 
 	pool.GroupAdd(a.currentPageIndex + 1)
 	for i := a.currentPageIndex; i >= 0; i-- {
 		j := a.currentPageIndex - i
-		a.edvpTasks[j].page = &a.book[i]
+		a.edvpTasks[j].page = a.book[i]
 		a.edvpTasks[j].f = handler
 		pool.ProcessGroupTask(&a.edvpTasks[j])
 	}
@@ -335,7 +347,7 @@ func (a *PagedArray[T]) EachDataParallel(handler func(*T, worker.WorkerId), pool
 	pool.GroupAdd(a.currentPageIndex + 1)
 	for i := a.currentPageIndex; i >= 0; i-- {
 		j := a.currentPageIndex - i
-		a.edpTasks[j].page = &a.book[i]
+		a.edpTasks[j].page = a.book[i]
 		a.edpTasks[j].f = handler
 		pool.ProcessGroupTask(&a.edpTasks[j])
 	}
