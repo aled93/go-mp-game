@@ -14,17 +14,14 @@ Thank you for your support!
 
 package stdcomponents
 
-import (
-	"gomp/pkg/ecs"
-)
+import "gomp/pkg/ecs"
 
-type SpatialHash struct {
-	Min SpatialCellIndex
-	Max SpatialCellIndex
+type CollisionGridMember struct {
+	Grid ecs.Entity
 }
 
-type SpatialHashComponentManager = ecs.ComponentManager[SpatialHash]
+type CollisionGridMemberComponentManager = ecs.ComponentManager[CollisionGridMember]
 
-func NewSpatialHashComponentManager() SpatialHashComponentManager {
-	return ecs.NewComponentManager[SpatialHash](SpatialHashComponentId)
+func NewCollisionGridMemberComponentManager() CollisionGridMemberComponentManager {
+	return ecs.NewComponentManager[CollisionGridMember](CollisionGridMemberComponentId)
 }

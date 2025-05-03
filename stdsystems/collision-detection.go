@@ -15,7 +15,6 @@ Thank you for your support!
 package stdsystems
 
 import (
-	"github.com/negrel/assert"
 	gjk "gomp/pkg/collision"
 	"gomp/pkg/core"
 	"gomp/pkg/ecs"
@@ -39,7 +38,7 @@ type CollisionDetectionSystem struct {
 	CircleColliders                    *stdcomponents.CircleColliderComponentManager
 	PolygonColliders                   *stdcomponents.PolygonColliderComponentManager
 	Collisions                         *stdcomponents.CollisionComponentManager
-	SpatialIndex                       *stdcomponents.SpatialIndexComponentManager
+	SpatialIndex                       *stdcomponents.SpatialHashComponentManager
 	AABB                               *stdcomponents.AABBComponentManager
 	ColliderSleepStateComponentManager *stdcomponents.ColliderSleepStateComponentManager
 	BvhTreeComponentManager            *stdcomponents.BvhTreeComponentManager
@@ -104,33 +103,33 @@ func (s *CollisionDetectionSystem) broadPhase(entityA ecs.Entity, result []ecs.E
 			return result
 		}
 	}
-
-	aabbPtr := s.AABB.GetUnsafe(entityA)
-	assert.NotNil(aabbPtr)
-	aabb := *aabbPtr
-
-	cells := make([]ecs.Entity, 0, 64)
-
-	// Iterate through all trees
-	for index := range s.gridLookup {
-		grid := s.gridLookup[index]
-		layer := grid.Layer
-
-		// Check if mask includes this layer
-		if !colliderA.Mask.HasLayer(layer) {
-			continue
-		}
-
-		// Traverse this BVH tree for potential collisions
-		cells = grid.Query(aabb, cells)
-	}
-
-	for _, cellEntityId := range cells {
-		tree := s.BvhTreeComponentManager.GetUnsafe(cellEntityId)
-		assert.NotNil(tree)
-
-		result = tree.Query(aabb, result)
-	}
+	//
+	//aabbPtr := s.AABB.GetUnsafe(entityA)
+	//assert.NotNil(aabbPtr)
+	//aabb := *aabbPtr
+	//
+	//cells := make([]ecs.Entity, 0, 64)
+	//
+	//// Iterate through all trees
+	//for index := range s.gridLookup {
+	//	grid := s.gridLookup[index]
+	//	layer := grid.Layer
+	//
+	//	// Check if mask includes this layer
+	//	if !colliderA.Mask.HasLayer(layer) {
+	//		continue
+	//	}
+	//
+	//	// Traverse this BVH tree for potential collisions
+	//	cells = grid.Query(aabb, cells)
+	//}
+	//
+	//for _, cellEntityId := range cells {
+	//	tree := s.BvhTreeComponentManager.GetUnsafe(cellEntityId)
+	//	assert.NotNil(tree)
+	//
+	//	result = tree.Query(aabb, result)
+	//}
 
 	return result
 }

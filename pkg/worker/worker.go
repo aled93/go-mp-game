@@ -16,7 +16,6 @@ package worker
 
 import (
 	"context"
-	"runtime"
 	"sync"
 )
 
@@ -48,8 +47,6 @@ func (w *Worker) Stop() {
 }
 
 func (w *Worker) run(poolWg *sync.WaitGroup) {
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 	defer poolWg.Done()
 	for {
 		select {

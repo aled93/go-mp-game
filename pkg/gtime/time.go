@@ -12,19 +12,14 @@ none :)
 Thank you for your support!
 */
 
-package stdcomponents
+package gtime
 
-import (
-	"gomp/pkg/ecs"
-)
+/*
+#include "timestamp.h"
+*/
+import "C"
 
-type SpatialHash struct {
-	Min SpatialCellIndex
-	Max SpatialCellIndex
-}
-
-type SpatialHashComponentManager = ecs.ComponentManager[SpatialHash]
-
-func NewSpatialHashComponentManager() SpatialHashComponentManager {
-	return ecs.NewComponentManager[SpatialHash](SpatialHashComponentId)
+// GetTimestampC возвращает текущий UNIX timestamp
+func GetTimestampC() int64 {
+	return int64(C.get_system_timestamp())
 }

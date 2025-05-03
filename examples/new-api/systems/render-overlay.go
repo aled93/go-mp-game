@@ -180,22 +180,6 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 					position := s.Positions.GetUnsafe(e)
 					assert.NotNil(position)
 
-					tree := s.BvhTrees.GetUnsafe(e)
-					assert.NotNil(tree)
-
-					tree.AabbNodes.EachData()(func(a *stdcomponents.AABB) bool {
-						// Simple AABB culling
-						if s.intersects(cameraRect, a.Rect()) {
-							rl.DrawRectangleRec(rl.Rectangle{
-								X:      a.Min.X,
-								Y:      a.Min.Y,
-								Width:  a.Max.X - a.Min.X,
-								Height: a.Max.Y - a.Min.Y,
-							}, *tint)
-						}
-						return true
-					})
-
 					clr := color.RGBA{
 						R: tint.R,
 						G: tint.G,

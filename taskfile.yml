@@ -7,6 +7,12 @@ tasks:
     cmds:
       - go run ./examples/new-api
 
+  dev-assert:
+    env:
+      CGO_ENABLED: 1
+    cmds:
+      - go run ./examples/new-api -tags assert
+
   server:
     cmds:
       - go run ./examples/server .
@@ -34,7 +40,7 @@ tasks:
 
   gpprof-cpu:
     cmds:
-    - go tool pprof --http=:6061 http://localhost:6060/debug/fgprof?seconds=20
+      - go tool pprof --http=:6061 http://localhost:6060/debug/fgprof?seconds=20
 
   pprof-cpu:
     cmds:

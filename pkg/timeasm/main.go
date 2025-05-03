@@ -12,19 +12,4 @@ none :)
 Thank you for your support!
 */
 
-package stdcomponents
-
-import (
-	"gomp/pkg/ecs"
-)
-
-type SpatialHash struct {
-	Min SpatialCellIndex
-	Max SpatialCellIndex
-}
-
-type SpatialHashComponentManager = ecs.ComponentManager[SpatialHash]
-
-func NewSpatialHashComponentManager() SpatialHashComponentManager {
-	return ecs.NewComponentManager[SpatialHash](SpatialHashComponentId)
-}
+package timeasm

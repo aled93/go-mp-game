@@ -36,13 +36,15 @@ const (
 	ColliderSleepStateComponentId
 	PolygonColliderComponentId
 	CollisionComponentId
-	SpatialIndexComponentId
+	SpatialHashComponentId
 	AABBComponentId
 	RigidBodyComponentId
 	BvhTreeComponentId
 	CollisionGridComponentId
 	CollisionCellComponentId
 	CollisionChunkComponentId
+	CollisionGridMemberComponentId
+	s
 	FrameBuffer2DComponentId
 	CameraComponentId
 	TexturePositionSmoothComponentId

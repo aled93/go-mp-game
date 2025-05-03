@@ -12,19 +12,7 @@ none :)
 Thank you for your support!
 */
 
-package stdcomponents
+// timestamp_asm.go
+package timeasm
 
-import (
-	"gomp/pkg/ecs"
-)
-
-type SpatialHash struct {
-	Min SpatialCellIndex
-	Max SpatialCellIndex
-}
-
-type SpatialHashComponentManager = ecs.ComponentManager[SpatialHash]
-
-func NewSpatialHashComponentManager() SpatialHashComponentManager {
-	return ecs.NewComponentManager[SpatialHash](SpatialHashComponentId)
-}
+func Cputicks() (t uint64)
