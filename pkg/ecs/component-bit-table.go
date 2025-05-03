@@ -20,15 +20,14 @@ import (
 )
 
 const (
-	uintShift    = 7 - 64/bits.UintSize
-	pageSizeMask = pageSize - 1
+	uintShift = 7 - 64/bits.UintSize
 )
 
 func NewComponentBitTable(maxComponentsLen int) ComponentBitTable {
 	bitsetSize := ((maxComponentsLen - 1) / bits.UintSize) + 1
 	return ComponentBitTable{
 		bitsetsBook:  make([][]uint, 0, initialBookSize),
-		entitiesBook: make([][]Entity, 0, initialBookSize),
+		entitiesBook: make([]*entityArray, 0, initialBookSize),
 		lookup:       NewPagedMap[Entity, int](),
 		bitsetSize:   bitsetSize,
 		pageSize:     bitsetSize * pageSize,
@@ -37,12 +36,14 @@ func NewComponentBitTable(maxComponentsLen int) ComponentBitTable {
 
 type ComponentBitTable struct {
 	bitsetsBook  [][]uint
-	entitiesBook [][]Entity
+	entitiesBook []*entityArray
 	lookup       PagedMap[Entity, int]
 	length       int
 	bitsetSize   int
 	pageSize     int
 }
+
+type entityArray [pageSize]Entity
 
 func (b *ComponentBitTable) Create(entity Entity) {
 	assert.False(b.lookup.Has(entity), "entity already exists")
@@ -140,7 +141,7 @@ func (b *ComponentBitTable) extend() {
 	lastChunkId, lastEntityId := b.getPageIDAndEntityIndex(b.length)
 	if lastChunkId == len(b.bitsetsBook) && lastEntityId == 0 {
 		b.bitsetsBook = append(b.bitsetsBook, make([]uint, b.pageSize))
-		b.entitiesBook = append(b.entitiesBook, make([]Entity, pageSize))
+		b.entitiesBook = append(b.entitiesBook, &entityArray{})
 	}
 }
 
