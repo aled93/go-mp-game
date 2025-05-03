@@ -7,14 +7,15 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package stdsystems
 
 import (
-	"github.com/felixge/fgprof"
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"runtime/pprof"
 	"runtime/trace"
+
+	"github.com/felixge/fgprof"
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 const gpprof = false
@@ -91,7 +92,7 @@ func (s *DebugSystem) Run() {
 
 	if s.traceEnabled {
 		s.traceCounter++
-		if s.traceCounter == 10 {
+		if s.traceCounter == 50 {
 			trace.Stop()
 			s.traceEnabled = false
 			s.traceCounter = 0

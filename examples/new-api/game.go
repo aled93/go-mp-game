@@ -106,7 +106,7 @@ func (g *Game) FixedUpdate(dt time.Duration) {
 		systems.Velocity.Run(dt)
 		systems.ColliderSystem.Run(dt)
 		systems.CollisionSetup.Run(dt)
-		systems.CollisionDetection.Run(dt)
+		//systems.CollisionDetection.Run(dt)
 		//systems.CollisionDetectionBVH.Run(dt)
 		systems.CollisionResolution.Run(dt)
 

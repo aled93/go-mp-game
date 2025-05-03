@@ -41,7 +41,7 @@ type ComponentList struct {
 	ColliderSleepState    stdcomponents.ColliderSleepStateComponentManager
 	Collision             stdcomponents.CollisionComponentManager
 	AABB                  stdcomponents.AABBComponentManager
-	SpatialIndex          stdcomponents.SpatialIndexComponentManager
+	SpatialIndex          stdcomponents.SpatialHashComponentManager
 	RigidBody             stdcomponents.RigidBodyComponentManager
 	BvhTree               stdcomponents.BvhTreeComponentManager
 	Cameras               stdcomponents.CameraComponentManager
@@ -50,6 +50,7 @@ type ComponentList struct {
 	CollisionGrid         stdcomponents.CollisionGridComponentManager
 	CollisionChunk        stdcomponents.CollisionChunkComponentManager
 	CollisionCell         stdcomponents.CollisionCellComponentManager
+	CollisionGridMember   stdcomponents.CollisionGridMemberComponentManager
 
 	Health               components.HpComponentManager
 	Controller           components.ControllerComponentManager
@@ -91,7 +92,7 @@ func NewComponentList() ComponentList {
 		ColliderSleepState:    stdcomponents.NewColliderSleepStateComponentManager(),
 		Collision:             stdcomponents.NewCollisionComponentManager(),
 		AABB:                  stdcomponents.NewAABBComponentManager(),
-		SpatialIndex:          stdcomponents.NewSpatialIndexComponentManager(),
+		SpatialIndex:          stdcomponents.NewSpatialHashComponentManager(),
 		RigidBody:             stdcomponents.NewRigidBodyComponentManager(),
 		BvhTree:               stdcomponents.NewBvhTreeComponentManager(),
 		Cameras:               stdcomponents.NewCameraComponentManager(),
@@ -100,6 +101,7 @@ func NewComponentList() ComponentList {
 		CollisionGrid:         stdcomponents.NewCollisionGridComponentManager(),
 		CollisionChunk:        stdcomponents.NewCollisionChunkComponentManager(),
 		CollisionCell:         stdcomponents.NewCollisionCellComponentManager(),
+		CollisionGridMember:   stdcomponents.NewCollisionGridMemberComponentManager(),
 
 		Health:               components.NewHealthComponentManager(),
 		Controller:           components.NewControllerComponentManager(),

@@ -46,7 +46,7 @@ type CollisionDetectionBVHSystem struct {
 	CircleColliders                    *stdcomponents.CircleColliderComponentManager
 	PolygonColliders                   *stdcomponents.PolygonColliderComponentManager
 	Collisions                         *stdcomponents.CollisionComponentManager
-	SpatialIndex                       *stdcomponents.SpatialIndexComponentManager
+	SpatialIndex                       *stdcomponents.SpatialHashComponentManager
 	AABB                               *stdcomponents.AABBComponentManager
 	ColliderSleepStateComponentManager *stdcomponents.ColliderSleepStateComponentManager
 	BvhTreeComponentManager            *stdcomponents.BvhTreeComponentManager

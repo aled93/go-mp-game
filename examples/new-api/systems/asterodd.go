@@ -17,9 +17,11 @@ package systems
 import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/examples/new-api/components"
+	"gomp/examples/new-api/config"
 	"gomp/examples/new-api/entities"
 	"gomp/pkg/ecs"
 	"gomp/stdcomponents"
+	"gomp/stdentities"
 	"gomp/vectors"
 	"math/rand"
 	"time"
@@ -43,6 +45,7 @@ type AssteroddSystem struct {
 	TexturePositionSmooth *stdcomponents.TexturePositionSmoothComponentManager
 	RenderOrders          *stdcomponents.RenderOrderComponentManager
 	Textures              *stdcomponents.RLTextureProComponentManager
+	CollisionGrids        *stdcomponents.CollisionGridComponentManager
 
 	PlayerTags       *components.PlayerTagComponentManager
 	AsteroidTags     *components.AsteroidComponentManager
@@ -58,6 +61,16 @@ type AssteroddSystem struct {
 }
 
 func (s *AssteroddSystem) Init() {
+	collisionGridManages := stdentities.CreateCollisionGridManagers{
+		EntityManager: s.EntityManager,
+		Grid:          s.CollisionGrids,
+	}
+	stdentities.CreateCollisionGrid(&collisionGridManages, config.DefaultCollisionLayer, 256)
+	stdentities.CreateCollisionGrid(&collisionGridManages, config.PlayerCollisionLayer, 128)
+	stdentities.CreateCollisionGrid(&collisionGridManages, config.BulletCollisionLayer, 32)
+	stdentities.CreateCollisionGrid(&collisionGridManages, config.EnemyCollisionLayer, 128)
+	stdentities.CreateCollisionGrid(&collisionGridManages, config.WallCollisionLayer, 4096)
+
 	entities.CreateSpaceShip(entities.CreateSpaceShipManagers{
 		EntityManager:    s.EntityManager,
 		Positions:        s.Positions,
