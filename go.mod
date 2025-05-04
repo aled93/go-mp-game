@@ -6,7 +6,6 @@ replace github.com/ugorji/go v1.1.4 => github.com/ugorji/go v1.1.7
 
 require (
 	github.com/coder/websocket v1.8.12
-	github.com/gen2brain/raylib-go/raylib v0.0.0-20250215042252-db8e47f0e5c5
 	github.com/hajimehoshi/ebiten/v2 v2.8.6
 	github.com/jakecoffman/cp/v2 v2.1.0
 	github.com/jfreymuth/go-sdl3 v0.1.3-0.20250226211328-622f8250e21c
