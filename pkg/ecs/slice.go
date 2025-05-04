@@ -60,7 +60,7 @@ func (a *Slice[T]) Set(index int, value T) *T {
 
 func (a *Slice[T]) Append(values ...T) []T {
 	a.data = append(a.data, values...)
-	disCap := 1 << (FastIntLog2(len(a.data)) + 1)
+	disCap := 1 << (FastIntLog2(uint64(len(a.data))) + 1)
 	if cap(a.data) > disCap {
 		a.data = a.data[:len(a.data):disCap]
 	}
