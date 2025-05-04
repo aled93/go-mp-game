@@ -7,7 +7,7 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 Donations during this file development:
 -===-===-===-===-===-===-===-===-===-===
 
-none :)
+<- Фрея Donated 2 000 RUB
 
 Thank you for your support!
 */
@@ -15,6 +15,7 @@ Thank you for your support!
 package stdsystems
 
 import (
+	"github.com/negrel/assert"
 	gjk "gomp/pkg/collision"
 	"gomp/pkg/core"
 	"gomp/pkg/ecs"
@@ -61,6 +62,7 @@ func (s *CollisionDetectionSystem) Init() {
 	}
 	s.activeCollisions = make(map[CollisionPair]ecs.Entity)
 }
+
 func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 	s.CollisionGridComponentManager.EachComponent()(func(grid *stdcomponents.CollisionGrid) bool {
 		s.gridLookup[grid.Layer] = grid
@@ -89,6 +91,7 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 		s.collisionEventAcc[i].Reset()
 	}
 }
+
 func (s *CollisionDetectionSystem) Destroy() {
 	s.collisionEventAcc = nil
 	s.activeCollisions = nil
@@ -103,33 +106,32 @@ func (s *CollisionDetectionSystem) broadPhase(entityA ecs.Entity, result []ecs.E
 			return result
 		}
 	}
-	//
-	//aabbPtr := s.AABB.GetUnsafe(entityA)
-	//assert.NotNil(aabbPtr)
-	//aabb := *aabbPtr
-	//
-	//cells := make([]ecs.Entity, 0, 64)
-	//
-	//// Iterate through all trees
-	//for index := range s.gridLookup {
-	//	grid := s.gridLookup[index]
-	//	layer := grid.Layer
-	//
-	//	// Check if mask includes this layer
-	//	if !colliderA.Mask.HasLayer(layer) {
-	//		continue
-	//	}
-	//
-	//	// Traverse this BVH tree for potential collisions
-	//	cells = grid.Query(aabb, cells)
-	//}
-	//
-	//for _, cellEntityId := range cells {
-	//	tree := s.BvhTreeComponentManager.GetUnsafe(cellEntityId)
-	//	assert.NotNil(tree)
-	//
-	//	result = tree.Query(aabb, result)
-	//}
+
+	aabbPtr := s.AABB.GetUnsafe(entityA)
+	assert.NotNil(aabbPtr)
+	aabb := *aabbPtr
+
+	cells := make([]ecs.Entity, 0, 64)
+	// Iterate through all trees
+	for index := range s.gridLookup {
+		grid := s.gridLookup[index]
+		layer := grid.Layer
+
+		// Check if mask includes this layer
+		if !colliderA.Mask.HasLayer(layer) {
+			continue
+		}
+
+		// Traverse this BVH tree for potential collisions
+		cells = grid.Query(aabb, cells)
+	}
+
+	for _, cellEntityId := range cells {
+		cell := s.CollisionCellComponentManager.GetUnsafe(cellEntityId)
+		assert.NotNil(cell)
+
+		result = append(result, cell.Members.Members...)
+	}
 
 	return result
 }

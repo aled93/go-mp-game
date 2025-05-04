@@ -67,7 +67,7 @@ func (s *AssteroddSystem) Init() {
 	}
 	stdentities.CreateCollisionGrid(&collisionGridManages, config.DefaultCollisionLayer, 256)
 	stdentities.CreateCollisionGrid(&collisionGridManages, config.PlayerCollisionLayer, 128)
-	stdentities.CreateCollisionGrid(&collisionGridManages, config.BulletCollisionLayer, 64)
+	stdentities.CreateCollisionGrid(&collisionGridManages, config.BulletCollisionLayer, 16)
 	stdentities.CreateCollisionGrid(&collisionGridManages, config.EnemyCollisionLayer, 128)
 	stdentities.CreateCollisionGrid(&collisionGridManages, config.WallCollisionLayer, 4096)
 
@@ -130,8 +130,8 @@ func (s *AssteroddSystem) Init() {
 			Y: float32(rand.Intn(5000)) + float32(rand.Intn(1000))/10000,
 		}
 
-		randVelX := float32(rand.Intn(200)) - 100 + float32(rand.Intn(1000))/10000
-		randVelY := float32(rand.Intn(200)) - 100 + float32(rand.Intn(1000))/10000
+		//randVelX := float32(rand.Intn(200)) - 100 + float32(rand.Intn(1000))/10000
+		//randVelY := float32(rand.Intn(200)) - 100 + float32(rand.Intn(1000))/10000
 
 		entities.CreateBullet(entities.CreateBulletManagers{
 			EntityManager:   s.EntityManager,
@@ -145,7 +145,7 @@ func (s *AssteroddSystem) Init() {
 			BulletTags:      s.BulletTags,
 			Hps:             s.Hps,
 			Renderables:     s.Renderables,
-		}, randPos.X, randPos.Y, 0, randVelX, randVelY)
+		}, randPos.X, randPos.Y, 0, 0, 0)
 
 		// bug case
 		//entities.CreateBullet(entities.CreateBulletManagers{

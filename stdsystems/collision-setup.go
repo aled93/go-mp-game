@@ -65,9 +65,6 @@ type CollisionSetupSystem struct {
 	memberListPool stdcomponents.MemberListPool
 }
 
-// для грида для каждого потока мапа ключ хэш значение сущность
-// по каждой клетке в многопотоке и проверить по ключу всех жителей?
-
 func (s *CollisionSetupSystem) Init() {
 	s.memberListPool = stdcomponents.NewMemberListPool(s.Engine.Pool())
 	s.clearCellAccumulator = make([]ecs.PagedArray[ecs.Entity], s.Engine.Pool().NumWorkers())
