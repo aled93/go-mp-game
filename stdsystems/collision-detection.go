@@ -22,6 +22,8 @@ import (
 	"gomp/pkg/worker"
 	"gomp/stdcomponents"
 	"gomp/vectors"
+	"math"
+	"math/bits"
 	"time"
 )
 
@@ -76,7 +78,8 @@ func (s *CollisionDetectionSystem) Run(dt time.Duration) {
 	}
 
 	s.GenericCollider.ProcessEntities(func(entity ecs.Entity, workerId worker.WorkerId) {
-		potentialEntities := s.broadPhase(entity, make([]ecs.Entity, 0, 64))
+		potentialEntities := make([]ecs.Entity, 0, 64)
+		potentialEntities = s.broadPhase(entity, potentialEntities)
 		if len(potentialEntities) == 0 {
 			return
 		}
@@ -99,104 +102,142 @@ func (s *CollisionDetectionSystem) Destroy() {
 	s.gridLookup = nil
 }
 
-func (s *CollisionDetectionSystem) broadPhase(entityA ecs.Entity, result []ecs.Entity) []ecs.Entity {
+func (s *CollisionDetectionSystem) broadPhase(entityA ecs.Entity, potentialEntities []ecs.Entity) []ecs.Entity {
 	colliderA := s.GenericCollider.GetUnsafe(entityA)
-	if colliderA.AllowSleep {
-		if s.ColliderSleepStateComponentManager.Has(entityA) {
-			return result
-		}
+
+	// Early exit for sleeping colliders (moved aabb access after sleep check)
+	if colliderA.AllowSleep && s.ColliderSleepStateComponentManager.Has(entityA) {
+		return potentialEntities
 	}
 
 	aabbPtr := s.AABB.GetUnsafe(entityA)
 	assert.NotNil(aabbPtr)
-	aabb := *aabbPtr
+	bb := *aabbPtr
 
-	cells := make([]ecs.Entity, 0, 64)
-	// Iterate through all trees
-	for index := range s.gridLookup {
-		grid := s.gridLookup[index]
-		layer := grid.Layer
+	// Direct layer bitmask iteration
+	mask := colliderA.Mask
+	var cells []ecs.Entity // Reused across queries
 
-		// Check if mask includes this layer
-		if !colliderA.Mask.HasLayer(layer) {
-			continue
+	// Iterate only set bits in mask
+	for mask != 0 {
+		// Get the least significant raised bit position
+		layer := stdcomponents.CollisionLayer(bits.TrailingZeros32(uint32(mask)))
+		mask ^= 1 << layer // Clear the processed bit
+
+		// Direct grid access
+		grid := s.gridLookup[layer]
+		assert.NotNil(grid)
+
+		// Reuse cells slice with reset
+		cells = grid.Query(bb, cells)
+		for _, cellEntityId := range cells {
+			cell := s.CollisionCellComponentManager.GetUnsafe(cellEntityId)
+			assert.NotNil(cell)
+			potentialEntities = append(potentialEntities, cell.Members.Members...)
 		}
-
-		// Traverse this BVH tree for potential collisions
-		cells = grid.Query(aabb, cells)
+		cells = cells[:0]
 	}
 
-	for _, cellEntityId := range cells {
-		cell := s.CollisionCellComponentManager.GetUnsafe(cellEntityId)
-		assert.NotNil(cell)
-
-		result = append(result, cell.Members.Members...)
+	// exclude self
+	for i := len(potentialEntities) - 1; i >= 0; i-- {
+		if potentialEntities[i] == entityA {
+			potentialEntities[i] = potentialEntities[len(potentialEntities)-1]
+			potentialEntities = potentialEntities[:len(potentialEntities)-1]
+		}
 	}
 
-	return result
+	return potentialEntities
 }
 
 func (s *CollisionDetectionSystem) narrowPhase(entityA ecs.Entity, potentialEntities []ecs.Entity, workerId worker.WorkerId) {
+	posA := s.Positions.GetUnsafe(entityA)
+	assert.NotNil(posA)
+
+	colliderA := s.GenericCollider.GetUnsafe(entityA)
+	assert.NotNil(colliderA)
+
+	scaleA := s.Scales.GetUnsafe(entityA)
+	assert.NotNil(scaleA)
+
+	rotA := s.Rotations.GetUnsafe(entityA)
+	assert.NotNil(rotA)
+
+	colA := s.getGjkCollider(colliderA, entityA)
+
+	circleA := s.CircleColliders.GetUnsafe(entityA)
+	// Cache circleA properties if exists
+	var radiusA float32
+	if circleA != nil {
+		radiusA = circleA.Radius * scaleA.XY.X
+	}
+
+	transformA := stdcomponents.Transform2d{
+		Position: posA.XY,
+		Rotation: rotA.Angle,
+		Scale:    scaleA.XY,
+	}
+
 	for _, entityB := range potentialEntities {
-		if entityA == entityB {
-			continue
-		}
-
-		colliderA := s.GenericCollider.GetUnsafe(entityA)
+		positionB := s.Positions.GetUnsafe(entityB)
+		assert.NotNil(positionB)
 		colliderB := s.GenericCollider.GetUnsafe(entityB)
-		posA := s.Positions.GetUnsafe(entityA)
-		posB := s.Positions.GetUnsafe(entityB)
-		scaleA := s.Scales.GetUnsafe(entityA)
+		assert.NotNil(colliderB)
 		scaleB := s.Scales.GetUnsafe(entityB)
-		rotA := s.Rotations.GetUnsafe(entityA)
-		rotB := s.Rotations.GetUnsafe(entityB)
-		transformA := stdcomponents.Transform2d{
-			Position: posA.XY,
-			Rotation: rotA.Angle,
-			Scale:    scaleA.XY,
-		}
-		transformB := stdcomponents.Transform2d{
-			Position: posB.XY,
-			Rotation: rotB.Angle,
-			Scale:    scaleB.XY,
-		}
-
-		circleA := s.CircleColliders.GetUnsafe(entityA)
+		assert.NotNil(scaleB)
+		rotationB := s.Rotations.GetUnsafe(entityB)
+		assert.NotNil(rotationB)
 		circleB := s.CircleColliders.GetUnsafe(entityB)
+
+		// 1. FAST PATH: Circle-circle collision
 		if circleA != nil && circleB != nil {
-			radiusA := circleA.Radius * scaleA.XY.X
+			posB := positionB.XY
 			radiusB := circleB.Radius * scaleB.XY.X
-			if transformA.Position.Distance(transformB.Position) < radiusA+radiusB {
-				s.collisionEventAcc[workerId].Append(CollisionEvent{
+
+			// Vector math with early exit
+			dx := posB.X - transformA.Position.X
+			dy := posB.Y - transformA.Position.Y
+			sqDist := dx*dx + dy*dy
+			sumRadii := radiusA + radiusB
+
+			if sqDist < sumRadii*sumRadii {
+				dist := float32(math.Sqrt(float64(sqDist)))
+				assert.NotZero(dist)
+				event := CollisionEvent{
 					entityA:  entityA,
 					entityB:  entityB,
-					position: transformA.Position,
-					normal:   transformB.Position.Sub(transformA.Position).Normalize(),
-					depth:    radiusA + radiusB - transformB.Position.Distance(transformA.Position),
-				})
+					position: posA.XY,
+					normal: vectors.Vec2{
+						X: dx / dist,
+						Y: dy / dist,
+					},
+					depth: sumRadii - dist,
+				}
+				s.collisionEventAcc[workerId].Append(event)
 			}
 			continue
 		}
 
-		// GJK strategy
-		colA := s.getGjkCollider(colliderA, entityA)
-		colB := s.getGjkCollider(colliderB, entityB)
-		// First detect collision using GJK
+		// 2. GJK/EPA PATH
 		test := gjk.New()
-		if !test.CheckCollision(colA, colB, transformA, transformB) {
-			continue
+		transformB := stdcomponents.Transform2d{
+			Position: positionB.XY,
+			Rotation: rotationB.Angle,
+			Scale:    scaleB.XY,
 		}
-
-		// If collision detected, get penetration details using EPA
-		normal, depth := test.EPA(colA, colB, transformA, transformB)
-		position := posA.XY.Add(posB.XY.Sub(posA.XY))
-		s.collisionEventAcc[workerId].Append(CollisionEvent{
-			entityA:  entityA,
-			entityB:  entityB,
-			position: position,
-			normal:   normal,
-			depth:    depth,
-		})
+		colB := s.getGjkCollider(colliderB, entityB)
+		// Detect collision using GJK
+		if test.CheckCollision(colA, colB, transformA, transformB) {
+			// If collision detected, get penetration details using EPA
+			normal, depth := test.EPA(colA, colB, transformA, transformB)
+			position := posA.XY.Add(positionB.XY.Sub(posA.XY))
+			s.collisionEventAcc[workerId].Append(CollisionEvent{
+				entityA:  entityA,
+				entityB:  entityB,
+				position: position,
+				normal:   normal,
+				depth:    depth,
+			})
+		}
 	}
 }
 func (s *CollisionDetectionSystem) registerCollisionEvents() {

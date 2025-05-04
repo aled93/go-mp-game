@@ -32,6 +32,7 @@ type CreateBulletManagers struct {
 	Scales          *stdcomponents.ScaleComponentManager
 	Velocities      *stdcomponents.VelocityComponentManager
 	CircleColliders *stdcomponents.CircleColliderComponentManager
+	BoxColliders    *stdcomponents.BoxColliderComponentManager
 	RigidBodies     *stdcomponents.RigidBodyComponentManager
 	Sprites         *stdcomponents.SpriteComponentManager
 	BulletTags      *components.BulletTagComponentManager
@@ -73,6 +74,19 @@ func CreateBullet(
 		Mask:       1<<config.EnemyCollisionLayer | 1<<config.WallCollisionLayer | 1<<config.BulletCollisionLayer,
 		AllowSleep: true,
 	})
+	//props.BoxColliders.Create(entity, stdcomponents.BoxCollider{
+	//	WH: vectors.Vec2{
+	//		X: 16,
+	//		Y: 16,
+	//	},
+	//	Offset: vectors.Vec2{
+	//		X: 8,
+	//		Y: 8,
+	//	},
+	//	Layer:      config.BulletCollisionLayer,
+	//	Mask:       1<<config.EnemyCollisionLayer | 1<<config.WallCollisionLayer | 1<<config.BulletCollisionLayer,
+	//	AllowSleep: true,
+	//})
 	te := stdcomponents.Sprite{
 		Texture: assets.Textures.Get("bullet.png"),
 		Frame: rl.Rectangle{

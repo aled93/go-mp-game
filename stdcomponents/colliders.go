@@ -41,6 +41,10 @@ const (
 	CollisionLayerNone CollisionLayer = 0
 )
 
+// ===========================
+// Box Collider
+// ===========================
+
 type BoxCollider struct {
 	WH         vectors.Vec2
 	Offset     vectors.Vec2
@@ -50,28 +54,32 @@ type BoxCollider struct {
 }
 
 func (c *BoxCollider) GetSupport(direction vectors.Vec2, transform Transform2d) vectors.Vec2 {
-	var maxDistance float32 = -math.MaxFloat32
-	var maxPoint vectors.Vec2
+	// Precompute rotation terms once
+	cos := float32(math.Cos(transform.Rotation))
+	sin := float32(math.Sin(transform.Rotation))
 
-	vertices := [4]vectors.Vec2{
-		{X: c.WH.X, Y: c.WH.Y},
-		{X: 0, Y: c.WH.Y},
-		{X: 0, Y: 0},
-		{X: c.WH.X, Y: 0},
+	// Inverse-rotate direction to local space (avoids per-vertex rotation)
+	localDir := vectors.Vec2{
+		X: direction.X*cos + direction.Y*sin,
+		Y: -direction.X*sin + direction.Y*cos,
 	}
 
-	for i := range vertices {
-		vertex := &vertices[i]
-		worldVertex := vertex.Sub(c.Offset).Rotate(transform.Rotation)
-
-		distance := worldVertex.Dot(direction)
-		if distance > maxDistance {
-			maxDistance = distance
-			maxPoint = worldVertex
-		}
+	// Branchless selection using sign bits (Go-optimized)
+	xSign := math.Float32bits(localDir.X) >> 31
+	ySign := math.Float32bits(localDir.Y) >> 31
+	localSupport := vectors.Vec2{
+		X: c.WH.X * (1 - float32(xSign)), // 0 if negative, WH.X otherwise
+		Y: c.WH.Y * (1 - float32(ySign)),
 	}
 
-	return maxPoint.Mul(transform.Scale).Add(transform.Position)
+	// Apply offset and rotate to world space
+	vertex := localSupport.Sub(c.Offset)
+	rotated := vectors.Vec2{
+		X: vertex.X*cos - vertex.Y*sin,
+		Y: vertex.X*sin + vertex.Y*cos,
+	}
+
+	return rotated.Mul(transform.Scale).Add(transform.Position)
 }
 
 type BoxColliderComponentManager = ecs.ComponentManager[BoxCollider]
@@ -79,6 +87,10 @@ type BoxColliderComponentManager = ecs.ComponentManager[BoxCollider]
 func NewBoxColliderComponentManager() BoxColliderComponentManager {
 	return ecs.NewComponentManager[BoxCollider](ColliderBoxComponentId)
 }
+
+// ===========================
+// Circle Collider
+// ===========================
 
 type CircleCollider struct {
 	Radius     float32
@@ -89,12 +101,24 @@ type CircleCollider struct {
 }
 
 func (c *CircleCollider) GetSupport(direction vectors.Vec2, transform Transform2d) vectors.Vec2 {
-	angle := direction.Angle()
-	rotatedRadius := vectors.Vec2{
-		X: c.Radius * float32(math.Cos(angle)),
-		Y: c.Radius * float32(math.Sin(angle)),
+	var radiusWithOffset vectors.Vec2
+	// Handle zero direction to avoid division by zero
+	if direction.X == 0 && direction.Y == 0 {
+		// Fallback to a default direction (e.g., right)
+		defaultDir := vectors.Vec2{X: c.Radius, Y: 0}
+		radiusWithOffset = defaultDir.Sub(c.Offset).Mul(transform.Scale)
+	} else {
+		// Compute scaled direction without trigonometry
+		mag := float32(math.Hypot(float64(direction.X), float64(direction.Y)))
+		invMag := c.Radius / mag
+		scaledDir := vectors.Vec2{
+			X: direction.X * invMag,
+			Y: direction.Y * invMag,
+		}
+		// Apply offset, scale, and translation
+		radiusWithOffset = scaledDir.Sub(c.Offset).Mul(transform.Scale)
 	}
-	radiusWithOffset := rotatedRadius.Sub(c.Offset).Mul(transform.Scale)
+
 	return transform.Position.Add(radiusWithOffset)
 }
 
@@ -103,6 +127,10 @@ type CircleColliderComponentManager = ecs.ComponentManager[CircleCollider]
 func NewCircleColliderComponentManager() CircleColliderComponentManager {
 	return ecs.NewComponentManager[CircleCollider](ColliderCircleComponentId)
 }
+
+// ===========================
+// Polygon Collider
+// ===========================
 
 type PolygonCollider struct {
 	Vertices   []vectors.Vec2
@@ -134,6 +162,10 @@ type PolygonColliderComponentManager = ecs.ComponentManager[PolygonCollider]
 func NewPolygonColliderComponentManager() PolygonColliderComponentManager {
 	return ecs.NewComponentManager[PolygonCollider](PolygonColliderComponentId)
 }
+
+// ===========================
+// Generic Collider
+// ===========================
 
 type GenericCollider struct {
 	Shape      ColliderShape

@@ -66,5 +66,8 @@ func (s *GJK) CheckCollision(
 }
 
 func (s *GJK) minkowskiSupport2d(a, b AnyCollider, transformA, transformB stdcomponents.Transform2d, direction vectors.Vec2) vectors.Vec2 {
-	return a.GetSupport(direction, transformA).Sub(b.GetSupport(direction.Neg(), transformB))
+	aSupport := a.GetSupport(direction, transformA)
+	bSupport := b.GetSupport(direction.Neg(), transformB)
+	support := aSupport.Sub(bSupport)
+	return support
 }

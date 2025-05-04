@@ -125,6 +125,7 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 						Scales:          s.Scales,
 						Velocities:      s.Velocities,
 						CircleColliders: s.CircleColliders,
+						BoxColliders:    s.BoxColliders,
 						RigidBodies:     s.RigidBodies,
 						Sprites:         s.Sprites,
 						BulletTags:      s.BulletTags,
