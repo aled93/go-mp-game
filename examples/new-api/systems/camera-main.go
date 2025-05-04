@@ -15,15 +15,17 @@ Thank you for your support!
 package systems
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/examples/new-api/components"
 	"gomp/examples/new-api/config"
 	"gomp/pkg/ecs"
+	"gomp/pkg/kbd"
 	"gomp/stdcomponents"
 	"gomp/vectors"
 	"image/color"
 	"math"
 	"time"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 // MainCameraSystem is simple system responsible for managing the camera entities in the game.
@@ -92,7 +94,7 @@ func (s *MainCameraSystem) Run(dt time.Duration) {
 	}
 
 	// Follow player for main camera and minimap camera
-	if rl.IsKeyPressed(rl.KeyR) {
+	if kbd.IsKeyPressed(kbd.KeycodeR) {
 		s.shouldRotate = !s.shouldRotate
 	}
 	s.Player.EachEntity()(func(entity ecs.Entity) bool {

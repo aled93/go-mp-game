@@ -7,16 +7,17 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package stdsystems
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
-	"github.com/negrel/assert"
 	"gomp/pkg/core"
 	"gomp/pkg/ecs"
+	"gomp/pkg/kbd"
 	"gomp/pkg/worker"
 	"gomp/stdcomponents"
 	"gomp/vectors"
 	"math"
 	"runtime"
 	"time"
+
+	"github.com/negrel/assert"
 )
 
 func NewTexturePositionSmoothSystem() TexturePositionSmoothSystem {
@@ -37,17 +38,17 @@ func (s *TexturePositionSmoothSystem) Init() {
 
 func (s *TexturePositionSmoothSystem) Run(dt time.Duration) {
 	//DEBUG Temporary, TODO: remove
-	if rl.IsKeyPressed(rl.KeyI) {
+	if kbd.IsKeyPressed(kbd.KeycodeI) {
 		s.TexturePositionSmooth.ProcessComponents(func(t *stdcomponents.TexturePositionSmooth, workerId worker.WorkerId) {
 			*t = stdcomponents.TexturePositionSmoothOff
 		})
 	}
-	if rl.IsKeyPressed(rl.KeyO) {
+	if kbd.IsKeyPressed(kbd.KeycodeO) {
 		s.TexturePositionSmooth.ProcessComponents(func(t *stdcomponents.TexturePositionSmooth, workerId worker.WorkerId) {
 			*t = stdcomponents.TexturePositionSmoothLerp
 		})
 	}
-	if rl.IsKeyPressed(rl.KeyP) {
+	if kbd.IsKeyPressed(kbd.KeycodeP) {
 		s.TexturePositionSmooth.ProcessComponents(func(t *stdcomponents.TexturePositionSmooth, workerId worker.WorkerId) {
 			*t = stdcomponents.TexturePositionSmoothExpDecay
 		})

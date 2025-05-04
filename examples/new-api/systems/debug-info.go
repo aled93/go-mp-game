@@ -7,14 +7,16 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package systems
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/examples/new-api/components"
 	"gomp/examples/new-api/config"
 	"gomp/pkg/ecs"
+	"gomp/pkg/kbd"
 	"gomp/stdcomponents"
 	"image/color"
 	"math"
 	"time"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 func NewDebugInfoSystem() DebugInfoSystem {
@@ -58,7 +60,7 @@ func (s *DebugInfoSystem) Init() {
 }
 
 func (s *DebugInfoSystem) Run(dt time.Duration) bool {
-	if rl.IsKeyPressed(rl.KeyF6) {
+	if kbd.IsKeyPressed(kbd.KeycodeF6) {
 		if !s.debug {
 			s.BoxColliders.EachEntity()(func(e ecs.Entity) bool {
 				col := s.BoxColliders.GetUnsafe(e)

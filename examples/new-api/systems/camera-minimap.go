@@ -1,14 +1,16 @@
 package systems
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/examples/new-api/components"
 	"gomp/examples/new-api/config"
 	"gomp/pkg/ecs"
+	"gomp/pkg/kbd"
 	"gomp/stdcomponents"
 	"gomp/vectors"
 	"image/color"
 	"time"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 func NewMinimapSystem() MinimapSystem {
@@ -65,7 +67,7 @@ func (s *MinimapSystem) Init() {
 func (s *MinimapSystem) Run(dt time.Duration) bool {
 	c := s.Cameras.GetUnsafe(s.minimapCamera)
 
-	if rl.IsKeyPressed(rl.KeyM) {
+	if kbd.IsKeyPressed(kbd.KeycodeM) {
 		if s.disabled {
 			s.disabled = false
 			c = s.Cameras.Create(s.minimapCamera, s.cameraComponent)

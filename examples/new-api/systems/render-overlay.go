@@ -16,16 +16,18 @@ package systems
 
 import (
 	"fmt"
-	rl "github.com/gen2brain/raylib-go/raylib"
-	"github.com/negrel/assert"
 	"gomp/examples/new-api/components"
 	"gomp/examples/new-api/config"
 	"gomp/pkg/ecs"
+	"gomp/pkg/kbd"
 	"gomp/stdcomponents"
 	"gomp/vectors"
 	"image/color"
 	"slices"
 	"time"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
+	"github.com/negrel/assert"
 )
 
 const (
@@ -91,20 +93,20 @@ func (s *RenderOverlaySystem) Init() {
 }
 
 func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
-	if rl.IsKeyPressed(rl.KeyF6) {
+	if kbd.IsKeyPressed(kbd.KeycodeF6) {
 		if !s.debug {
 			s.debug = true
 		} else {
 			s.debug = false
 		}
 	}
-	if rl.IsKeyPressed(rl.KeyF7) {
+	if kbd.IsKeyPressed(kbd.KeycodeF7) {
 		s.debugLvl--
 		if s.debugLvl < 0 {
 			s.debugLvl = 63
 		}
 	}
-	if rl.IsKeyPressed(rl.KeyF8) {
+	if kbd.IsKeyPressed(kbd.KeycodeF8) {
 		s.debugLvl++
 		if s.debugLvl > 63 {
 			s.debugLvl = 0

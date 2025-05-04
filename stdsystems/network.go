@@ -15,8 +15,8 @@ Thank you for your support!
 package stdsystems
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/network"
+	"gomp/pkg/kbd"
 	"time"
 )
 
@@ -38,11 +38,11 @@ type NetworkSystem struct {
 func (s *NetworkSystem) Init() {
 }
 func (s *NetworkSystem) Run(dt time.Duration) {
-	if rl.IsKeyPressed(rl.KeyP) {
+	if kbd.IsKeyPressed(kbd.KeycodeP) {
 		network.Quic.Host("127.0.0.1:27015")
 	}
 
-	if rl.IsKeyPressed(rl.KeyO) {
+	if kbd.IsKeyPressed(kbd.KeycodeO) {
 		network.Quic.Connect("127.0.0.1:27015")
 	}
 }

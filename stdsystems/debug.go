@@ -7,6 +7,7 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package stdsystems
 
 import (
+	"gomp/pkg/kbd"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -15,7 +16,6 @@ import (
 	"runtime/trace"
 
 	"github.com/felixge/fgprof"
-	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 const gpprof = false
@@ -40,7 +40,7 @@ func (s *DebugSystem) Init() {
 
 }
 func (s *DebugSystem) Run() {
-	if rl.IsKeyPressed(rl.KeyF9) {
+	if kbd.IsKeyPressed(kbd.KeycodeF9) {
 		if s.pprofEnabled {
 			pprof.StopCPUProfile()
 			log.Println("CPU Profile Stopped")
@@ -73,7 +73,7 @@ func (s *DebugSystem) Run() {
 		s.pprofEnabled = !s.pprofEnabled
 	}
 
-	if rl.IsKeyPressed(rl.KeyF10) {
+	if kbd.IsKeyPressed(kbd.KeycodeF10) {
 		if !s.traceEnabled {
 			f, err := os.Create("trace.out")
 			if err != nil {

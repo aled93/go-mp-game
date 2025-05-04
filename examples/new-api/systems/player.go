@@ -7,12 +7,12 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package systems
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/examples/new-api/components"
 	"gomp/examples/new-api/config"
 	"gomp/examples/new-api/entities"
 	"gomp/examples/new-api/sprites"
 	"gomp/pkg/ecs"
+	"gomp/pkg/kbd"
 	"gomp/stdcomponents"
 	"math/rand"
 )
@@ -83,31 +83,31 @@ func (s *PlayerSystem) Run() {
 		velocity.X = 0
 		velocity.Y = 0
 
-		if rl.IsKeyDown(rl.KeySpace) {
+		if kbd.IsKeyDown(kbd.KeycodeSpace) {
 			*animationState = entities.PlayerStateJump
 		} else {
 			*animationState = entities.PlayerStateIdle
-			if rl.IsKeyDown(rl.KeyD) {
+			if kbd.IsKeyDown(kbd.KeycodeD) {
 				*animationState = entities.PlayerStateWalk
 				velocity.X = speed
 				flip.X = false
 			}
-			if rl.IsKeyDown(rl.KeyA) {
+			if kbd.IsKeyDown(kbd.KeycodeA) {
 				*animationState = entities.PlayerStateWalk
 				velocity.X = -speed
 				flip.X = true
 			}
-			if rl.IsKeyDown(rl.KeyW) {
+			if kbd.IsKeyDown(kbd.KeycodeW) {
 				*animationState = entities.PlayerStateWalk
 				velocity.Y = -speed
 			}
-			if rl.IsKeyDown(rl.KeyS) {
+			if kbd.IsKeyDown(kbd.KeycodeS) {
 				*animationState = entities.PlayerStateWalk
 				velocity.Y = speed
 			}
 		}
 
-		if rl.IsKeyPressed(rl.KeyK) {
+		if kbd.IsKeyPressed(kbd.KeycodeK) {
 			s.EntityManager.Delete(e)
 		}
 	}

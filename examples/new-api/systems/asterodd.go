@@ -15,11 +15,11 @@ Thank you for your support!
 package systems
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/examples/new-api/components"
 	"gomp/examples/new-api/config"
 	"gomp/examples/new-api/entities"
 	"gomp/pkg/ecs"
+	"gomp/pkg/kbd"
 	"gomp/stdcomponents"
 	"gomp/stdentities"
 	"gomp/vectors"
@@ -188,21 +188,21 @@ func (s *AssteroddSystem) Run(dt time.Duration) {
 		intents.RotateRight = false
 		intents.Fire = false
 
-		if rl.IsKeyDown(rl.KeyW) {
+		if kbd.IsKeyDown(kbd.KeycodeW) {
 			intents.MoveUp = true
 		}
-		if rl.IsKeyDown(rl.KeyS) {
+		if kbd.IsKeyDown(kbd.KeycodeS) {
 			intents.MoveDown = true
 		}
 
-		if rl.IsKeyDown(rl.KeyA) {
+		if kbd.IsKeyDown(kbd.KeycodeA) {
 			intents.RotateLeft = true
 		}
-		if rl.IsKeyDown(rl.KeyD) {
+		if kbd.IsKeyDown(kbd.KeycodeD) {
 			intents.RotateRight = true
 		}
 
-		if rl.IsKeyDown(rl.KeySpace) {
+		if kbd.IsKeyDown(kbd.KeycodeSpace) {
 			intents.Fire = true
 		}
 
