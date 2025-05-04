@@ -11,3 +11,7 @@ import "math/bits"
 func FastIntLog2(value uint64) int {
 	return bits.Len64(value) - 1
 }
+
+func FastestIntLog2(value uint64) int {
+	return bits.LeadingZeros64(value) ^ 63
+}

@@ -12,21 +12,25 @@ import (
 	"testing"
 )
 
-//func TesCalcIndex(t *testing.T) {
-//	for i := 0; i <= 100_000_000; i++ {
-//		value := i>>10 + 1
-//		want := uint64(math.Log2(float64(value)))
-//		have := FastIntLog2(value)
-//		if want != have {
-//			t.Fatalf("i: %v, want: %v, got: %v", i, want, have)
-//		}
-//	}
-//}
+func TestCalcIndex(t *testing.T) {
+	for i := uint64(0); i <= 100_000_000; i++ {
+		var value uint64 = i>>10 + 1
+		want := int(math.Log2(float64(value)))
+		want2 := int(bits.LeadingZeros64(value) ^ 63)
+		have := bits.Len64(value) - 1
+		if want != have {
+			t.Fatalf("i: %v, want: %v, got: %v", i, want, have)
+		}
+		if want2 != have {
+			t.Fatalf("i: %v, want: %v, got: %v", i, want2, have)
+		}
+	}
+}
 
 func BenchmarkFastestLog2(b *testing.B) {
 	var i uint64 = 1
 	for b.Loop() {
-		_ = bits.LeadingZeros64(i/10 + 1)
+		_ = FastestIntLog2(i/10 + 1)
 		i++
 	}
 }
