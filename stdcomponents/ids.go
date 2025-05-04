@@ -49,6 +49,7 @@ const (
 	CameraComponentId
 	TexturePositionSmoothComponentId
 	RenderVisibleComponentId
+	WindowComponentId
 
 	StdLastComponentId // StdLastComponentId MUST always be the last
 )
