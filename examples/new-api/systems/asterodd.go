@@ -67,7 +67,7 @@ func (s *AssteroddSystem) Init() {
 	}
 	stdentities.CreateCollisionGrid(&collisionGridManages, config.DefaultCollisionLayer, 256)
 	stdentities.CreateCollisionGrid(&collisionGridManages, config.PlayerCollisionLayer, 128)
-	stdentities.CreateCollisionGrid(&collisionGridManages, config.BulletCollisionLayer, 32)
+	stdentities.CreateCollisionGrid(&collisionGridManages, config.BulletCollisionLayer, 64)
 	stdentities.CreateCollisionGrid(&collisionGridManages, config.EnemyCollisionLayer, 128)
 	stdentities.CreateCollisionGrid(&collisionGridManages, config.WallCollisionLayer, 4096)
 

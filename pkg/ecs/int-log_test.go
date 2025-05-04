@@ -11,11 +11,11 @@ import (
 	"testing"
 )
 
-func TesCalcIndex(t *testing.T) {
+func TestCalcIndex(t *testing.T) {
 	for i := 0; i <= 100_000_000; i++ {
 		value := i>>10 + 1
 		want := int(math.Log2(float64(value)))
-		have := FastIntLog2(value)
+		have := FastIntLog2(uint(value))
 		if want != have {
 			t.Fatalf("i: %v, want: %v, got: %v", i, want, have)
 		}
@@ -24,7 +24,7 @@ func TesCalcIndex(t *testing.T) {
 
 func BenchmarkFastLog2(t *testing.B) {
 	for range t.N {
-		_ = FastIntLog2(t.N/10 + 1)
+		_ = FastIntLog2(uint(t.N/10 + 1))
 	}
 }
 
