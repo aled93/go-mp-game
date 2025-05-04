@@ -24,6 +24,7 @@ import (
 	"gomp/stdcomponents"
 	"gomp/vectors"
 	"image/color"
+	"slices"
 	"time"
 )
 
@@ -65,7 +66,7 @@ type RenderOverlaySystem struct {
 	fpsSampleSum                       int
 	fpsSampleIdx                       int
 	avgFPS                             float64
-	percentileFPS                      int
+	lowestFps                          int
 	lastFrameDuration                  time.Duration
 	msHistory                          []float64 // ms per frame, ring buffer
 	msHistoryIdx                       int
@@ -135,7 +136,7 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 	s.avgFPS = float64(s.fpsSampleSum) / float64(len(s.fpsSamples))
 
 	// Calculate 1% FPS (lowest 1% frame in the sample window)
-	s.percentileFPS = s.calcPercentileFPS(0.01)
+	s.lowestFps = slices.Min(s.fpsSamples)
 
 	// Update frame time history (ms) on every frame
 	// Use average of last two frames for smoother graph
@@ -316,7 +317,7 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 	return true
 }
 
-// Draws FPS stats: 1% low, current frame, average, and current FPS
+// Draws FPS stats: low, current frame, average, and current FPS
 func (s *RenderOverlaySystem) drawCustomFPS(x, y int32) {
 	fps := int32(s.currentFPS)
 
@@ -327,7 +328,7 @@ func (s *RenderOverlaySystem) drawCustomFPS(x, y int32) {
 	}
 
 	avgFPS := int32(s.avgFPS)
-	percentileFPS := int32(s.percentileFPS)
+	percentileFPS := int32(s.lowestFps)
 
 	// Colors
 	fontColor := rl.Lime
@@ -349,7 +350,7 @@ func (s *RenderOverlaySystem) drawCustomFPS(x, y int32) {
 	rl.DrawText(fmt.Sprintf("FPS: %d", fps), x, y, fontSize, fontColor)
 	rl.DrawText(fmt.Sprintf("Frame: %.2f ms", frameTimeMs), x, y+fontSize, fontSize, frameTimeColor)
 	rl.DrawText(fmt.Sprintf("Avg %d: %d", fpsAvgSamples, avgFPS), x, y+fontSize*2, fontSize, fontColor)
-	rl.DrawText(fmt.Sprintf("1%% Low: %d", percentileFPS), x, y+fontSize*3, fontSize, fontColor)
+	rl.DrawText(fmt.Sprintf("Low: %d", percentileFPS), x, y+fontSize*3, fontSize, fontColor)
 
 	// Draw ms graph
 	s.drawMsGraph(x+180, y)
@@ -445,36 +446,6 @@ func (s *RenderOverlaySystem) drawMsGraph(x, y int32) {
 		1.0,
 		rl.White,
 	)
-}
-
-// Calculates the given percentile FPS (e.g., 0.01 for 1% low)
-func (s *RenderOverlaySystem) calcPercentileFPS(percentile float64) int {
-	n := len(s.fpsSamples)
-	if n == 0 {
-		return 0
-	}
-	// Copy and sort samples
-	sorted := make([]int, n)
-	copy(sorted, s.fpsSamples)
-	for i := 1; i < n; i++ {
-		key := sorted[i]
-		j := i - 1
-		for j >= 0 && sorted[j] > key {
-			sorted[j+1] = sorted[j]
-			j--
-		}
-		sorted[j+1] = key
-	}
-
-	// For 1% low, we want the 1st percentile (lowest values)
-	idx := int(float64(n) * percentile)
-	if idx < 0 {
-		idx = 0
-	}
-	if idx >= n {
-		idx = n - 1
-	}
-	return sorted[idx]
 }
 
 func (s *RenderOverlaySystem) intersects(rect1, rect2 vectors.Rectangle) bool {
