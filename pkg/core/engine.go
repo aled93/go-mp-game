@@ -26,7 +26,7 @@ const (
 )
 
 func NewEngine(game AnyGame) Engine {
-	numCpu := max(runtime.NumCPU(), 1)
+	numCpu := max(runtime.NumCPU()-1, 1)
 	engine := Engine{
 		Game: game,
 		pool: worker.NewPool(numCpu),
@@ -40,6 +40,9 @@ type Engine struct {
 }
 
 func (e *Engine) Run(tickrate uint, framerate uint) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	fixedUpdDuration := time.Second / time.Duration(tickrate)
 
 	var renderTicker *time.Ticker
