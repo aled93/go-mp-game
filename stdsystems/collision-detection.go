@@ -15,16 +15,17 @@ Thank you for your support!
 package stdsystems
 
 import (
-	"github.com/negrel/assert"
 	gjk "gomp/pkg/collision"
 	"gomp/pkg/core"
 	"gomp/pkg/ecs"
+	"gomp/pkg/util"
 	"gomp/pkg/worker"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 	"math"
 	"math/bits"
 	"time"
+
+	"github.com/negrel/assert"
 )
 
 func NewCollisionDetectionSystem() CollisionDetectionSystem {
@@ -206,11 +207,8 @@ func (s *CollisionDetectionSystem) narrowPhase(entityA ecs.Entity, potentialEnti
 					entityA:  entityA,
 					entityB:  entityB,
 					position: posA.XY,
-					normal: vectors.Vec2{
-						X: dx / dist,
-						Y: dy / dist,
-					},
-					depth: sumRadii - dist,
+					normal:   util.NewVec2(dx/dist, dy/dist),
+					depth:    sumRadii - dist,
 				}
 				s.collisionEventAcc[workerId].Append(event)
 			}
@@ -229,7 +227,7 @@ func (s *CollisionDetectionSystem) narrowPhase(entityA ecs.Entity, potentialEnti
 		if test.CheckCollision(colA, colB, transformA, transformB) {
 			// If collision detected, get penetration details using EPA
 			normal, depth := test.EPA(colA, colB, transformA, transformB)
-			position := posA.XY.Add(positionB.XY.Sub(posA.XY))
+			position := posA.XY.Add(positionB.XY.Subtract(posA.XY))
 			s.collisionEventAcc[workerId].Append(CollisionEvent{
 				entityA:  entityA,
 				entityB:  entityB,
@@ -246,7 +244,7 @@ func (s *CollisionDetectionSystem) registerCollisionEvents() {
 		events.EachData()(func(event *CollisionEvent) bool {
 			pair := CollisionPair{event.entityA, event.entityB}
 			s.currentCollisions[pair] = struct{}{}
-			displacement := event.normal.Scale(event.depth)
+			displacement := event.normal.ScaleScalar(event.depth)
 			pos := event.position.Add(displacement)
 
 			if _, exists := s.activeCollisions[pair]; !exists {
@@ -260,9 +258,7 @@ func (s *CollisionDetectionSystem) registerCollisionEvents() {
 				})
 
 				s.Positions.Create(proxy, stdcomponents.Position{
-					XY: vectors.Vec2{
-						X: pos.X, Y: pos.Y,
-					}})
+					XY: util.NewVec2(pos.X, pos.Y)})
 				s.activeCollisions[pair] = proxy
 			} else {
 				proxy := s.activeCollisions[pair]

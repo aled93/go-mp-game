@@ -17,8 +17,8 @@ package stdsystems
 
 import (
 	"gomp/pkg/ecs"
+	"gomp/pkg/util"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 	"time"
 )
 
@@ -71,8 +71,8 @@ func (s *CollisionDetectionGridSystem) Init() {
 
 type CollisionEvent struct {
 	entityA, entityB ecs.Entity
-	position         vectors.Vec2
-	normal           vectors.Vec2
+	position         util.Vec2
+	normal           util.Vec2
 	depth            float32
 }
 
@@ -215,7 +215,7 @@ func (s *CollisionDetectionGridSystem) registerCollision(entityA, entityB ecs.En
 	if _, exists := s.activeCollisions[pair]; !exists {
 		proxy := s.EntityManager.Create()
 		s.Collisions.Create(proxy, stdcomponents.Collision{E1: pair.E1, E2: pair.E2, State: stdcomponents.CollisionStateEnter})
-		s.Positions.Create(proxy, stdcomponents.Position{XY: vectors.Vec2{X: posX, Y: posY}})
+		s.Positions.Create(proxy, stdcomponents.Position{XY: util.NewVec2(posX, posY)})
 		s.activeCollisions[pair] = proxy
 	} else {
 		s.Collisions.GetUnsafe(s.activeCollisions[pair]).State = stdcomponents.CollisionStateStay

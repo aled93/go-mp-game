@@ -15,12 +15,13 @@ Thank you for your support!
 package stdcomponents
 
 import (
-	"github.com/negrel/assert"
 	"gomp/pkg/ecs"
-	"gomp/vectors"
+	"gomp/pkg/util"
 	"math"
 	"math/bits"
 	"slices"
+
+	"github.com/negrel/assert"
 )
 
 const mortonPrecision = (1 << 16) - 1
@@ -307,14 +308,8 @@ func (t *BvhTree) findSplit(start, end int) int {
 
 func (t *BvhTree) mergeAABB(a, b *AABB) AABB {
 	return AABB{
-		Min: vectors.Vec2{
-			X: min(a.Min.X, b.Min.X),
-			Y: min(a.Min.Y, b.Min.Y),
-		},
-		Max: vectors.Vec2{
-			X: max(a.Max.X, b.Max.X),
-			Y: max(a.Max.Y, b.Max.Y),
-		},
+		Min: util.NewVec2(min(a.Min.X, b.Min.X), min(a.Min.Y, b.Min.Y)),
+		Max: util.NewVec2(max(a.Max.X, b.Max.X), max(a.Max.Y, b.Max.Y)),
 	}
 }
 

@@ -16,25 +16,20 @@ package stdcomponents
 
 import (
 	"gomp/pkg/ecs"
-	"gomp/vectors"
+	"gomp/pkg/util"
 )
 
 type AABB struct {
-	Min vectors.Vec2
-	Max vectors.Vec2
+	Min util.Vec2
+	Max util.Vec2
 }
 
-func (a AABB) Center() vectors.Vec2 {
-	return a.Min.Add(a.Max).Scale(0.5)
+func (a AABB) Center() util.Vec2 {
+	return a.Min.Add(a.Max).ScaleScalar(0.5)
 }
 
-func (a AABB) Rect() vectors.Rectangle {
-	return vectors.Rectangle{
-		X:      a.Min.X,
-		Y:      a.Min.Y,
-		Width:  a.Max.X - a.Min.X,
-		Height: a.Max.Y - a.Min.Y,
-	}
+func (a AABB) Rect() util.Rect {
+	return util.NewRectFromMinMax(a.Min, a.Max)
 }
 
 type AABBComponentManager = ecs.ComponentManager[AABB]

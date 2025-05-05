@@ -15,11 +15,12 @@ Thank you for your support!
 package stdcomponents
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/pkg/ecs"
-	"gomp/vectors"
+	"gomp/pkg/util"
 	"image/color"
 	"math"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 const (
@@ -40,7 +41,7 @@ type CameraLayer uint64
 // Order defines the camera's order, ascending order
 type Camera struct {
 	rl.Camera2D
-	Dst       vectors.Rectangle // TODO: remove?
+	Dst       util.Rect // TODO: remove?
 	Layer     CameraLayer
 	Culling   uint8
 	Order     int
@@ -49,7 +50,7 @@ type Camera struct {
 	Tint      color.RGBA
 }
 
-func (c Camera) Rect() vectors.Rectangle {
+func (c Camera) Rect() util.Rect {
 	// Calculate the non-rotated top-left corner of the view rectangle
 	x := c.Target.X - (c.Offset.X / c.Zoom)
 	y := c.Target.Y - (c.Offset.Y / c.Zoom)
@@ -58,25 +59,23 @@ func (c Camera) Rect() vectors.Rectangle {
 
 	// When rotation is zero, we can return directly.
 	if c.Rotation == 0 {
-		return vectors.Rectangle{
-			X:      x,
-			Y:      y,
-			Width:  width,
-			Height: height,
-		}
+		return util.NewRectFromOriginSize(
+			util.NewVec2(x, y),
+			util.NewVec2(width, height),
+		)
 	}
 
 	// Define the four corners of the non-rotated rectangle
-	topLeft := vectors.Vec2{X: x, Y: y}
-	topRight := vectors.Vec2{X: x + width, Y: y}
-	bottomRight := vectors.Vec2{X: x + width, Y: y + height}
-	bottomLeft := vectors.Vec2{X: x, Y: y + height}
+	topLeft := util.NewVec2(x, y)
+	topRight := util.NewVec2(x+width, y)
+	bottomRight := util.NewVec2(x+width, y+height)
+	bottomLeft := util.NewVec2(x, y+height)
 
 	// Rotate each corner around the camera.Target using the camera rotation
-	topLeft = rotatePoint(topLeft, vectors.Vec2(c.Target), float64(c.Rotation))
-	topRight = rotatePoint(topRight, vectors.Vec2(c.Target), float64(c.Rotation))
-	bottomRight = rotatePoint(bottomRight, vectors.Vec2(c.Target), float64(c.Rotation))
-	bottomLeft = rotatePoint(bottomLeft, vectors.Vec2(c.Target), float64(c.Rotation))
+	topLeft = rotatePoint(topLeft, util.Vec2(c.Target), float64(c.Rotation))
+	topRight = rotatePoint(topRight, util.Vec2(c.Target), float64(c.Rotation))
+	bottomRight = rotatePoint(bottomRight, util.Vec2(c.Target), float64(c.Rotation))
+	bottomLeft = rotatePoint(bottomLeft, util.Vec2(c.Target), float64(c.Rotation))
 
 	// Determine the axis-aligned bounding box that contains all rotated points
 	// TODO: fast math 32bit
@@ -85,16 +84,14 @@ func (c Camera) Rect() vectors.Rectangle {
 	minY := math.Min(math.Min(float64(topLeft.Y), float64(topRight.Y)), math.Min(float64(bottomRight.Y), float64(bottomLeft.Y)))
 	maxY := math.Max(math.Max(float64(topLeft.Y), float64(topRight.Y)), math.Max(float64(bottomRight.Y), float64(bottomLeft.Y)))
 
-	return vectors.Rectangle{
-		X:      float32(minX),
-		Y:      float32(minY),
-		Width:  float32(maxX - minX),
-		Height: float32(maxY - minY),
-	}
+	return util.NewRectFromMinMax(
+		util.NewVec2(util.Scalar(minX), util.Scalar(minY)),
+		util.NewVec2(util.Scalar(maxX), util.Scalar(maxY)),
+	)
 }
 
 // rotatePoint rotates point p around pivot by angle degrees.
-func rotatePoint(p, pivot vectors.Vec2, angle float64) vectors.Vec2 {
+func rotatePoint(p, pivot util.Vec2, angle float64) util.Vec2 {
 	// Convert angle from degrees to radians.
 	// TODO: fast math 32bit
 	theta := angle * (math.Pi / 180)
@@ -110,10 +107,7 @@ func rotatePoint(p, pivot vectors.Vec2, angle float64) vectors.Vec2 {
 	rotatedY := dx*sinTheta + dy*cosTheta
 
 	// Translate point back
-	return vectors.Vec2{
-		X: rotatedX + pivot.X,
-		Y: rotatedY + pivot.Y,
-	}
+	return util.NewVec2(rotatedX+pivot.X, rotatedY+pivot.Y)
 }
 
 type CameraComponentManager = ecs.ComponentManager[Camera]

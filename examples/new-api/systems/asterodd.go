@@ -20,9 +20,9 @@ import (
 	"gomp/examples/new-api/entities"
 	"gomp/pkg/ecs"
 	"gomp/pkg/kbd"
+	"gomp/pkg/util"
 	"gomp/stdcomponents"
 	"gomp/stdentities"
-	"gomp/vectors"
 	"math/rand"
 	"time"
 )
@@ -125,10 +125,10 @@ func (s *AssteroddSystem) Init() {
 	entities.CreateWall(&wallManager, 5000, -1000, 0, 1000, 7000)
 
 	for range 30_000 {
-		randPos := vectors.Vec2{
-			X: float32(rand.Intn(5000)) + float32(rand.Intn(1000))/10000,
-			Y: float32(rand.Intn(5000)) + float32(rand.Intn(1000))/10000,
-		}
+		randPos := util.NewVec2(
+			float32(rand.Intn(5000))+float32(rand.Intn(1000))/10000,
+			float32(rand.Intn(5000))+float32(rand.Intn(1000))/10000,
+		)
 
 		randVelX := float32(rand.Intn(200)) - 100 + float32(rand.Intn(1000))/10000
 		randVelY := float32(rand.Intn(200)) - 100 + float32(rand.Intn(1000))/10000

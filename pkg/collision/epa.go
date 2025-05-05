@@ -15,8 +15,8 @@ Thank you for your support!
 package gjk
 
 import (
+	"gomp/pkg/util"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 	"math"
 )
 
@@ -31,10 +31,10 @@ Based on https://dyn4j.org/2010/05/epa-expanding-polytope-algorithm/#epa-alterna
 func (s *GJK) EPA(
 	a, b AnyCollider,
 	transformA, transformB stdcomponents.Transform2d,
-) (vectors.Vec2, float32) {
-	polytope := s.simplex.toPolytope(make([]vectors.Vec2, 0, 6))
+) (util.Vec2, float32) {
+	polytope := s.simplex.toPolytope(make([]util.Vec2, 0, 6))
 
-	bestNormal := vectors.Vec2{}
+	bestNormal := util.Vec2{}
 	bestDistance := float32(math.MaxFloat32)
 	bestTolerance := float32(math.MaxFloat32)
 
@@ -52,16 +52,16 @@ func (s *GJK) EPA(
 			bestDistance = distance
 		}
 
-		polytope = append(polytope[:edge.index], append([]vectors.Vec2{point}, polytope[edge.index:]...)...)
+		polytope = append(polytope[:edge.index], append([]util.Vec2{point}, polytope[edge.index:]...)...)
 	}
 
 	return bestNormal, bestDistance
 }
 
-func (s *GJK) findClosestEdge(polytope []vectors.Vec2) closestEdge {
+func (s *GJK) findClosestEdge(polytope []util.Vec2) closestEdge {
 	closest := closestEdge{
 		distance: float32(math.MaxFloat32),
-		normal:   vectors.Vec2{},
+		normal:   util.Vec2{},
 		index:    -1,
 	}
 
@@ -70,8 +70,8 @@ func (s *GJK) findClosestEdge(polytope []vectors.Vec2) closestEdge {
 		a := polytope[i]
 		b := polytope[j]
 
-		edge := b.Sub(a)
-		normal := edge.Perpendicular().Normalize()
+		edge := b.Subtract(a)
+		normal := edge.PerpendicularCW().Normalized()
 		distance := normal.Dot(a)
 
 		if distance < closest.distance {
@@ -86,6 +86,6 @@ func (s *GJK) findClosestEdge(polytope []vectors.Vec2) closestEdge {
 
 type closestEdge struct {
 	distance float32
-	normal   vectors.Vec2
+	normal   util.Vec2
 	index    int
 }

@@ -12,19 +12,21 @@ Thank you for your support!
 
 package gjk
 
-import "gomp/vectors"
+import (
+	"gomp/pkg/util"
+)
 
 type Simplex2d struct {
-	a, b, c vectors.Vec3
+	a, b, c util.Vec3
 	count   int
 }
 
-func (s *Simplex2d) do(direction *vectors.Vec2) bool {
-	ao := s.a.Neg()
+func (s *Simplex2d) do(direction *util.Vec2) bool {
+	ao := s.a.Back()
 
 	switch s.count {
 	case 2: // Line
-		ab := s.b.Sub(s.a)
+		ab := s.b.Subtract(s.a)
 		if ab.Dot(ao) > 0 {
 			newDirection := ab.Cross(ao).Cross(ab)
 			direction.X = newDirection.X
@@ -35,8 +37,8 @@ func (s *Simplex2d) do(direction *vectors.Vec2) bool {
 			s.count = 1
 		}
 	case 3: // Triangle
-		ab := s.b.Sub(s.a)
-		ac := s.c.Sub(s.a)
+		ab := s.b.Subtract(s.a)
+		ac := s.c.Subtract(s.a)
 		abc := ab.Cross(ac)
 
 		if abc.Cross(ac).Dot(ao) > 0 {
@@ -90,7 +92,7 @@ func (s *Simplex2d) do(direction *vectors.Vec2) bool {
 	return false
 }
 
-func (s *Simplex2d) add(p vectors.Vec3) {
+func (s *Simplex2d) add(p util.Vec3) {
 	switch s.count {
 	case 0:
 		s.a = p
@@ -104,14 +106,14 @@ func (s *Simplex2d) add(p vectors.Vec3) {
 	s.count++
 }
 
-func (s *Simplex2d) toPolytope(polytope []vectors.Vec2) []vectors.Vec2 {
+func (s *Simplex2d) toPolytope(polytope []util.Vec2) []util.Vec2 {
 	switch s.count {
 	case 1:
-		polytope = append(polytope, s.a.ToVec2())
+		polytope = append(polytope, util.NewVec2(s.a.X, s.a.Y))
 	case 2:
-		polytope = append(polytope, s.a.ToVec2(), s.b.ToVec2())
+		polytope = append(polytope, util.NewVec2(s.a.X, s.a.Y), util.NewVec2(s.b.X, s.b.Y))
 	case 3:
-		polytope = append(polytope, s.a.ToVec2(), s.b.ToVec2(), s.c.ToVec2())
+		polytope = append(polytope, util.NewVec2(s.a.X, s.a.Y), util.NewVec2(s.b.X, s.b.Y), util.NewVec2(s.c.X, s.c.Y))
 	default:
 		panic("Invalid simplex")
 	}

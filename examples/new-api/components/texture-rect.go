@@ -15,14 +15,16 @@ Thank you for your support!
 package components
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/pkg/ecs"
+	"gomp/pkg/util"
 	"image/color"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type TextureRect struct {
 	Dest     rl.Rectangle
-	Origin   rl.Vector2
+	Origin   util.Vec2
 	Rotation float32
 	Color    color.RGBA
 }

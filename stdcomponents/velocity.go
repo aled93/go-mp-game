@@ -16,18 +16,18 @@ package stdcomponents
 
 import (
 	"gomp/pkg/ecs"
-	"gomp/vectors"
+	"gomp/pkg/util"
 )
 
 type Velocity struct {
 	X, Y float32
 }
 
-func (v Velocity) Vec2() vectors.Vec2 {
-	return vectors.Vec2{X: v.X, Y: v.Y}
+func (v Velocity) Vec2() util.Vec2 {
+	return util.NewVec2(v.X, v.Y)
 }
 
-func (v *Velocity) SetVec2(velocity vectors.Vec2) {
+func (v *Velocity) SetVec2(velocity util.Vec2) {
 	v.X = velocity.X
 	v.Y = velocity.Y
 }

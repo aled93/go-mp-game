@@ -17,8 +17,8 @@ package entities
 import (
 	"gomp/examples/new-api/components"
 	"gomp/pkg/ecs"
+	"gomp/pkg/util"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 	"time"
 )
 
@@ -37,10 +37,7 @@ func CreateSpaceSpawner(
 ) ecs.Entity {
 	e := props.EntityManager.Create()
 	props.Positions.Create(e, stdcomponents.Position{
-		XY: vectors.Vec2{
-			X: posX,
-			Y: posY,
-		},
+		XY: util.NewVec2(posX, posY),
 	})
 	props.Velocities.Create(e, stdcomponents.Velocity{
 		X: velX,

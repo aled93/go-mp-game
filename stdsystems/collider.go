@@ -15,13 +15,14 @@ Thank you for your support!
 package stdsystems
 
 import (
-	"github.com/negrel/assert"
 	"gomp/pkg/core"
 	"gomp/pkg/ecs"
+	"gomp/pkg/util"
 	"gomp/pkg/worker"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 	"time"
+
+	"github.com/negrel/assert"
 )
 
 func NewColliderSystem() ColliderSystem {
@@ -128,17 +129,17 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		assert.NotNil(aabb)
 
 		a := boxCollider.WH
-		b := vectors.Vec2{X: 0, Y: boxCollider.WH.Y}
-		c := vectors.Vec2{X: 0, Y: 0}
-		d := vectors.Vec2{X: boxCollider.WH.X, Y: 0}
+		b := util.NewVec2(0, boxCollider.WH.Y)
+		c := util.NewVec2(0, 0)
+		d := util.NewVec2(boxCollider.WH.X, 0)
 
-		c = c.Sub(boxCollider.Offset).Rotate(rotation.Angle)
-		a = a.Sub(boxCollider.Offset).Rotate(rotation.Angle)
-		b = b.Sub(boxCollider.Offset).Rotate(rotation.Angle)
-		d = d.Sub(boxCollider.Offset).Rotate(rotation.Angle)
+		c = c.Subtract(boxCollider.Offset).Rotate(rotation.Angle)
+		a = a.Subtract(boxCollider.Offset).Rotate(rotation.Angle)
+		b = b.Subtract(boxCollider.Offset).Rotate(rotation.Angle)
+		d = d.Subtract(boxCollider.Offset).Rotate(rotation.Angle)
 
-		aabb.Min = vectors.Vec2{X: min(b.X, c.X, a.X, d.X), Y: min(b.Y, c.Y, a.Y, d.Y)}.Mul(scale.XY)
-		aabb.Max = vectors.Vec2{X: max(b.X, c.X, a.X, d.X), Y: max(b.Y, c.Y, a.Y, d.Y)}.Mul(scale.XY)
+		aabb.Min = util.NewVec2(min(b.X, c.X, a.X, d.X), min(b.Y, c.Y, a.Y, d.Y)).Scale(scale.XY)
+		aabb.Max = util.NewVec2(max(b.X, c.X, a.X, d.X), max(b.Y, c.Y, a.Y, d.Y)).Scale(scale.XY)
 
 		aabb.Min = position.XY.Add(aabb.Min)
 		aabb.Max = position.XY.Add(aabb.Max)
@@ -172,9 +173,9 @@ func (s *ColliderSystem) Run(dt time.Duration) {
 		aabb := s.AABB.GetUnsafe(entity)
 		assert.NotNil(aabb)
 
-		offset := circleCollider.Offset.Mul(scale.XY)
-		scaledRadius := scale.XY.Scale(circleCollider.Radius)
-		aabb.Min = position.XY.Add(offset).Sub(scaledRadius)
+		offset := circleCollider.Offset.Scale(scale.XY)
+		scaledRadius := scale.XY.ScaleScalar(circleCollider.Radius)
+		aabb.Min = position.XY.Add(offset).Subtract(scaledRadius)
 		aabb.Max = position.XY.Add(offset).Add(scaledRadius)
 	})
 

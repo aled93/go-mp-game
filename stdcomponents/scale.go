@@ -16,11 +16,11 @@ package stdcomponents
 
 import (
 	"gomp/pkg/ecs"
-	"gomp/vectors"
+	"gomp/pkg/util"
 )
 
 type Scale struct {
-	XY vectors.Vec2
+	XY util.Vec2
 }
 
 type ScaleComponentManager = ecs.ComponentManager[Scale]

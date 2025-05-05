@@ -10,9 +10,9 @@ import (
 	"gomp/pkg/core"
 	"gomp/pkg/ecs"
 	"gomp/pkg/kbd"
+	"gomp/pkg/util"
 	"gomp/pkg/worker"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 	"math"
 	"runtime"
 	"time"
@@ -66,12 +66,12 @@ func (s *TexturePositionSmoothSystem) Run(dt time.Duration) {
 
 		switch *smooth {
 		case stdcomponents.TexturePositionSmoothLerp:
-			dest := vectors.Vec2{X: texture.Dest.X, Y: texture.Dest.Y}
-			xy := s.Lerp2D(dest, position.XY, dt)
+			dest := util.NewVec2(texture.Dest.X, texture.Dest.Y)
+			xy := dest.Lerp(position.XY, util.Scalar(dt))
 			texture.Dest.X = xy.X
 			texture.Dest.Y = xy.Y
 		case stdcomponents.TexturePositionSmoothExpDecay:
-			dest := vectors.Vec2{X: texture.Dest.X, Y: texture.Dest.Y}
+			dest := util.NewVec2(texture.Dest.X, texture.Dest.Y)
 			xy := s.ExpDecay2D(dest, position.XY, 10, float64(dt))
 			texture.Dest.X = xy.X
 			texture.Dest.Y = xy.Y
@@ -83,15 +83,11 @@ func (s *TexturePositionSmoothSystem) Run(dt time.Duration) {
 
 func (s *TexturePositionSmoothSystem) Destroy() {}
 
-func (_ *TexturePositionSmoothSystem) Lerp2D(a, b vectors.Vec2, dt time.Duration) vectors.Vec2 {
-	return a.Add(b.Sub(a).Scale(float32(dt)))
-}
-
 // ExpDecay2D applies an exponential decay to the position vector.
 // TODO: float32 math package
-func (_ *TexturePositionSmoothSystem) ExpDecay2D(a, b vectors.Vec2, decay, dt float64) vectors.Vec2 {
-	return vectors.Vec2{
-		X: b.X + (a.X-b.X)*(float32(math.Exp(-decay*dt))),
-		Y: b.Y + (a.Y-b.Y)*(float32(math.Exp(-decay*dt))),
-	}
+func (_ *TexturePositionSmoothSystem) ExpDecay2D(a, b util.Vec2, decay, dt float64) util.Vec2 {
+	return util.NewVec2(
+		b.X+(a.X-b.X)*(float32(math.Exp(-decay*dt))),
+		b.Y+(a.Y-b.Y)*(float32(math.Exp(-decay*dt))),
+	)
 }

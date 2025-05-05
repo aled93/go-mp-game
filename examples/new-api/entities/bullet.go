@@ -15,13 +15,12 @@ Thank you for your support!
 package entities
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/examples/new-api/assets"
 	"gomp/examples/new-api/components"
 	"gomp/examples/new-api/config"
 	"gomp/pkg/ecs"
+	"gomp/pkg/util"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 	"image/color"
 )
 
@@ -48,38 +47,29 @@ func CreateBullet(
 ) ecs.Entity {
 	entity := props.EntityManager.Create()
 	props.Positions.Create(entity, stdcomponents.Position{
-		XY: vectors.Vec2{
-			X: posX,
-			Y: posY,
-		},
+		XY: util.NewVec2(posX, posY),
 	})
 	props.Rotations.Create(entity, stdcomponents.Rotation{}.SetFromDegrees(angle))
 	props.Scales.Create(entity, stdcomponents.Scale{
-		XY: vectors.Vec2{
-			X: 1,
-			Y: 1,
-		},
+		XY: util.NewVec2(1, 1),
 	})
 	props.Velocities.Create(entity, stdcomponents.Velocity{
 		X: velocityX,
 		Y: velocityY,
 	})
 	props.CircleColliders.Create(entity, stdcomponents.CircleCollider{
-		Radius: 6,
-		Offset: vectors.Vec2{
-			X: 0,
-			Y: 0,
-		},
+		Radius:     6,
+		Offset:     util.NewVec2(0, 0),
 		Layer:      config.BulletCollisionLayer,
 		Mask:       1<<config.EnemyCollisionLayer | 1<<config.WallCollisionLayer | 1<<config.BulletCollisionLayer,
 		AllowSleep: true,
 	})
 	//props.BoxColliders.Create(entity, stdcomponents.BoxCollider{
-	//	WH: vectors.Vec2{
+	//	WH: util.Vec2{
 	//		X: 16,
 	//		Y: 16,
 	//	},
-	//	Offset: vectors.Vec2{
+	//	Offset: util.Vec2{
 	//		X: 8,
 	//		Y: 8,
 	//	},
@@ -89,16 +79,8 @@ func CreateBullet(
 	//})
 	te := stdcomponents.Sprite{
 		Texture: assets.Textures.Get("bullet.png"),
-		Frame: rl.Rectangle{
-			X:      0,
-			Y:      0,
-			Width:  64,
-			Height: 64,
-		},
-		Origin: rl.Vector2{
-			X: 32,
-			Y: 32,
-		},
+		Frame:   util.NewRectFromOriginSize(util.NewVec2(0, 0), util.NewVec2(64, 64)),
+		Origin:  util.NewVec2(32, 32),
 		Tint: color.RGBA{
 			R: 255,
 			G: 255,

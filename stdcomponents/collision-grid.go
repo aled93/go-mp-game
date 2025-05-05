@@ -16,7 +16,7 @@ package stdcomponents
 
 import (
 	"gomp/pkg/ecs"
-	"gomp/vectors"
+	"gomp/pkg/util"
 )
 
 func NewCollisionGrid(collisionLayer CollisionLayer, cellSize float32) CollisionGrid {
@@ -42,8 +42,8 @@ type SpatialCellIndex struct {
 	X, Y int
 }
 
-func (i SpatialCellIndex) ToVec2() vectors.Vec2 {
-	return vectors.Vec2{X: float32(i.X), Y: float32(i.Y)}
+func (i SpatialCellIndex) ToVec2() util.Vec2 {
+	return util.NewVec2(util.Scalar(i.X), util.Scalar(i.Y))
 }
 
 // Query returns the EntityIds of Cells that intersect the AABB
@@ -66,7 +66,7 @@ func (g *CollisionGrid) Query(bb AABB, result []ecs.Entity) []ecs.Entity {
 	return result
 }
 
-func (g *CollisionGrid) GetCellIndex(position vectors.Vec2) SpatialCellIndex {
+func (g *CollisionGrid) GetCellIndex(position util.Vec2) SpatialCellIndex {
 	return SpatialCellIndex{
 		X: int(position.X / g.CellSize),
 		Y: int(position.Y / g.CellSize),

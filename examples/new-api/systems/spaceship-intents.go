@@ -19,8 +19,8 @@ import (
 	"gomp/examples/new-api/components"
 	"gomp/examples/new-api/entities"
 	"gomp/pkg/ecs"
+	"gomp/pkg/util"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 	"math"
 	"time"
 )
@@ -55,7 +55,7 @@ func (s *SpaceshipIntentsSystem) Init() {}
 func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 	var moveSpeedMax float32 = 300
 	var moveSpeedMaxBackwards float32 = -200
-	var rotateSpeed vectors.Radians = 3
+	var rotateSpeed util.Radians = 3
 	var speedIncrement float32 = 10
 
 	var bulletSpeed float32 = 300
@@ -72,10 +72,10 @@ func (s *SpaceshipIntentsSystem) Run(dt time.Duration) {
 		flySfx := s.SoundEffects.GetUnsafe(entity)
 
 		if intent.RotateLeft {
-			rot.Angle -= rotateSpeed * vectors.Radians(dtSec)
+			rot.Angle -= rotateSpeed * util.Radians(dtSec)
 		}
 		if intent.RotateRight {
-			rot.Angle += rotateSpeed * vectors.Radians(dtSec)
+			rot.Angle += rotateSpeed * util.Radians(dtSec)
 		}
 		if intent.MoveUp {
 			s.moveSpeed += speedIncrement

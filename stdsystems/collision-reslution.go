@@ -15,11 +15,12 @@ Thank you for your support!
 package stdsystems
 
 import (
-	"github.com/negrel/assert"
 	"gomp/pkg/ecs"
+	"gomp/pkg/util"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 	"time"
+
+	"github.com/negrel/assert"
 )
 
 func NewCollisionResolutionSystem() CollisionResolutionSystem {
@@ -39,7 +40,7 @@ func (s *CollisionResolutionSystem) Run(dt time.Duration) {
 	s.Collisions.EachComponent()(func(collision *stdcomponents.Collision) bool {
 		if collision.State == stdcomponents.CollisionStateEnter || collision.State == stdcomponents.CollisionStateStay {
 			// Resolve penetration
-			var displacement vectors.Vec2
+			var displacement util.Vec2
 
 			// Move entities apart
 			rigidbody1 := s.RigidBodies.GetUnsafe(collision.E1)
@@ -51,15 +52,15 @@ func (s *CollisionResolutionSystem) Run(dt time.Duration) {
 
 			if !rigidbody1.IsStatic && !rigidbody2.IsStatic {
 				// both objects are dynamic
-				displacement = collision.Normal.Scale(collision.Depth * 0.5)
+				displacement = collision.Normal.ScaleScalar(collision.Depth * 0.5)
 			} else {
 				// one of the objects is static
-				displacement = collision.Normal.Scale(collision.Depth)
+				displacement = collision.Normal.ScaleScalar(collision.Depth)
 			}
 
 			if !rigidbody1.IsStatic {
 				p1 := s.Positions.GetUnsafe(collision.E1)
-				p1d := p1.XY.Sub(displacement)
+				p1d := p1.XY.Subtract(displacement)
 				p1.XY.X, p1.XY.Y = p1d.X, p1d.Y
 			}
 
@@ -75,7 +76,7 @@ func (s *CollisionResolutionSystem) Run(dt time.Duration) {
 			velocity2 := s.Velocities.GetUnsafe(collision.E2)
 			assert.NotNil(velocity2)
 
-			relativeVelocity := velocity2.Vec2().Sub(velocity1.Vec2())
+			relativeVelocity := velocity2.Vec2().Subtract(velocity1.Vec2())
 			velocityAlongNormal := relativeVelocity.Dot(collision.Normal)
 
 			if velocityAlongNormal > 0 {
@@ -86,14 +87,14 @@ func (s *CollisionResolutionSystem) Run(dt time.Duration) {
 			j := -(1 + e) * velocityAlongNormal
 			j /= 1/rigidbody1.Mass + 1/rigidbody2.Mass
 
-			impulse := collision.Normal.Scale(j)
+			impulse := collision.Normal.ScaleScalar(j)
 
 			if !rigidbody1.IsStatic {
-				velocity1.SetVec2(velocity1.Vec2().Sub(impulse.Scale(1 / rigidbody1.Mass)))
+				velocity1.SetVec2(velocity1.Vec2().Subtract(impulse.DivideScalar(rigidbody1.Mass)))
 			}
 
 			if !rigidbody2.IsStatic {
-				velocity2.SetVec2(velocity2.Vec2().Add(impulse.Scale(1 / rigidbody2.Mass)))
+				velocity2.SetVec2(velocity2.Vec2().Add(impulse.DivideScalar(rigidbody2.Mass)))
 			}
 		}
 		return true

@@ -15,13 +15,12 @@ Thank you for your support!
 package entities
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/examples/new-api/assets"
 	"gomp/examples/new-api/components"
 	"gomp/examples/new-api/config"
 	"gomp/pkg/ecs"
+	"gomp/pkg/util"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 	"image/color"
 	"math/rand"
 )
@@ -50,17 +49,11 @@ func CreateAsteroid(
 ) ecs.Entity {
 	e := props.EntityManager.Create()
 	props.Positions.Create(e, stdcomponents.Position{
-		XY: vectors.Vec2{
-			X: posX,
-			Y: posY,
-		},
+		XY: util.NewVec2(posX, posY),
 	})
 	props.Rotations.Create(e, stdcomponents.Rotation{}.SetFromDegrees(angle))
 	props.Scales.Create(e, stdcomponents.Scale{
-		XY: vectors.Vec2{
-			X: 1 * scaleFactor,
-			Y: 1 * scaleFactor,
-		},
+		XY: util.NewVec2(1*scaleFactor, 1*scaleFactor),
 	})
 	props.Velocities.Create(e, stdcomponents.Velocity{
 		X: velocityX,
@@ -68,25 +61,14 @@ func CreateAsteroid(
 	})
 	props.CircleColliders.Create(e, stdcomponents.CircleCollider{
 		Radius: 20,
-		Offset: vectors.Vec2{
-			X: 0,
-			Y: 0,
-		},
-		Layer: config.EnemyCollisionLayer,
-		Mask:  1<<config.EnemyCollisionLayer | 1<<config.WallCollisionLayer,
+		Offset: util.NewVec2(0, 0),
+		Layer:  config.EnemyCollisionLayer,
+		Mask:   1<<config.EnemyCollisionLayer | 1<<config.WallCollisionLayer,
 	})
 	props.Sprites.Create(e, stdcomponents.Sprite{
 		Texture: assets.Textures.Get("meteor_large.png"),
-		Frame: rl.Rectangle{
-			X:      0,
-			Y:      0,
-			Width:  64,
-			Height: 64,
-		},
-		Origin: rl.Vector2{
-			X: 32,
-			Y: 32,
-		},
+		Frame:   util.NewRectFromOriginSize(util.NewVec2(0, 0), util.NewVec2(64, 64)),
+		Origin:  util.NewVec2(32, 32),
 		Tint: color.RGBA{
 			R: 255,
 			G: 255,

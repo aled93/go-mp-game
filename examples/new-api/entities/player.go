@@ -10,8 +10,8 @@ import (
 	"gomp/examples/new-api/config"
 	"gomp/examples/new-api/sprites"
 	"gomp/pkg/ecs"
+	"gomp/pkg/util"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 )
 
 const (
@@ -74,10 +74,7 @@ func CreatePlayer(
 
 	// Adding scale component
 	scale := stdcomponents.Scale{
-		XY: vectors.Vec2{
-			X: 1,
-			Y: 1,
-		},
+		XY: util.NewVec2(1, 1),
 	}
 	player.Scale = scales.Create(entity, scale)
 
@@ -113,10 +110,7 @@ func CreatePlayer(
 
 	// Adding BoxCollider component
 	player.ColliderBox = boxColliders.Create(entity, stdcomponents.BoxCollider{
-		WH: vectors.Vec2{
-			X: 96,
-			Y: 128,
-		},
+		WH: util.NewVec2(96, 128),
 	})
 
 	// Adding GenericCollider component

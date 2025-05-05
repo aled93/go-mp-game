@@ -13,8 +13,8 @@ Thank you for your support!
 package gjk
 
 import (
+	"gomp/pkg/util"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 )
 
 const (
@@ -30,7 +30,7 @@ type GJK struct {
 }
 
 type AnyCollider interface {
-	GetSupport(direction vectors.Vec2, transform stdcomponents.Transform2d) vectors.Vec2
+	GetSupport(direction util.Vec2, transform stdcomponents.Transform2d) util.Vec2
 }
 
 /*
@@ -42,11 +42,11 @@ func (s *GJK) CheckCollision(
 	a, b AnyCollider,
 	transformA, transformB stdcomponents.Transform2d,
 ) bool {
-	direction := vectors.Vec2{X: 1, Y: 0}
+	direction := util.NewVec2(1, 0)
 
 	p := s.minkowskiSupport2d(a, b, transformA, transformB, direction)
-	s.simplex.add(p.ToVec3())
-	direction = p.Neg()
+	s.simplex.add(util.NewVec3FromVec2(p, 0))
+	direction = p.Back()
 
 	for range maxIterations {
 		p = s.minkowskiSupport2d(a, b, transformA, transformB, direction)
@@ -55,7 +55,7 @@ func (s *GJK) CheckCollision(
 			return false
 		}
 
-		s.simplex.add(p.ToVec3())
+		s.simplex.add(util.NewVec3FromVec2(p, 0))
 
 		if s.simplex.do(&direction) {
 			return true
@@ -65,9 +65,9 @@ func (s *GJK) CheckCollision(
 	panic("GJK infinite loop")
 }
 
-func (s *GJK) minkowskiSupport2d(a, b AnyCollider, transformA, transformB stdcomponents.Transform2d, direction vectors.Vec2) vectors.Vec2 {
+func (s *GJK) minkowskiSupport2d(a, b AnyCollider, transformA, transformB stdcomponents.Transform2d, direction util.Vec2) util.Vec2 {
 	aSupport := a.GetSupport(direction, transformA)
-	bSupport := b.GetSupport(direction.Neg(), transformB)
-	support := aSupport.Sub(bSupport)
+	bSupport := b.GetSupport(direction.Back(), transformB)
+	support := aSupport.Subtract(bSupport)
 	return support
 }

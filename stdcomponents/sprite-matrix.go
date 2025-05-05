@@ -15,9 +15,10 @@ Thank you for your support!
 package stdcomponents
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/pkg/ecs"
-	"gomp/vectors"
+	"gomp/pkg/util"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type SpriteMatrixAnimation struct {
@@ -30,11 +31,11 @@ type SpriteMatrixAnimation struct {
 
 type SpriteMatrix struct {
 	Texture    *rl.Texture2D
-	Origin     rl.Vector2
-	Dest       rl.Rectangle
+	Origin     util.Vec2
+	Dest       util.Rect
 	FPS        int32
 	Animations []SpriteMatrixAnimation
-	Rotation   vectors.Radians
+	Rotation   util.Radians
 }
 
 type SpriteMatrixComponentManager = ecs.SharedComponentManager[SpriteMatrix]

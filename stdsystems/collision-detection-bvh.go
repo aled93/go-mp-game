@@ -19,9 +19,9 @@ import (
 	gjk "gomp/pkg/collision"
 	"gomp/pkg/core"
 	"gomp/pkg/ecs"
+	"gomp/pkg/util"
 	"gomp/pkg/worker"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 	"sync"
 	"time"
 )
@@ -143,9 +143,8 @@ func (s *CollisionDetectionBVHSystem) registerCollisionEvents() {
 				})
 
 				s.Positions.Create(proxy, stdcomponents.Position{
-					XY: vectors.Vec2{
-						X: pos.X, Y: pos.Y,
-					}})
+					XY: util.NewVec2(pos.X, pos.Y),
+				})
 				s.activeCollisions[pair] = proxy
 			} else {
 				proxy := s.activeCollisions[pair]
@@ -225,7 +224,7 @@ func (s *CollisionDetectionBVHSystem) narrowPhase(entityA ecs.Entity, potentialE
 					entityA:  entityA,
 					entityB:  entityB,
 					position: transformA.Position,
-					normal:   transformB.Position.Sub(transformA.Position).Normalize(),
+					normal:   transformB.Position.Subtract(transformA.Position).Normalized(),
 					depth:    radiusA + radiusB - transformB.Position.Distance(transformA.Position),
 				})
 			}
@@ -243,7 +242,7 @@ func (s *CollisionDetectionBVHSystem) narrowPhase(entityA ecs.Entity, potentialE
 
 		// If collision detected, get penetration details using EPA
 		normal, depth := test.EPA(colA, colB, transformA, transformB)
-		position := posA.XY.Add(posB.XY.Sub(posA.XY))
+		position := posA.XY.Add(posB.XY.Subtract(posA.XY))
 		s.collisionEvents[workerId].Append(CollisionEvent{
 			entityA:  entityA,
 			entityB:  entityB,

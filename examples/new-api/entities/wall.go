@@ -15,13 +15,12 @@ Thank you for your support!
 package entities
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/examples/new-api/assets"
 	"gomp/examples/new-api/components"
 	"gomp/examples/new-api/config"
 	"gomp/pkg/ecs"
+	"gomp/pkg/util"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 	"image/color"
 	"math"
 )
@@ -47,29 +46,17 @@ func CreateWall(
 ) ecs.Entity {
 	entity := props.EntityManager.Create()
 	props.Positions.Create(entity, stdcomponents.Position{
-		XY: vectors.Vec2{
-			X: posX,
-			Y: posY,
-		},
+		XY: util.NewVec2(posX, posY),
 	})
 	props.Rotations.Create(entity, stdcomponents.Rotation{}.SetFromDegrees(angle))
 	props.Scales.Create(entity, stdcomponents.Scale{
-		XY: vectors.Vec2{
-			X: 1,
-			Y: 1,
-		},
+		XY: util.NewVec2(1, 1),
 	})
 	props.BoxColliders.Create(entity, stdcomponents.BoxCollider{
-		WH: vectors.Vec2{
-			X: width,
-			Y: height,
-		},
-		Offset: vectors.Vec2{
-			X: 0,
-			Y: 0,
-		},
-		Layer: config.WallCollisionLayer,
-		Mask:  0,
+		WH:     util.NewVec2(width, height),
+		Offset: util.NewVec2(0, 0),
+		Layer:  config.WallCollisionLayer,
+		Mask:   0,
 	})
 	props.RigidBodies.Create(entity, stdcomponents.RigidBody{
 		IsStatic: true,
@@ -81,16 +68,8 @@ func CreateWall(
 	})
 	props.Sprites.Create(entity, stdcomponents.Sprite{
 		Texture: assets.Textures.Get("wall.png"),
-		Frame: rl.Rectangle{
-			X:      0,
-			Y:      0,
-			Width:  width,
-			Height: height,
-		},
-		Origin: rl.Vector2{
-			X: 0,
-			Y: 0,
-		},
+		Frame:   util.NewRectFromOriginSize(util.NewVec2(0, 0), util.NewVec2(width, height)),
+		Origin:  util.NewVec2(0, 0),
 		Tint: color.RGBA{
 			R: 255,
 			G: 255,

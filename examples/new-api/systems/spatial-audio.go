@@ -17,8 +17,8 @@ package systems
 import (
 	"gomp/examples/new-api/components"
 	"gomp/pkg/ecs"
+	"gomp/pkg/util"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 	"math"
 	"time"
 
@@ -84,7 +84,7 @@ func (s *SpatialAudioSystem) Run(dt time.Duration) {
 func (s *SpatialAudioSystem) Destroy() {
 }
 
-func (s *SpatialAudioSystem) calculatePan(listener vectors.Vec2, source vectors.Vec2) float32 {
+func (s *SpatialAudioSystem) calculatePan(listener util.Vec2, source util.Vec2) float32 {
 	dx := float64(source.X - listener.X)
 	dy := float64(source.Y - listener.Y)
 	distanceSq := dx*dx + dy*dy

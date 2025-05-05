@@ -5,6 +5,7 @@ import (
 	"gomp/examples/new-api/config"
 	"gomp/pkg/ecs"
 	"gomp/pkg/kbd"
+	"gomp/pkg/util"
 	"gomp/stdcomponents"
 	"gomp/vectors"
 	"image/color"
@@ -40,7 +41,7 @@ func (s *MinimapSystem) Init() {
 	s.Cameras.Create(s.minimapCamera, stdcomponents.Camera{
 		Camera2D: rl.Camera2D{
 			Target:   rl.Vector2{},
-			Offset:   rl.Vector2(vectors.Vec2{X: float32(width), Y: float32(height)}.Scale(0.5)),
+			Offset:   rl.Vector2(util.NewVec2(float32(width), float32(height)).ScaleScalar(0.5)),
 			Rotation: 0,
 			Zoom:     .5,
 		},

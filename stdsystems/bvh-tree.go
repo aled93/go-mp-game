@@ -17,8 +17,8 @@ package stdsystems
 import (
 	"cmp"
 	"gomp/pkg/ecs"
+	"gomp/pkg/util"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 	"math/bits"
 	"slices"
 	"time"
@@ -183,13 +183,7 @@ func (s *BvhTreeSystem) findSplit(t *stdcomponents.BvhTree, start, end int) int 
 
 func (s *BvhTreeSystem) mergeAABB(a, b *stdcomponents.AABB) stdcomponents.AABB {
 	return stdcomponents.AABB{
-		Min: vectors.Vec2{
-			X: min(a.Min.X, b.Min.X),
-			Y: min(a.Min.Y, b.Min.Y),
-		},
-		Max: vectors.Vec2{
-			X: max(a.Max.X, b.Max.X),
-			Y: max(a.Max.Y, b.Max.Y),
-		},
+		Min: util.NewVec2(min(a.Min.X, b.Min.X), min(a.Min.Y, b.Min.Y)),
+		Max: util.NewVec2(max(a.Max.X, b.Max.X), max(a.Max.Y, b.Max.Y)),
 	}
 }

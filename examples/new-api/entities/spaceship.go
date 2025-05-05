@@ -15,13 +15,12 @@ Thank you for your support!
 package entities
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/examples/new-api/assets"
 	"gomp/examples/new-api/components"
 	"gomp/examples/new-api/config"
 	"gomp/pkg/ecs"
+	"gomp/pkg/util"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 	"image/color"
 	"time"
 )
@@ -59,19 +58,13 @@ func CreateSpaceShip(
 	entity := props.EntityManager.Create()
 
 	props.Positions.Create(entity, stdcomponents.Position{
-		XY: vectors.Vec2{
-			X: posX,
-			Y: posY,
-		},
+		XY: util.NewVec2(posX, posY),
 	})
 
 	props.Rotations.Create(entity, stdcomponents.Rotation{}.SetFromDegrees(angle))
 
 	props.Scales.Create(entity, stdcomponents.Scale{
-		XY: vectors.Vec2{
-			X: 1,
-			Y: 1,
-		},
+		XY: util.NewVec2(1, 1),
 	})
 
 	props.Velocities.Create(entity, stdcomponents.Velocity{
@@ -81,17 +74,17 @@ func CreateSpaceShip(
 
 	props.Sprites.Create(entity, stdcomponents.Sprite{
 		Texture: assets.Textures.Get("ship_E.png"),
-		Origin:  rl.Vector2{X: 32, Y: 40},
-		Frame:   rl.Rectangle{0, 0, 64, 64},
+		Origin:  util.NewVec2(32, 40),
+		Frame:   util.NewRectFromOriginSize(util.NewVec2(0, 0), util.NewVec2(64, 64)),
 		Tint:    color.RGBA{255, 255, 255, 255},
 	})
 
 	props.BoxColliders.Create(entity, stdcomponents.BoxCollider{
-		WH: vectors.Vec2{
+		WH: util.Vec2{
 			X: 32,
 			Y: 32,
 		},
-		Offset: vectors.Vec2{
+		Offset: util.Vec2{
 			X: 16,
 			Y: 16,
 		},

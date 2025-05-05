@@ -16,13 +16,13 @@ package stdcomponents
 
 import (
 	"gomp/pkg/ecs"
-	"gomp/vectors"
+	"gomp/pkg/util"
 )
 
 type Transform2d struct {
-	Position vectors.Vec2
-	Rotation vectors.Radians
-	Scale    vectors.Vec2
+	Position util.Vec2
+	Rotation util.Radians
+	Scale    util.Vec2
 }
 
 type TransformComponentManager = ecs.ComponentManager[Transform2d]

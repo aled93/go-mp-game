@@ -15,8 +15,8 @@ Thank you for your support!
 package components
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/pkg/ecs"
+	"gomp/pkg/util"
 	"image/color"
 )
 
@@ -25,7 +25,7 @@ type TextureCircle struct {
 	CenterY  float32
 	Radius   float32
 	Rotation float32
-	Origin   rl.Vector2
+	Origin   util.Vec2
 	Color    color.RGBA
 }
 

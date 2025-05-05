@@ -16,13 +16,14 @@ package bvh
 
 import (
 	"cmp"
-	"github.com/negrel/assert"
 	"gomp/pkg/ecs"
+	"gomp/pkg/util"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 	"math"
 	"math/bits"
 	"slices"
+
+	"github.com/negrel/assert"
 )
 
 type node struct {
@@ -280,14 +281,9 @@ func (t *Tree) findSplit(start, end int) int {
 // mergeAABB combines two AABB
 func (t *Tree) mergeAABB(a, b *stdcomponents.AABB) stdcomponents.AABB {
 	return stdcomponents.AABB{
-		Min: vectors.Vec2{
-			X: min(a.Min.X, b.Min.X),
-			Y: min(a.Min.Y, b.Min.Y),
-		},
-		Max: vectors.Vec2{
-			X: max(a.Max.X, b.Max.X),
-			Y: max(a.Max.Y, b.Max.Y),
-		},
+		// TODO: replace with Min\Max functions from util.Vec2
+		Min: util.NewVec2(min(a.Min.X, b.Min.X), min(a.Min.Y, b.Min.Y)),
+		Max: util.NewVec2(max(a.Max.X, b.Max.X), max(a.Max.Y, b.Max.Y)),
 	}
 }
 

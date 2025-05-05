@@ -15,15 +15,17 @@ Thank you for your support!
 package sprites
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/examples/new-api/assets"
+	"gomp/pkg/util"
 	"gomp/stdcomponents"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 var PlayerSpriteMatrix = stdcomponents.SpriteMatrix{
 	Texture: assets.Textures.Get("milansheet.png"),
-	Origin:  rl.Vector2{X: 0.5, Y: 0.5},
-	Dest:    rl.Rectangle{X: 0, Y: 0, Width: 96, Height: 128},
+	Origin:  util.NewVec2(0.5, 0.5),
+	Dest:    util.NewRectFromOriginSize(util.NewVec2(0, 0), util.NewVec2(96, 128)),
 	FPS:     12,
 	Animations: []stdcomponents.SpriteMatrixAnimation{
 		{

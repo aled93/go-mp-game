@@ -16,12 +16,12 @@ package stdcomponents
 
 import (
 	"gomp/pkg/ecs"
-	"gomp/vectors"
+	"gomp/pkg/util"
 	"math"
 )
 
 type Rotation struct {
-	Angle vectors.Radians
+	Angle util.Radians
 }
 
 func (r Rotation) SetFromDegrees(deg float64) Rotation {
