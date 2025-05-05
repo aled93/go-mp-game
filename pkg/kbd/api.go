@@ -4,8 +4,10 @@
 package kbd
 
 var (
-	downKeycodes     map[Keycode]bool
-	prevDownKeycodes map[Keycode]bool
+	downKeycodes      map[Keycode]bool
+	prevDownKeycodes  map[Keycode]bool
+	downScancodes     map[Scancode]bool
+	prevDownScancodes map[Scancode]bool
 )
 
 func IsKeyDown(keycode Keycode) bool {
@@ -25,6 +27,23 @@ func IsKeyReleased(keycode Keycode) bool {
 	return !down && prevDown
 }
 
+func IsScancodeDown(scancode Scancode) bool {
+	down := downScancodes[scancode]
+	return down
+}
+
+func IsScancodePressed(scancode Scancode) bool {
+	down := downScancodes[scancode]
+	prevDown := prevDownScancodes[scancode]
+	return down && !prevDown
+}
+
+func IsScancodeReleased(scancode Scancode) bool {
+	down := downScancodes[scancode]
+	prevDown := prevDownScancodes[scancode]
+	return !down && prevDown
+}
+
 func SetDown(keycode Keycode, scancode Scancode) {
 	downKeycodes[keycode] = true
 }
@@ -35,5 +54,7 @@ func SetUp(keycode Keycode, scancode Scancode) {
 
 func Update() {
 	downKeycodes, prevDownKeycodes = prevDownKeycodes, downKeycodes
+	downScancodes, prevDownScancodes = prevDownScancodes, downScancodes
 	clear(downKeycodes)
+	clear(downScancodes)
 }
