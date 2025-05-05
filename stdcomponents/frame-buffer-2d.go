@@ -15,30 +15,22 @@ Thank you for your support!
 package stdcomponents
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/pkg/ecs"
-	"gomp/vectors"
+	"gomp/pkg/util"
 	"image/color"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type FrameBuffer2D struct {
-	Position  rl.Vector2
-	Frame     rl.Rectangle
+	Position  util.Vec2
+	Frame     util.Rect
 	Texture   rl.RenderTexture2D
 	Layer     CameraLayer
 	BlendMode rl.BlendMode
 	Rotation  float32
 	Tint      color.RGBA
-	Dst       rl.Rectangle
-}
-
-func (d FrameBuffer2D) FrameRect() vectors.Rectangle {
-	return vectors.Rectangle{
-		X:      d.Frame.X,
-		Y:      d.Frame.Y,
-		Width:  d.Frame.Width,
-		Height: d.Frame.Height,
-	}
+	Dst       util.Rect
 }
 
 type FrameBuffer2DComponentManager = ecs.ComponentManager[FrameBuffer2D]

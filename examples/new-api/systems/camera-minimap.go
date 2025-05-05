@@ -7,7 +7,6 @@ import (
 	"gomp/pkg/kbd"
 	"gomp/pkg/util"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 	"image/color"
 	"time"
 
@@ -45,7 +44,10 @@ func (s *MinimapSystem) Init() {
 			Rotation: 0,
 			Zoom:     .5,
 		},
-		Dst:       vectors.Rectangle{X: 0, Y: float32(width) - float32(height)*0.1666666666666667, Width: float32(width) * 0.1666666666666667, Height: float32(height) * 0.1666666666666667},
+		Dst: util.NewRectFromOriginSize(
+			util.NewVec2(0, width-height*(5/3)),
+			util.NewVec2(width*(5/3), height*(5/3)),
+		),
 		Layer:     config.MinimapCameraLayer,
 		Order:     1,
 		Culling:   stdcomponents.Culling2DFullscreenBB,
@@ -54,14 +56,17 @@ func (s *MinimapSystem) Init() {
 		Tint:      color.RGBA{R: 255, G: 255, B: 255, A: 255},
 	})
 	s.FrameBuffer2D.Create(s.minimapCamera, stdcomponents.FrameBuffer2D{
-		Position:  rl.Vector2{},
-		Frame:     rl.NewRectangle(0, 0, float32(width), float32(height)),
+		Position:  util.Vec2{},
+		Frame:     util.NewRect(0, 0, width, height),
 		Texture:   rl.LoadRenderTexture(int32(width), int32(height)),
 		Layer:     config.MinimapCameraLayer,
 		BlendMode: rl.BlendAlpha,
 		Rotation:  0,
 		Tint:      rl.White,
-		Dst:       rl.Rectangle{Y: float32(height) - float32(height)*0.1666666666666667, Width: float32(width) * 0.1666666666666667, Height: float32(height) * 0.1666666666666667},
+		Dst: util.NewRectFromOriginSize(
+			util.NewVec2(0, height-height*(5/3)),
+			util.NewVec2(width*(5/3), height*(5/3)),
+		),
 	})
 }
 

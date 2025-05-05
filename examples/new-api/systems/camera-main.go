@@ -21,7 +21,6 @@ import (
 	"gomp/pkg/kbd"
 	"gomp/pkg/util"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 	"image/color"
 	"math"
 	"time"
@@ -59,7 +58,7 @@ func (s *MainCameraSystem) Init() {
 			Rotation: 0,
 			Zoom:     1.0,
 		},
-		Dst:       vectors.Rectangle{X: 0, Y: 0, Width: float32(width), Height: float32(height)},
+		Dst:       util.NewRectFromOriginSize(util.NewVec2(0, 0), util.NewVec2(width, height)),
 		Layer:     config.MainCameraLayer,
 		Order:     0,
 		Culling:   stdcomponents.Culling2DFullscreenBB,
@@ -68,14 +67,14 @@ func (s *MainCameraSystem) Init() {
 		Tint:      color.RGBA{R: 255, G: 255, B: 255, A: 255},
 	})
 	s.FrameBuffer2D.Create(s.mainCamera, stdcomponents.FrameBuffer2D{
-		Position:  rl.Vector2{},
-		Frame:     rl.Rectangle{X: 0, Y: 0, Width: float32(width), Height: float32(height)},
+		Position:  util.Vec2{},
+		Frame:     util.NewRectFromOriginSize(util.NewVec2(0, 0), util.NewVec2(width, height)),
 		Texture:   rl.LoadRenderTexture(int32(width), int32(height)),
 		Layer:     config.MainCameraLayer,
 		BlendMode: rl.BlendColor,
 		Rotation:  0,
 		Tint:      rl.White,
-		Dst:       rl.Rectangle{Width: float32(width), Height: float32(height)},
+		Dst:       util.NewRectFromOriginSize(util.NewVec2(0, 0), util.NewVec2(width, height)),
 	})
 }
 

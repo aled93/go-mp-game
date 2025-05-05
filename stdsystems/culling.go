@@ -7,13 +7,13 @@ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 package stdsystems
 
 import (
-	"github.com/negrel/assert"
 	"gomp/pkg/core"
 	"gomp/pkg/ecs"
 	"gomp/pkg/worker"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 	"time"
+
+	"github.com/negrel/assert"
 )
 
 func NewCullingSystem() CullingSystem {
@@ -65,7 +65,7 @@ func (s *CullingSystem) Run(dt time.Duration) {
 
 			textureRect := texture.Rect()
 
-			if s.intersects(cameraRect, textureRect) {
+			if cameraRect.Intersects(textureRect) {
 				renderable.Observed = true
 			}
 		})
@@ -95,13 +95,6 @@ func (s *CullingSystem) Run(dt time.Duration) {
 			s.RenderVisible.Delete(entity)
 		}
 	}
-}
-
-func (_ *CullingSystem) intersects(rect1, rect2 vectors.Rectangle) bool {
-	return rect1.X < rect2.X+rect2.Width &&
-		rect1.X+rect1.Width > rect2.X &&
-		rect1.Y < rect2.Y+rect2.Height &&
-		rect1.Y+rect1.Height > rect2.Y
 }
 
 func (s *CullingSystem) Destroy() {

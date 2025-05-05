@@ -20,8 +20,8 @@ import (
 	"gomp/examples/new-api/config"
 	"gomp/pkg/ecs"
 	"gomp/pkg/kbd"
+	"gomp/pkg/util"
 	"gomp/stdcomponents"
-	"gomp/vectors"
 	"image/color"
 	"slices"
 	"time"
@@ -191,12 +191,7 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 					}
 
 					// Simple AABB culling
-					if s.intersects(cameraRect, vectors.Rectangle{
-						X:      position.XY.X,
-						Y:      position.XY.Y,
-						Width:  cell.Size,
-						Height: cell.Size,
-					}) {
+					if cameraRect.Intersects(util.NewRectFromOriginSize(position.XY, util.NewVec2FromScalar(cell.Size))) {
 						rl.DrawRectangleLines(int32(position.XY.X), int32(position.XY.Y), int32(cell.Size), int32(cell.Size), clr)
 					}
 					return true
@@ -220,7 +215,7 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 
 					tree.AabbNodes.EachData()(func(a *stdcomponents.AABB) bool {
 						// Simple AABB culling
-						if s.intersects(cameraRect, a.Rect()) {
+						if cameraRect.Intersects(a.Rect()) {
 							rl.DrawRectangleRec(rl.Rectangle{
 								X:      a.Min.X,
 								Y:      a.Min.Y,
@@ -239,12 +234,7 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 					}
 
 					// Simple AABB culling
-					if s.intersects(cameraRect, vectors.Rectangle{
-						X:      position.XY.X,
-						Y:      position.XY.Y,
-						Width:  chunk.Size,
-						Height: chunk.Size,
-					}) {
+					if cameraRect.Intersects(util.NewRectFromOriginSize(position.XY, util.NewVec2FromScalar(chunk.Size))) {
 						rl.DrawRectangleLines(int32(position.XY.X), int32(position.XY.Y), int32(chunk.Size), int32(chunk.Size), clr)
 					}
 					return true
@@ -256,7 +246,7 @@ func (s *RenderOverlaySystem) Run(dt time.Duration) bool {
 					if isSleeping != nil {
 						clr = rl.Blue
 					}
-					if s.intersects(cameraRect, aabb.Rect()) {
+					if cameraRect.Intersects(aabb.Rect()) {
 						rl.DrawRectangleLinesEx(rl.Rectangle{
 							X:      aabb.Min.X,
 							Y:      aabb.Min.Y,
@@ -448,13 +438,6 @@ func (s *RenderOverlaySystem) drawMsGraph(x, y int32) {
 		1.0,
 		rl.White,
 	)
-}
-
-func (s *RenderOverlaySystem) intersects(rect1, rect2 vectors.Rectangle) bool {
-	return rect1.X < rect2.X+rect2.Width &&
-		rect1.X+rect1.Width > rect2.X &&
-		rect1.Y < rect2.Y+rect2.Height &&
-		rect1.Y+rect1.Height > rect2.Y
 }
 
 func (s *RenderOverlaySystem) Destroy() {}

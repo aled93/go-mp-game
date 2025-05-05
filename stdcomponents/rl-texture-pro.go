@@ -15,28 +15,24 @@ Thank you for your support!
 package stdcomponents
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/pkg/ecs"
-	"gomp/vectors"
+	"gomp/pkg/util"
 	"image/color"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type RLTexturePro struct {
 	Texture  *rl.Texture2D
-	Frame    rl.Rectangle
-	Origin   rl.Vector2
+	Frame    util.Rect
+	Origin   util.Vec2
 	Tint     color.RGBA
-	Dest     rl.Rectangle
+	Dest     util.Rect
 	Rotation float32
 }
 
-func (t *RLTexturePro) Rect() vectors.Rectangle {
-	return vectors.Rectangle{
-		X:      t.Dest.X - t.Origin.X,
-		Y:      t.Dest.Y - t.Origin.Y,
-		Width:  t.Dest.Width,
-		Height: t.Dest.Height,
-	}
+func (t *RLTexturePro) Rect() util.Rect {
+	return util.NewRectFromOriginSize(t.Dest.Mins.Subtract(t.Origin), t.Dest.Size())
 }
 
 type RLTextureProComponentManager = ecs.ComponentManager[RLTexturePro]
