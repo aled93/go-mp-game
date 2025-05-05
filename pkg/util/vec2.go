@@ -84,10 +84,15 @@ func (v Vec2) AngleTo(to Vec2) Scalar {
 }
 
 func (v Vec2) Rotate(angle Radians) Vec2 {
+	sn, cs := math.Sincos(angle)
 	return NewVec2(
-		v.X*float32(math.Cos(angle))-v.Y*float32(math.Sin(angle)),
-		v.X*float32(math.Sin(angle))+v.Y*float32(math.Cos(angle)),
+		v.X*float32(cs)-v.Y*float32(sn),
+		v.X*float32(sn)+v.Y*float32(cs),
 	)
+}
+
+func (v Vec2) RotateAround(pivot Vec2, angle Radians) Vec2 {
+	return v.Subtract(pivot).Rotate(angle).Add(pivot)
 }
 
 // Lerp interpolate vector between v and target. With fraction == 0.0
