@@ -44,6 +44,10 @@ func (r Rect) Center() Vec2 {
 	return r.Mins.Lerp(r.Maxs, 0.5)
 }
 
+func (r Rect) Size() Vec2 {
+	return r.Maxs.Subtract(r.Mins)
+}
+
 // Normalized returns normalized rectangle where r.Mins is
 // lower that r.Maxs.
 func (r Rect) Normalized() Rect {
