@@ -12,8 +12,6 @@ none :)
 Thank you for your support!
 */
 
-package vectors
+package util
 
-type Rectangle struct {
-	X, Y, Width, Height float32
-}
+type Radians = float64
