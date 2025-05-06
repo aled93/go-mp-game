@@ -52,12 +52,10 @@ func (s *MainCameraSystem) Init() {
 
 	s.mainCamera = s.EntityManager.Create()
 	s.Cameras.Create(s.mainCamera, stdcomponents.Camera{
-		Camera2D: rl.Camera2D{
-			Target:   rl.Vector2{},
-			Offset:   rl.Vector2(util.NewVec2(float32(width), float32(height)).ScaleScalar(0.5)),
-			Rotation: 0,
-			Zoom:     1.0,
-		},
+		Target:    util.Vec2{},
+		Offset:    util.NewVec2(width, height).ScaleScalar(0.5),
+		Rotation:  0,
+		Zoom:      1.0,
 		Dst:       util.NewRectFromOriginSize(util.NewVec2(0, 0), util.NewVec2(width, height)),
 		Layer:     config.MainCameraLayer,
 		Order:     0,
@@ -103,12 +101,12 @@ func (s *MainCameraSystem) Run(dt time.Duration) {
 		//decay := 40.0 // DECAY IS TICKRATE DEPENDENT
 		//c.Camera2D.Target.X = float32(s.expDecay(float64(c.Camera2D.Target.X), float64(playerPosition.XY.X), decay, float64(dt)))
 		//c.Camera2D.Target.Y = float32(s.expDecay(float64(c.Camera2D.Target.Y), float64(playerPosition.XY.Y), decay, float64(dt)))
-		c.Camera2D.Target = rl.Vector2(playerPosition.XY)
+		c.Target = playerPosition.XY
 		if s.shouldRotate {
 			rotation := s.Rotation.GetUnsafe(entity)
-			c.Camera2D.Rotation = -float32(rotation.Degrees())
+			c.Rotation = -rotation.Degrees()
 		} else {
-			c.Camera2D.Rotation = 0
+			c.Rotation = 0
 		}
 		return false
 	})

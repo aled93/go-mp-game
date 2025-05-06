@@ -15,12 +15,13 @@ Thank you for your support!
 package stdsystems
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
-	"github.com/negrel/assert"
 	"gomp/pkg/core"
 	"gomp/pkg/ecs"
+	"gomp/pkg/util"
 	"gomp/pkg/worker"
 	"gomp/stdcomponents"
+
+	"github.com/negrel/assert"
 )
 
 func NewSpriteSystem() SpriteSystem {
@@ -93,13 +94,7 @@ func (s *SpriteSystem) updateTextureRender(entity ecs.Entity, workerId worker.Wo
 
 	tr.Texture = sprite.Texture
 	tr.Frame = sprite.Frame
-	tr.Origin = rl.Vector2{
-		X: sprite.Origin.X * scale.XY.X,
-		Y: sprite.Origin.Y * scale.XY.Y,
-	}
-	tr.Dest.X = position.XY.X
-	tr.Dest.Y = position.XY.Y
-	tr.Dest.Width = sprite.Frame.Width
-	tr.Dest.Height = sprite.Frame.Height
+	tr.Origin = sprite.Origin.Scale(scale.XY)
+	tr.Dest = util.NewRectFromMinMax(position.XY, position.XY.Add(sprite.Frame.Size()))
 	tr.Tint = sprite.Tint
 }

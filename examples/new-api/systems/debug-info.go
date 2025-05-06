@@ -11,12 +11,11 @@ import (
 	"gomp/examples/new-api/config"
 	"gomp/pkg/ecs"
 	"gomp/pkg/kbd"
+	"gomp/pkg/util"
 	"gomp/stdcomponents"
 	"image/color"
 	"math"
 	"time"
-
-	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 func NewDebugInfoSystem() DebugInfoSystem {
@@ -68,14 +67,10 @@ func (s *DebugInfoSystem) Run(dt time.Duration) bool {
 				position := s.Positions.GetUnsafe(e)
 				rotation := s.Rotations.GetUnsafe(e)
 
-				x := position.XY.X
-				y := position.XY.Y
-				width := col.WH.X * scale.XY.X
-				height := col.WH.Y * scale.XY.Y
-				s.spawnRect(x, y, width, height, rl.Vector2{
-					X: col.Offset.X * scale.XY.X,
-					Y: col.Offset.Y * scale.XY.Y,
-				}, float32(rotation.Degrees()), rl.DarkGreen, e)
+				s.spawnRect(util.NewRectFromCenterSize(position.XY, col.WH.Scale(scale.XY)), util.NewVec2(
+					col.Offset.X*scale.XY.X,
+					col.Offset.Y*scale.XY.Y,
+				), float32(rotation.Degrees()), color.RGBA{G: 128, A: 255}, e)
 				return true
 			})
 			s.CircleColliders.EachEntity()(func(e ecs.Entity) bool {
@@ -83,13 +78,13 @@ func (s *DebugInfoSystem) Run(dt time.Duration) bool {
 				scale := s.Scales.GetUnsafe(e)
 				pos := s.Positions.GetUnsafe(e)
 
-				circleColor := rl.DarkGreen
+				circleColor := color.RGBA{G: 128, A: 255}
 				isSleeping := s.ColliderSleepStateComponentManager.GetUnsafe(e)
 				if isSleeping != nil {
-					circleColor = rl.Blue
+					circleColor = color.RGBA{B: 255, A: 255}
 				}
 
-				posWithOffset := pos.XY.Add(col.Offset.Mul(scale.XY))
+				posWithOffset := pos.XY.Add(col.Offset.Scale(scale.XY))
 				s.spawnCircle(posWithOffset.X, posWithOffset.Y, col.Radius*scale.XY.X, circleColor, e)
 				return true
 			})
@@ -122,10 +117,8 @@ func (s *DebugInfoSystem) Run(dt time.Duration) bool {
 				if parentAABB != nil && childAABB != nil {
 					childAABB.Min = parentAABB.Min
 					childAABB.Max = parentAABB.Max
-					childRect.Dest.X = parentPosition.XY.X
-					childRect.Dest.Y = parentPosition.XY.Y
-					childRect.Dest.Width = col.WH.X * scale.XY.X
-					childRect.Dest.Height = col.WH.Y * scale.XY.Y
+					childRect.Dest.Mins = parentPosition.XY
+					childRect.Dest.Maxs = childRect.Dest.Mins.Add(col.WH.Scale(scale.XY))
 					childRect.Origin.X = col.Offset.X * scale.XY.X
 					childRect.Origin.Y = col.Offset.Y * scale.XY.Y
 					childRect.Rotation = float32(rotation.Degrees())
@@ -133,14 +126,10 @@ func (s *DebugInfoSystem) Run(dt time.Duration) bool {
 
 			} else {
 				//TODO: defer spawning to non parallel function
-				x := parentPosition.XY.X
-				y := parentPosition.XY.Y
-				width := col.WH.X * scale.XY.X
-				height := col.WH.Y * scale.XY.Y
-				s.spawnRect(x, y, width, height, rl.Vector2{
-					X: col.Offset.X * scale.XY.X,
-					Y: col.Offset.Y * scale.XY.Y,
-				}, float32(rotation.Degrees()), rl.DarkGreen, e)
+				s.spawnRect(util.NewRectFromOriginSize(parentPosition.XY, col.WH.Scale(scale.XY)), util.NewVec2(
+					col.Offset.X*scale.XY.X,
+					col.Offset.Y*scale.XY.Y,
+				), float32(rotation.Degrees()), color.RGBA{G: 128, A: 255}, e)
 			}
 
 			return true
@@ -158,15 +147,15 @@ func (s *DebugInfoSystem) Run(dt time.Duration) bool {
 			if ok {
 				childAABB := s.AABBs.GetUnsafe(child.id)
 				childCircle := s.Circle.GetUnsafe(child.id)
-				circleColor := rl.DarkGreen
+				circleColor := color.RGBA{G: 128, A: 255}
 				isSleeping := s.ColliderSleepStateComponentManager.GetUnsafe(e)
 				if isSleeping != nil {
-					circleColor = rl.Blue
+					circleColor = color.RGBA{B: 255, A: 255}
 				}
 				if parentAABB != nil && childAABB != nil {
 					childAABB.Min = parentAABB.Min
 					childAABB.Max = parentAABB.Max
-					posWithOffset := pos.XY.Add(col.Offset.Mul(scale.XY))
+					posWithOffset := pos.XY.Add(col.Offset.Scale(scale.XY))
 					childCircle.CenterX = posWithOffset.X
 					childCircle.CenterY = posWithOffset.Y
 					childCircle.Radius = col.Radius * scale.XY.X
@@ -175,7 +164,7 @@ func (s *DebugInfoSystem) Run(dt time.Duration) bool {
 
 			} else {
 				//TODO: defer spawning to non parallel function
-				s.spawnCircle(pos.XY.X, pos.XY.Y, col.Radius*scale.XY.X, rl.DarkGreen, e)
+				s.spawnCircle(pos.XY.X, pos.XY.Y, col.Radius*scale.XY.X, color.RGBA{G: 128, A: 255}, e)
 			}
 			return true
 		})
@@ -201,16 +190,11 @@ func (s *DebugInfoSystem) Run(dt time.Duration) bool {
 	return false
 }
 
-func (s *DebugInfoSystem) spawnRect(x float32, y float32, width float32, height float32, origin rl.Vector2, rotation float32, tint color.RGBA, parent ecs.Entity) {
+func (s *DebugInfoSystem) spawnRect(rect util.Rect, origin util.Vec2, rotation float32, tint color.RGBA, parent ecs.Entity) {
 	if _, ok := s.children[parent]; !ok {
 		childEntity := s.EntityManager.Create()
 		s.TextureRect.Create(childEntity, components.TextureRect{
-			Dest: rl.Rectangle{
-				X:      x,
-				Y:      y,
-				Width:  width,
-				Height: height,
-			},
+			Dest:     rect,
 			Origin:   origin,
 			Rotation: rotation,
 			Color:    tint,
@@ -239,7 +223,7 @@ func (s *DebugInfoSystem) spawnCircle(x float32, y float32, radius float32, circ
 			CenterY:  y,
 			Radius:   radius,
 			Rotation: 0,
-			Origin:   rl.Vector2{},
+			Origin:   util.Vec2{},
 			Color:    circleColor,
 		})
 		s.AABBs.Create(childEntity, stdcomponents.AABB{})

@@ -15,14 +15,16 @@ Thank you for your support!
 package stdcomponents
 
 import (
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"gomp/pkg/ecs"
+	"gomp/pkg/util"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type SpriteSheet struct {
 	Texture     *rl.Texture2D
-	Frame       rl.Rectangle
-	Origin      rl.Vector2
+	Frame       util.Rect
+	Origin      util.Vec2
 	NumOfFrames int32
 	FPS         int32
 	Vertical    bool

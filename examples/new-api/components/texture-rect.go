@@ -18,12 +18,10 @@ import (
 	"gomp/pkg/ecs"
 	"gomp/pkg/util"
 	"image/color"
-
-	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type TextureRect struct {
-	Dest     rl.Rectangle
+	Dest     util.Rect
 	Origin   util.Vec2
 	Rotation float32
 	Color    color.RGBA

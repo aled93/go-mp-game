@@ -5,6 +5,7 @@ import (
 	"gomp/examples/new-api/config"
 	"gomp/pkg/ecs"
 	"gomp/pkg/kbd"
+	"gomp/pkg/render"
 	"gomp/pkg/util"
 	"gomp/stdcomponents"
 	"image/color"
@@ -38,12 +39,10 @@ func (s *MinimapSystem) Init() {
 
 	s.minimapCamera = s.EntityManager.Create()
 	s.Cameras.Create(s.minimapCamera, stdcomponents.Camera{
-		Camera2D: rl.Camera2D{
-			Target:   rl.Vector2{},
-			Offset:   rl.Vector2(util.NewVec2(float32(width), float32(height)).ScaleScalar(0.5)),
-			Rotation: 0,
-			Zoom:     .5,
-		},
+		Target:   util.Vec2{},
+		Offset:   util.NewVec2(width, height).ScaleScalar(0.5),
+		Rotation: 0,
+		Zoom:     .5,
 		Dst: util.NewRectFromOriginSize(
 			util.NewVec2(0, width-height*(5/3)),
 			util.NewVec2(width*(5/3), height*(5/3)),
@@ -51,7 +50,7 @@ func (s *MinimapSystem) Init() {
 		Layer:     config.MinimapCameraLayer,
 		Order:     1,
 		Culling:   stdcomponents.Culling2DFullscreenBB,
-		BlendMode: rl.BlendAlpha,
+		BlendMode: render.BlendAlpha,
 		BGColor:   color.RGBA{R: 0, G: 0, B: 0, A: 255},
 		Tint:      color.RGBA{R: 255, G: 255, B: 255, A: 255},
 	})
@@ -60,9 +59,9 @@ func (s *MinimapSystem) Init() {
 		Frame:     util.NewRect(0, 0, width, height),
 		Texture:   rl.LoadRenderTexture(int32(width), int32(height)),
 		Layer:     config.MinimapCameraLayer,
-		BlendMode: rl.BlendAlpha,
+		BlendMode: render.BlendAlpha,
 		Rotation:  0,
-		Tint:      rl.White,
+		Tint:      color.RGBA{R: 255, G: 255, B: 255, A: 255},
 		Dst: util.NewRectFromOriginSize(
 			util.NewVec2(0, height-height*(5/3)),
 			util.NewVec2(width*(5/3), height*(5/3)),
@@ -93,9 +92,9 @@ func (s *MinimapSystem) Run(dt time.Duration) bool {
 		playerPosition := s.Position.GetUnsafe(entity)
 		rotation := s.Rotation.GetUnsafe(entity)
 
-		c.Camera2D.Target.X = playerPosition.XY.X
-		c.Camera2D.Target.Y = playerPosition.XY.Y
-		c.Camera2D.Rotation = -float32(rotation.Degrees())
+		c.Target.X = playerPosition.XY.X
+		c.Target.Y = playerPosition.XY.Y
+		c.Rotation = -rotation.Degrees()
 		return false
 	})
 	return false

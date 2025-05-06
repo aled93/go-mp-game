@@ -16,11 +16,10 @@ package stdcomponents
 
 import (
 	"gomp/pkg/ecs"
+	"gomp/pkg/render"
 	"gomp/pkg/util"
 	"image/color"
 	"math"
-
-	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 const (
@@ -40,12 +39,17 @@ type CameraLayer uint64
 // Layer defines the camera's layer, default is 0 - disabled
 // Order defines the camera's order, ascending order
 type Camera struct {
-	rl.Camera2D
+	// same as rl.Camera2D fields
+	Offset   util.Vec2
+	Target   util.Vec2
+	Rotation util.Radians
+	Zoom     float32
+
 	Dst       util.Rect // TODO: remove?
 	Layer     CameraLayer
 	Culling   uint8
 	Order     int
-	BlendMode rl.BlendMode
+	BlendMode render.BlendMode
 	BGColor   color.RGBA
 	Tint      color.RGBA
 }
@@ -72,10 +76,10 @@ func (c Camera) Rect() util.Rect {
 	bottomLeft := util.NewVec2(x, y+height)
 
 	// Rotate each corner around the camera.Target using the camera rotation
-	topLeft = rotatePoint(topLeft, util.Vec2(c.Target), float64(c.Rotation))
-	topRight = rotatePoint(topRight, util.Vec2(c.Target), float64(c.Rotation))
-	bottomRight = rotatePoint(bottomRight, util.Vec2(c.Target), float64(c.Rotation))
-	bottomLeft = rotatePoint(bottomLeft, util.Vec2(c.Target), float64(c.Rotation))
+	topLeft = topLeft.RotateAround(util.Vec2(c.Target), float64(c.Rotation))
+	topRight = topRight.RotateAround(util.Vec2(c.Target), float64(c.Rotation))
+	bottomRight = bottomRight.RotateAround(util.Vec2(c.Target), float64(c.Rotation))
+	bottomLeft = bottomLeft.RotateAround(util.Vec2(c.Target), float64(c.Rotation))
 
 	// Determine the axis-aligned bounding box that contains all rotated points
 	// TODO: fast math 32bit
@@ -88,26 +92,6 @@ func (c Camera) Rect() util.Rect {
 		util.NewVec2(util.Scalar(minX), util.Scalar(minY)),
 		util.NewVec2(util.Scalar(maxX), util.Scalar(maxY)),
 	)
-}
-
-// rotatePoint rotates point p around pivot by angle degrees.
-func rotatePoint(p, pivot util.Vec2, angle float64) util.Vec2 {
-	// Convert angle from degrees to radians.
-	// TODO: fast math 32bit
-	theta := angle * (math.Pi / 180)
-	sinTheta := float32(math.Sin(theta))
-	cosTheta := float32(math.Cos(theta))
-
-	// Translate point to origin
-	dx := p.X - pivot.X
-	dy := p.Y - pivot.Y
-
-	// Apply rotation matrix
-	rotatedX := dx*cosTheta - dy*sinTheta
-	rotatedY := dx*sinTheta + dy*cosTheta
-
-	// Translate point back
-	return util.NewVec2(rotatedX+pivot.X, rotatedY+pivot.Y)
 }
 
 type CameraComponentManager = ecs.ComponentManager[Camera]
